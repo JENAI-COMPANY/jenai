@@ -1,0 +1,208 @@
+import React, { useContext, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import { CartContext } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getCategories } from '../services/api';
+import LanguageSwitcher from './LanguageSwitcher';
+import '../styles/Navbar.css';
+
+const Navbar = () => {
+  const { user, isAuthenticated, logout, isAdmin, isSubscriber, isSupplier } = useContext(AuthContext);
+  const { getCartCount } = useContext(CartContext);
+  const { t, language } = useLanguage();
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProductsMenu, setShowProductsMenu] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetchCategories();
+    if (isAuthenticated) {
+      // TODO: Fetch notifications from API
+      // Mock data for now
+      setNotifications([
+        { _id: '1', title: 'Welcome!', message: 'Welcome to Jenai', isRead: false },
+        { _id: '2', title: 'New Order', message: 'Your order has been confirmed', isRead: false }
+      ]);
+      setUnreadCount(2);
+    }
+  }, [isAuthenticated]);
+
+  // Refresh categories when products menu is opened
+  useEffect(() => {
+    if (showProductsMenu) {
+      fetchCategories();
+    }
+  }, [showProductsMenu]);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await getCategories();
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  return (
+    <nav className="navbar">
+      <div className="nav-container">
+        <div className="nav-left">
+          <Link to="/" className="nav-logo">
+            <img src="/logo.png" alt="Jenai" className="logo-image" />
+          </Link>
+
+          {isAuthenticated && (
+            <Link to="/profile" className="nav-link profile-link desktop-only">
+              👤 {user?.name || (language === 'ar' ? 'الحساب' : 'Profile')}
+            </Link>
+          )}
+        </div>
+
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+
+        <div className={`nav-center ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+          <ul className="nav-main-links">
+            <li className="nav-item">
+              <Link to="/" className="nav-link">{t('home')}</Link>
+            </li>
+
+            {/* Products Dropdown */}
+            <li
+              className="nav-item dropdown"
+              onMouseEnter={() => setShowProductsMenu(true)}
+              onMouseLeave={() => setShowProductsMenu(false)}
+            >
+              <span
+                className="nav-link"
+                style={{ cursor: 'pointer' }}
+                onClick={() => setShowProductsMenu(!showProductsMenu)}
+              >
+                {language === 'ar' ? 'المنتجات' : 'Products'} ▾
+              </span>
+              {showProductsMenu && (
+                <div
+                  className="dropdown-menu"
+                  onMouseEnter={() => setShowProductsMenu(true)}
+                  onMouseLeave={() => setShowProductsMenu(false)}
+                >
+                  <Link
+                    to="/products-page?filter=new"
+                    className="dropdown-item"
+                    onClick={() => setShowProductsMenu(false)}
+                  >
+                    {language === 'ar' ? 'وصل حديثاً' : 'New Arrivals'}
+                  </Link>
+                  <Link
+                    to="/products-page"
+                    className="dropdown-item"
+                    onClick={() => setShowProductsMenu(false)}
+                  >
+                    {language === 'ar' ? 'جميع المنتجات' : 'All Products'}
+                  </Link>
+                  {categories.length > 0 && (
+                    <>
+                      <div className="dropdown-divider"></div>
+                      <div className="dropdown-header">
+                        {language === 'ar' ? 'الأقسام' : 'Categories'}
+                      </div>
+                      {categories.map((category, index) => (
+                        <Link
+                          key={index}
+                          to={`/products-page?category=${encodeURIComponent(category)}`}
+                          className="dropdown-item"
+                          onClick={() => setShowProductsMenu(false)}
+                        >
+                          {category}
+                        </Link>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </li>
+
+            {(isSubscriber || isAdmin) && (
+              <li className="nav-item">
+                <Link to="/academy" className="nav-link">
+                  🎓 {language === 'ar' ? 'أكاديمية جيناي' : 'Jenai Academy'}
+                </Link>
+              </li>
+            )}
+
+            {(isSubscriber || isAdmin) && (
+              <li className="nav-item">
+                <Link to="/library" className="nav-link">
+                  📚 {language === 'ar' ? 'مكتبة جيناي' : 'Jenai Library'}
+                </Link>
+              </li>
+            )}
+
+            <li className="nav-item">
+              <Link to="/services" className="nav-link">{language === 'ar' ? 'الخدمات' : 'Services'}</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/about" className="nav-link">{language === 'ar' ? 'من نحن' : 'About Us'}</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/contact" className="nav-link">{language === 'ar' ? 'اتصل بنا' : 'Contact Us'}</Link>
+            </li>
+          </ul>
+        </div>
+
+        <ul className="nav-menu">
+          {isAuthenticated ? (
+            <>
+              {isSupplier && (
+                <li className="nav-item">
+                  <Link to="/supplier-dashboard" className="nav-link">
+                    {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                  </Link>
+                </li>
+              )}
+
+              <li className="nav-item">
+                <Link to="/cart" className="nav-link">
+                  {t('cart')} ({getCartCount()})
+                </Link>
+              </li>
+
+              <li className="nav-item">
+                <LanguageSwitcher />
+              </li>
+
+              <li className="nav-item">
+                <button onClick={logout} className="nav-button">{t('logout')}</button>
+              </li>
+            </>
+          ) : (
+            <>
+              <li className="nav-item">
+                <Link to="/cart" className="nav-link">
+                  {t('cart')} ({getCartCount()})
+                </Link>
+              </li>
+              <li className="nav-item">
+                <LanguageSwitcher />
+              </li>
+              <li className="nav-item">
+                <Link to="/login" className="nav-button">{t('login')}</Link>
+              </li>
+            </>
+          )}
+        </ul>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;

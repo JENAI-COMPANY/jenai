@@ -1,0 +1,231 @@
+.pill-nav-wrapper {
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pill-nav {
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.pill-nav-logo {
+  display: none;
+}
+
+.pill-nav-items {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 50px;
+  height: 50px;
+  background: var(--base, #000);
+  margin-left: 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.pill-nav-list {
+  list-style: none;
+  display: flex;
+  align-items: stretch;
+  margin: 0;
+  padding: 4px;
+  height: 100%;
+  gap: 0;
+}
+
+.pill-nav-item {
+  display: flex;
+  height: 100%;
+}
+
+.pill-link {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-decoration: none;
+  border-radius: 50px;
+  box-sizing: border-box;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 0 2rem;
+  background: transparent;
+  color: var(--pill-text, #ffffff);
+  transition: all 0.3s ease;
+}
+
+.pill-link:hover {
+  background: var(--pill-bg, #fff);
+  color: var(--base, #000);
+}
+
+.pill-nav-item:first-child .pill-link {
+  border-radius: 50px 0 0 50px;
+}
+
+.pill-nav-item:last-child .pill-link {
+  border-radius: 0 50px 50px 0;
+}
+
+.hover-circle {
+  display: none;
+}
+
+.label-stack {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  z-index: 2;
+}
+
+.pill-label {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  line-height: 1;
+  will-change: transform;
+}
+
+.pill-label-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: inline-block;
+  color: var(--hover-text, #fff);
+  will-change: transform, opacity;
+}
+
+.active-dot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  border-radius: 0 0 50px 50px;
+  z-index: 4;
+  background: var(--pill-bg, #fff);
+}
+
+.pill-nav-hamburger {
+  display: none;
+  border-radius: 50%;
+  border: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  width: var(--nav-h);
+  height: var(--nav-h);
+  background: var(--base, #000);
+}
+
+.hamburger-line {
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  transform-origin: center;
+  transition: all 10ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  background: var(--pill-bg, #fff);
+}
+
+.pill-nav-mobile-menu {
+  display: none;
+  position: absolute;
+  top: 3em;
+  left: 1rem;
+  right: 1rem;
+  border-radius: 27px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 998;
+  transform-origin: top;
+  background: var(--base, #f0f0f0);
+}
+
+.pill-nav-mobile-list {
+  list-style: none;
+  margin: 0;
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pill-nav-mobile-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 50px;
+  transition: all 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  background: var(--pill-bg, #fff);
+  color: var(--pill-text, #fff);
+  text-decoration: none;
+}
+
+.pill-nav-mobile-link:hover {
+  background: var(--base);
+  color: var(--hover-text, #fff);
+}
+
+@media (max-width: 768px) {
+  .pill-nav-wrapper {
+    padding: 1rem;
+  }
+
+  .pill-nav-items {
+    display: none;
+  }
+
+  .pill-nav-hamburger {
+    display: flex;
+  }
+
+  .pill-nav {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0 1rem;
+  }
+
+  .pill-nav-logo {
+    display: inline-flex;
+    border-radius: 50%;
+    padding: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    width: 42px;
+    height: 42px;
+    background: var(--base, #000);
+    text-decoration: none;
+  }
+
+  .pill-nav-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}

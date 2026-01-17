@@ -1,0 +1,466 @@
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import ProductCard from '../components/ProductCard';
+import '../styles/ProductDetail.css';
+
+const ProductDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useContext(CartContext);
+  const { isSubscriber, isAuthenticated, isAdmin } = useContext(AuthContext);
+  const { language } = useLanguage();
+
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState('description');
+  const [reviewText, setReviewText] = useState('');
+  const [rating, setRating] = useState(5);
+
+  const fetchProduct = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+      setProduct(response.data);
+
+      // Fetch related products from the same category
+      if (response.data.category) {
+        const relatedResponse = await axios.get(
+          `http://localhost:5000/api/products?category=${response.data.category}&limit=4`
+        );
+        const filtered = relatedResponse.data.products.filter(p => p._id !== id);
+        setRelatedProducts(filtered.slice(0, 4));
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      alert(language === 'ar' ? 'فشل في تحميل المنتج' : 'Failed to load product');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, language]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
+
+  const handleAddToCart = () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      // Store the current product page URL to return after login
+      localStorage.setItem('returnUrl', `/products/${id}`);
+      navigate('/login');
+      return;
+    }
+
+    if (!product || product.stock <= 0) {
+      alert(language === 'ar' ? 'المنتج غير متوفر حالياً' : 'Product out of stock');
+      return;
+    }
+
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+    alert(language === 'ar' ? `تمت إضافة ${quantity} قطعة إلى السلة!` : `${quantity} item(s) added to cart!`);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      alert(language === 'ar' ? 'يرجى تسجيل الدخول أولاً' : 'Please login first');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `http://localhost:5000/api/products/${id}/reviews`,
+        { rating, comment: reviewText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert(language === 'ar' ? 'تم إضافة المراجعة بنجاح!' : 'Review submitted successfully!');
+      setReviewText('');
+      setRating(5);
+      fetchProduct(); // Refresh product to show new review
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert(language === 'ar' ? 'فشل في إضافة المراجعة' : 'Failed to submit review');
+    }
+  };
+
+  const renderStars = (ratingValue, interactive = false, size = 'medium') => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${i <= ratingValue ? 'filled' : ''} ${size}`}
+          onClick={interactive ? () => setRating(i) : undefined}
+          style={{ cursor: interactive ? 'pointer' : 'default' }}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
+
+  if (loading) {
+    return (
+      <div className="product-detail-loading">
+        <div className="spinner"></div>
+        <p>{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="product-not-found">
+        <h2>{language === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}</h2>
+        <button onClick={() => navigate('/products-page')}>
+          {language === 'ar' ? 'العودة إلى المنتجات' : 'Back to Products'}
+        </button>
+      </div>
+    );
+  }
+
+  const hasDiscount = product.subscriberPrice && product.subscriberPrice < product.price;
+  const discountPercentage = hasDiscount
+    ? Math.round(((product.price - product.subscriberPrice) / product.price) * 100)
+    : 0;
+
+  return (
+    <div className="product-detail-page">
+      <div className="product-detail-container">
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <span onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+            {language === 'ar' ? 'الرئيسية' : 'Home'}
+          </span>
+          <span> / </span>
+          <span onClick={() => navigate('/products-page')} style={{ cursor: 'pointer' }}>
+            {language === 'ar' ? 'المنتجات' : 'Products'}
+          </span>
+          <span> / </span>
+          <span>{product.name}</span>
+        </div>
+
+        {/* Main Product Section */}
+        <div className="product-detail-main">
+          {/* Image Gallery */}
+          <div className="product-images">
+            <div className="main-image">
+              {product.images && product.images[selectedImage] ? (
+                <img src={product.images[selectedImage]} alt={product.name} />
+              ) : (
+                <div className="no-image">
+                  {language === 'ar' ? 'لا توجد صورة' : 'No Image'}
+                </div>
+              )}
+            </div>
+            {product.images && product.images.length > 1 && (
+              <div className="image-thumbnails">
+                {product.images.map((image, index) => (
+                  <div
+                    key={index}
+                    className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                    onClick={() => setSelectedImage(index)}
+                  >
+                    <img src={image} alt={`${product.name} ${index + 1}`} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="product-info-section">
+            <h1 className="product-title">{product.name}</h1>
+
+            {/* Rating and Sales */}
+            <div className="product-meta">
+              {product.averageRating > 0 && (
+                <div className="rating-display">
+                  <div className="stars">{renderStars(Math.round(product.averageRating || 0))}</div>
+                  <span className="rating-text">
+                    {(product.averageRating || 0).toFixed(1)} ({product.totalReviews || 0}{' '}
+                    {language === 'ar' ? 'تقييم' : 'reviews'})
+                  </span>
+                </div>
+              )}
+              {product.soldCount > 0 && (
+                <div className="sold-info">
+                  {language === 'ar'
+                    ? `تم بيع ${product.soldCount} قطعة`
+                    : `${product.soldCount} sold`}
+                </div>
+              )}
+            </div>
+
+            {/* Badges */}
+            <div className="product-badges">
+              {product.isNewArrival && (
+                <span className="badge new-arrival">
+                  {language === 'ar' ? 'وصل حديثاً' : 'New Arrival'}
+                </span>
+              )}
+              {product.isOnSale && (
+                <span className="badge sale">
+                  {language === 'ar' ? 'عرض خاص' : 'Sale'}
+                </span>
+              )}
+              {product.isFeatured && (
+                <span className="badge featured">
+                  {language === 'ar' ? 'مميز' : 'Featured'}
+                </span>
+              )}
+            </div>
+
+            {/* Price */}
+            <div className="price-section">
+              {isSubscriber ? (
+                <div className="subscriber-pricing">
+                  <div className="current-price">${(product.subscriberPrice || product.price || 0).toFixed(2)}</div>
+                  {hasDiscount && (
+                    <>
+                      <div className="original-price">${(product.price || 0).toFixed(2)}</div>
+                      <div className="discount-badge">
+                        {language === 'ar' ? `توفير ${discountPercentage}%` : `Save ${discountPercentage}%`}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="customer-pricing">
+                  <div className="current-price">${(product.price || 0).toFixed(2)}</div>
+                  {hasDiscount && product.subscriberPrice && (
+                    <div className="subscriber-hint">
+                      {language === 'ar'
+                        ? `سعر المشتركين: $${product.subscriberPrice.toFixed(2)}`
+                        : `Subscriber price: $${product.subscriberPrice.toFixed(2)}`}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Bulk Pricing */}
+            {product.bulkPrice && product.bulkMinQuantity && (
+              <div className="bulk-pricing-info">
+                <span className="bulk-icon">📦</span>
+                {language === 'ar'
+                  ? `سعر الجملة: $${product.bulkPrice.toFixed(2)} عند شراء ${product.bulkMinQuantity} قطعة أو أكثر`
+                  : `Bulk price: $${product.bulkPrice.toFixed(2)} when buying ${product.bulkMinQuantity}+ items`}
+              </div>
+            )}
+
+            {/* Stock */}
+            <div className="stock-info">
+              {product.stock <= 0 ? (
+                <span className="out-of-stock">
+                  {language === 'ar' ? '❌ نفذت الكمية' : '❌ Out of Stock'}
+                </span>
+              ) : product.stock < 10 ? (
+                <span className="low-stock">
+                  {language === 'ar' ? `⚠️ باقي ${product.stock} فقط` : `⚠️ Only ${product.stock} left`}
+                </span>
+              ) : (
+                <span className="in-stock">
+                  {language === 'ar' ? '✓ متوفر في المخزون' : '✓ In Stock'}
+                </span>
+              )}
+            </div>
+
+            {/* Points - Only for subscribers and admins */}
+            {product.points > 0 && (isSubscriber || isAdmin) && (
+              <div className="points-info">
+                🎁 {language === 'ar' ? 'ستحصل على' : 'Earn'} {product.points}{' '}
+                {language === 'ar' ? 'نقطة' : 'points'}
+              </div>
+            )}
+
+            {/* Quantity and Add to Cart */}
+            <div className="purchase-section">
+              <div className="quantity-selector">
+                <label>{language === 'ar' ? 'الكمية:' : 'Quantity:'}</label>
+                <div className="quantity-controls">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    min="1"
+                    max={product.stock}
+                  />
+                  <button
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    disabled={quantity >= product.stock}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <button
+                className="add-to-cart-button"
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+              >
+                {product.stock <= 0
+                  ? language === 'ar'
+                    ? 'نفذت الكمية'
+                    : 'Out of Stock'
+                  : language === 'ar'
+                  ? 'إضافة إلى السلة'
+                  : 'Add to Cart'}
+              </button>
+            </div>
+
+            {/* Category and Region */}
+            <div className="product-additional-info">
+              <div className="info-item">
+                <strong>{language === 'ar' ? 'الفئة:' : 'Category:'}</strong> {product.category}
+              </div>
+              {product.region && (
+                <div className="info-item">
+                  <strong>{language === 'ar' ? 'المنطقة:' : 'Region:'}</strong> {product.region}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Section */}
+        <div className="product-tabs">
+          <div className="tab-headers">
+            <button
+              className={`tab-header ${activeTab === 'description' ? 'active' : ''}`}
+              onClick={() => setActiveTab('description')}
+            >
+              {language === 'ar' ? 'الوصف' : 'Description'}
+            </button>
+            <button
+              className={`tab-header ${activeTab === 'reviews' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reviews')}
+            >
+              {language === 'ar' ? 'التقييمات' : 'Reviews'} ({product.totalReviews || 0})
+            </button>
+          </div>
+
+          <div className="tab-content">
+            {activeTab === 'description' && (
+              <div className="description-tab">
+                <p>{product.description}</p>
+                {product.allowCustomOrder && (
+                  <div className="custom-order-info">
+                    <h3>{language === 'ar' ? '🎨 طلب مخصص' : '🎨 Custom Order'}</h3>
+                    <p>
+                      {language === 'ar'
+                        ? `يمكنك طلب هذا المنتج بشكل مخصص. العربون المطلوب: $${product.customOrderDeposit?.toFixed(2)}`
+                        : `This product is available for custom orders. Deposit required: $${product.customOrderDeposit?.toFixed(2)}`}
+                    </p>
+                    {product.estimatedDeliveryDays && (
+                      <p>
+                        {language === 'ar'
+                          ? `مدة التسليم المتوقعة: ${product.estimatedDeliveryDays} يوم`
+                          : `Estimated delivery: ${product.estimatedDeliveryDays} days`}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div className="reviews-tab">
+                {/* Submit Review Form */}
+                {isAuthenticated && (
+                  <div className="submit-review">
+                    <h3>{language === 'ar' ? 'أضف تقييمك' : 'Submit Your Review'}</h3>
+                    <form onSubmit={handleSubmitReview}>
+                      <div className="rating-input">
+                        <label>{language === 'ar' ? 'التقييم:' : 'Rating:'}</label>
+                        <div className="stars-input">{renderStars(rating, true, 'large')}</div>
+                      </div>
+                      <div className="review-text-input">
+                        <label>{language === 'ar' ? 'تعليقك:' : 'Your Review:'}</label>
+                        <textarea
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          placeholder={
+                            language === 'ar'
+                              ? 'شارك تجربتك مع هذا المنتج...'
+                              : 'Share your experience with this product...'
+                          }
+                          rows="4"
+                          required
+                        ></textarea>
+                      </div>
+                      <button type="submit" className="submit-review-btn">
+                        {language === 'ar' ? 'إرسال التقييم' : 'Submit Review'}
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* Reviews List */}
+                <div className="reviews-list">
+                  {product.reviews && product.reviews.length > 0 ? (
+                    product.reviews.map((review) => (
+                      <div key={review._id} className="review-item">
+                        <div className="review-header">
+                          <div className="reviewer-info">
+                            <strong>{review.user?.name || 'Anonymous'}</strong>
+                            <div className="review-rating">{renderStars(review.rating)}</div>
+                          </div>
+                          <div className="review-date">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <p className="review-comment">{review.comment}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-reviews">
+                      {language === 'ar'
+                        ? 'لا توجد تقييمات بعد. كن أول من يقيّم هذا المنتج!'
+                        : 'No reviews yet. Be the first to review this product!'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="related-products">
+            <h2>{language === 'ar' ? 'منتجات ذات صلة' : 'Related Products'}</h2>
+            <div className="related-products-grid">
+              {relatedProducts.map((relatedProduct) => (
+                <ProductCard key={relatedProduct._id} product={relatedProduct} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProductDetail;
