@@ -5,6 +5,14 @@ const sliderSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  title: {
+    type: String,
+    default: ''
+  },
+  description: {
+    type: String,
+    default: ''
+  },
   alt: {
     type: String,
     default: 'Slider image'

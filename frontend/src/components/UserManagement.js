@@ -15,6 +15,8 @@ const UserManagement = () => {
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [filterCountry, setFilterCountry] = useState('all');
+  const [showLocationStats, setShowLocationStats] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -26,11 +28,18 @@ const UserManagement = () => {
     country: '',
     city: '',
     role: 'customer',
-    sponsorCode: ''
+    sponsorCode: '',
+    region: ''
   });
+  const [showSponsorModal, setShowSponsorModal] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState(null);
+  const [sponsorCode, setSponsorCode] = useState('');
+  const [regions, setRegions] = useState([]);
+  const [selectedRegionFilter, setSelectedRegionFilter] = useState('all');
 
   useEffect(() => {
     fetchUsers();
+    fetchRegions();
   }, []);
 
   const fetchUsers = async () => {
@@ -41,6 +50,7 @@ const UserManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('Users response:', response.data);
+      console.log('First user with region:', response.data.users?.find(u => u.region));
       setUsers(response.data.users || []);
       setLoading(false);
     } catch (err) {
@@ -50,7 +60,29 @@ const UserManagement = () => {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
+  const fetchRegions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/regions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRegions(response.data.regions || []);
+    } catch (err) {
+      console.error('Error fetching regions:', err);
+    }
+  };
+
+
+  const handleRoleChange = async (userId, newRole, oldRole) => {
+    // إذا كان التغيير من customer إلى member، اطلب كود الإحالة
+    if (oldRole === 'customer' && newRole === 'member') {
+      setPendingRoleChange({ userId, newRole });
+      setShowSponsorModal(true);
+      setSponsorCode('');
+      return;
+    }
+
+    // في حالات أخرى، قم بالتحديث مباشرة
     try {
       const token = localStorage.getItem('token');
       await axios.put(
@@ -59,6 +91,59 @@ const UserManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage(language === 'ar' ? 'تم تحديث الدور بنجاح!' : 'Role updated successfully!');
+      fetchUsers();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update role');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    const confirmMessage = language === 'ar'
+      ? `هل أنت متأكد من حذف المستخدم "${userName}"؟ هذا الإجراء لا يمكن التراجع عنه.`
+      : `Are you sure you want to delete user "${userName}"? This action cannot be undone.`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `http://localhost:5000/api/admin/users/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessage(language === 'ar' ? 'تم حذف المستخدم بنجاح!' : 'User deleted successfully!');
+      fetchUsers();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || (language === 'ar' ? 'فشل حذف المستخدم' : 'Failed to delete user'));
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const confirmRoleChangeWithSponsor = async () => {
+    if (!sponsorCode || sponsorCode.trim() === '') {
+      setError(language === 'ar' ? 'كود الإحالة مطلوب!' : 'Sponsor code is required!');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `http://localhost:5000/api/admin/users/${pendingRoleChange.userId}/role`,
+        {
+          role: pendingRoleChange.newRole,
+          sponsorCode: sponsorCode.trim()
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessage(language === 'ar' ? 'تم تحويل العميل إلى عضو بنجاح!' : 'Customer converted to member successfully!');
+      setShowSponsorModal(false);
+      setPendingRoleChange(null);
+      setSponsorCode('');
       fetchUsers();
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -76,12 +161,15 @@ const UserManagement = () => {
       country: user.country || '',
       city: user.city || '',
       role: user.role,
+      region: user.region?._id || user.region || '',
+      supplier: user.supplier?._id || user.supplier || '',
       subscriberCode: user.subscriberCode || '',
       subscriberCodeOriginal: user.subscriberCode || '',
       sponsorCode: user.sponsorId?.subscriberCode || '',
       newSponsorCode: '',
       points: user.points || 0,
       monthlyPoints: user.monthlyPoints || 0,
+      bonusPoints: user.bonusPoints || 0,
       totalCommission: user.totalCommission || 0,
       availableCommission: user.availableCommission || 0
     });
@@ -89,6 +177,17 @@ const UserManagement = () => {
 
   const handleSaveEdit = async () => {
     try {
+      // Validate required fields
+      if (!editingUser.country || !editingUser.country.trim()) {
+        alert(language === 'ar' ? 'الدولة مطلوبة' : 'Country is required');
+        return;
+      }
+
+      if (!editingUser.city || !editingUser.city.trim()) {
+        alert(language === 'ar' ? 'المدينة مطلوبة' : 'City is required');
+        return;
+      }
+
       const token = localStorage.getItem('token');
 
       // Prepare update data
@@ -101,9 +200,21 @@ const UserManagement = () => {
         role: editingUser.role,
         points: editingUser.points,
         monthlyPoints: editingUser.monthlyPoints,
+        bonusPoints: editingUser.bonusPoints,
         totalCommission: editingUser.totalCommission,
         availableCommission: editingUser.availableCommission
       };
+
+      // Add region for regional_admin, member, and customer
+      if (editingUser.role === 'regional_admin' || editingUser.role === 'member' || editingUser.role === 'customer') {
+        // Extract region ID if it's an object, otherwise use as is (including empty string for unassigned)
+        updateData.region = editingUser.region && typeof editingUser.region === 'object' ? editingUser.region._id : (editingUser.region || '');
+      }
+
+      // Add supplier for products
+      if (editingUser.supplier) {
+        updateData.supplier = editingUser.supplier;
+      }
 
       // Add subscriberCode if changed
       if (editingUser.subscriberCode && editingUser.subscriberCode !== editingUser.subscriberCodeOriginal) {
@@ -115,15 +226,26 @@ const UserManagement = () => {
         updateData.newSponsorCode = editingUser.newSponsorCode;
       }
 
-      await axios.put(
+      console.log('📤 Sending update data:', updateData);
+
+      const response = await axios.put(
         `http://localhost:5000/api/admin/users/${editingUser._id}`,
         updateData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessage(language === 'ar' ? 'تم تحديث المستخدم بنجاح!' : 'User updated successfully!');
+
+      console.log('📥 Response from server:', response.data);
+      console.log('📥 Updated user region:', response.data.data?.region);
+
+      // Close modal and fetch users
       setEditingUser(null);
-      fetchUsers();
-      setTimeout(() => setMessage(''), 3000);
+
+      // Wait a bit then fetch to ensure state updates
+      setTimeout(async () => {
+        await fetchUsers();
+        setMessage(language === 'ar' ? 'تم تحديث المستخدم بنجاح!' : 'User updated successfully!');
+        setTimeout(() => setMessage(''), 3000);
+      }, 100);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update user');
       setTimeout(() => setError(''), 3000);
@@ -136,6 +258,19 @@ const UserManagement = () => {
     // Validate passwords match
     if (newUser.password !== newUser.confirmPassword) {
       setError(language === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    // Validate city and country are required
+    if (!newUser.country || !newUser.country.trim()) {
+      setError(language === 'ar' ? 'الدولة مطلوبة' : 'Country is required');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    if (!newUser.city || !newUser.city.trim()) {
+      setError(language === 'ar' ? 'المدينة مطلوبة' : 'City is required');
       setTimeout(() => setError(''), 3000);
       return;
     }
@@ -161,7 +296,8 @@ const UserManagement = () => {
         country: '',
         city: '',
         role: 'customer',
-        sponsorCode: ''
+        sponsorCode: '',
+        region: ''
       });
       fetchUsers();
       setTimeout(() => setMessage(''), 3000);
@@ -235,11 +371,63 @@ const UserManagement = () => {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  // استخراج قائمة الدول الفريدة
+  const uniqueCountries = [...new Set(users.map(u => u.country).filter(Boolean))].sort();
+
+  // حساب إحصائيات الموقع
+  const getLocationStats = () => {
+    const stats = {
+      byCountry: {},
+      byCity: {},
+      byCountryAndRole: {}
+    };
+
+    users.forEach(user => {
+      const country = user.country || 'غير محدد';
+      const city = user.city || 'غير محدد';
+      const role = user.role;
+
+      // إحصائيات حسب الدولة
+      if (!stats.byCountry[country]) {
+        stats.byCountry[country] = { total: 0, members: 0, customers: 0 };
+      }
+      stats.byCountry[country].total++;
+      if (role === 'member') stats.byCountry[country].members++;
+      if (role === 'customer') stats.byCountry[country].customers++;
+
+      // إحصائيات حسب المدينة
+      const cityKey = `${country} - ${city}`;
+      if (!stats.byCity[cityKey]) {
+        stats.byCity[cityKey] = { total: 0, members: 0, customers: 0, country, city };
+      }
+      stats.byCity[cityKey].total++;
+      if (role === 'member') stats.byCity[cityKey].members++;
+      if (role === 'customer') stats.byCity[cityKey].customers++;
+    });
+
+    return stats;
+  };
+
+  const locationStats = getLocationStats();
+
   const filteredUsers = users.filter(user => {
+    // إخفاء الموردين من قائمة المستخدمين - يتم إدارتهم من صفحة الموردين فقط
+    if (user.role === 'supplier') return false;
+
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.username.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role === filterRole;
-    return matchesSearch && matchesRole;
+    const matchesCountry = filterCountry === 'all' || user.country === filterCountry;
+
+    // فلتر المنطقة
+    let matchesRegion = true;
+    if (selectedRegionFilter === 'unassigned') {
+      matchesRegion = !user.region;
+    } else if (selectedRegionFilter !== 'all') {
+      matchesRegion = user.region && (user.region._id === selectedRegionFilter || user.region === selectedRegionFilter);
+    }
+
+    return matchesSearch && matchesRole && matchesCountry && matchesRegion;
   });
 
   if (loading) {
@@ -257,8 +445,8 @@ const UserManagement = () => {
           <h2>{language === 'ar' ? 'إدارة المستخدمين' : 'User Management'}</h2>
           <p className="um-subtitle">
             {language === 'ar'
-              ? `إجمالي المستخدمين: ${users.length}`
-              : `Total Users: ${users.length}`}
+              ? `إجمالي المستخدمين: ${filteredUsers.length}`
+              : `Total Users: ${filteredUsers.length}`}
           </p>
         </div>
         <div className="um-header-right">
@@ -289,10 +477,49 @@ const UserManagement = () => {
             <option value="all">{language === 'ar' ? 'جميع الأدوار' : 'All Roles'}</option>
             <option value="super_admin">{language === 'ar' ? 'مسؤول رئيسي' : 'Super Admin'}</option>
             <option value="regional_admin">{language === 'ar' ? 'مسؤول إقليمي' : 'Regional Admin'}</option>
-            <option value="subscriber">{language === 'ar' ? 'مشترك' : 'Subscriber'}</option>
+            <option value="member">{language === 'ar' ? 'عضو' : 'Member'}</option>
             <option value="customer">{language === 'ar' ? 'عميل' : 'Customer'}</option>
           </select>
         </div>
+
+        {/* فلتر المنطقة */}
+        <div className="um-location-filter">
+          <select value={selectedRegionFilter} onChange={(e) => setSelectedRegionFilter(e.target.value)}>
+            <option value="all">🗺️ {language === 'ar' ? 'جميع المناطق' : 'All Regions'}</option>
+            <option value="unassigned">⚠️ {language === 'ar' ? 'غير مصنف' : 'Unassigned'}</option>
+            {regions.map(region => (
+              <option key={region._id} value={region._id}>
+                {language === 'ar' ? region.nameAr : region.nameEn} ({users.filter(u => u.region && (u.region._id === region._id || u.region === region._id)).length})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* فلتر الدولة - للسوبر أدمن فقط */}
+        {currentUser?.role === 'super_admin' && (
+          <>
+            <div className="um-location-filter">
+              <select
+                value={filterCountry}
+                onChange={(e) => setFilterCountry(e.target.value)}
+              >
+                <option value="all">🌍 {language === 'ar' ? 'جميع الدول' : 'All Countries'}</option>
+                {uniqueCountries.map(country => (
+                  <option key={country} value={country}>
+                    {country} ({users.filter(u => u.country === country).length})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              className="um-stats-btn"
+              onClick={() => setShowLocationStats(true)}
+            >
+              📊 {language === 'ar' ? 'إحصائيات المواقع' : 'Location Stats'}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Users Table */}
@@ -303,6 +530,7 @@ const UserManagement = () => {
               <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
               <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
               <th>{language === 'ar' ? 'الهاتف' : 'Phone'}</th>
+              <th>{language === 'ar' ? 'المنطقة' : 'Region'}</th>
               <th>{language === 'ar' ? 'الدور' : 'Role'}</th>
               <th>{language === 'ar' ? 'تاريخ التسجيل' : 'Registered'}</th>
               <th>{language === 'ar' ? 'الإجراءات' : 'Actions'}</th>
@@ -315,13 +543,24 @@ const UserManagement = () => {
                 <td className="um-username">{user.username}</td>
                 <td>{user.phone}</td>
                 <td>
+                  {user.region ? (
+                    <span className="um-region-badge">
+                      {language === 'ar' ? user.region.nameAr : user.region.nameEn}
+                    </span>
+                  ) : (
+                    <span className="um-region-unassigned">
+                      {language === 'ar' ? 'غير مصنف' : 'Unassigned'}
+                    </span>
+                  )}
+                </td>
+                <td>
                   <select
                     className={`um-role-badge ${user.role}`}
                     value={user.role}
-                    onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                    onChange={(e) => handleRoleChange(user._id, e.target.value, user.role)}
                   >
                     <option value="customer">{language === 'ar' ? 'عميل' : 'Customer'}</option>
-                    <option value="subscriber">{language === 'ar' ? 'مشترك' : 'Subscriber'}</option>
+                    <option value="member">{language === 'ar' ? 'عضو' : 'Member'}</option>
                     <option value="regional_admin">{language === 'ar' ? 'مسؤول إقليمي' : 'Regional Admin'}</option>
                     <option value="super_admin">{language === 'ar' ? 'مسؤول رئيسي' : 'Super Admin'}</option>
                   </select>
@@ -329,13 +568,28 @@ const UserManagement = () => {
                 <td className="um-date">
                   {new Date(user.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}
                 </td>
-                <td>
+                <td className="um-actions">
                   <button
                     className="um-edit-btn"
                     onClick={() => handleEditUser(user)}
                   >
                     ✏️ {language === 'ar' ? 'تعديل' : 'Edit'}
                   </button>
+                  {/* زر الحذف - يظهر للسوبر أدمن (ما عدا حذف سوبر أدمن آخر) أو لأدمن المنطقة (للمستخدمين في منطقته فقط) */}
+                  {user.role !== 'super_admin' && (
+                    currentUser?.role === 'super_admin' ||
+                    (currentUser?.role === 'regional_admin' &&
+                     user.role !== 'regional_admin' &&
+                     user.region &&
+                     (user.region._id === currentUser.region || user.region === currentUser.region))
+                  ) && (
+                    <button
+                      className="um-delete-btn"
+                      onClick={() => handleDeleteUser(user._id, user.name)}
+                    >
+                      🗑️ {language === 'ar' ? 'حذف' : 'Delete'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -389,7 +643,6 @@ const UserManagement = () => {
                   >
                     <option value="customer">{language === 'ar' ? 'عميل' : 'Customer'}</option>
                     <option value="member">{language === 'ar' ? 'عضو' : 'Member'}</option>
-                    <option value="supplier">{language === 'ar' ? 'مورد' : 'Supplier'}</option>
                     <option value="regional_admin">{language === 'ar' ? 'مسؤول إقليمي' : 'Regional Admin'}</option>
                     <option value="super_admin">{language === 'ar' ? 'مسؤول رئيسي' : 'Super Admin'}</option>
                   </select>
@@ -398,22 +651,63 @@ const UserManagement = () => {
 
               <div className="um-form-row">
                 <div className="um-form-group">
-                  <label>{language === 'ar' ? 'الدولة' : 'Country'}</label>
-                  <input
-                    type="text"
+                  <label>{language === 'ar' ? 'الدولة *' : 'Country *'}</label>
+                  <select
                     value={editingUser.country}
                     onChange={(e) => setEditingUser({ ...editingUser, country: e.target.value })}
-                  />
+                    required
+                  >
+                    <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
+                    <option value="العراق">العراق - Iraq</option>
+                    <option value="فلسطين">فلسطين - Palestine</option>
+                    <option value="الأردن">الأردن - Jordan</option>
+                    <option value="سوريا">سوريا - Syria</option>
+                    <option value="لبنان">لبنان - Lebanon</option>
+                    <option value="مصر">مصر - Egypt</option>
+                    <option value="السعودية">السعودية - Saudi Arabia</option>
+                    <option value="الإمارات">الإمارات - UAE</option>
+                    <option value="الكويت">الكويت - Kuwait</option>
+                    <option value="قطر">قطر - Qatar</option>
+                    <option value="البحرين">البحرين - Bahrain</option>
+                    <option value="عمان">عمان - Oman</option>
+                    <option value="اليمن">اليمن - Yemen</option>
+                    <option value="المغرب">المغرب - Morocco</option>
+                    <option value="الجزائر">الجزائر - Algeria</option>
+                    <option value="تونس">تونس - Tunisia</option>
+                    <option value="ليبيا">ليبيا - Libya</option>
+                    <option value="السودان">السودان - Sudan</option>
+                  </select>
                 </div>
                 <div className="um-form-group">
-                  <label>{language === 'ar' ? 'المدينة' : 'City'}</label>
+                  <label>{language === 'ar' ? 'المدينة *' : 'City *'}</label>
                   <input
                     type="text"
                     value={editingUser.city}
                     onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value })}
+                    required
                   />
                 </div>
               </div>
+
+              {/* حقل المنطقة - للـ regional_admin والعضو والزبون */}
+              {currentUser?.role === 'super_admin' && (editingUser.role === 'regional_admin' || editingUser.role === 'member' || editingUser.role === 'customer') && (
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'المنطقة' : 'Region'}</label>
+                    <select
+                      value={editingUser.region || ''}
+                      onChange={(e) => setEditingUser({ ...editingUser, region: e.target.value })}
+                    >
+                      <option value="">{language === 'ar' ? '⚠️ غير مصنف' : '⚠️ Unassigned'}</option>
+                      {regions.map((region) => (
+                        <option key={region._id} value={region._id}>
+                          {language === 'ar' ? region.nameAr : region.nameEn}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               {currentUser?.role === 'super_admin' && (
                 <>
@@ -464,6 +758,43 @@ const UserManagement = () => {
                       />
                     </div>
                   </div>
+
+                  {editingUser.role === 'member' && (
+                    <>
+                      <div className="um-form-row">
+                        <div className="um-form-group">
+                          <label style={{ color: '#9c27b0' }}>🎁 {language === 'ar' ? 'نقاط المكافأة' : 'Bonus Points'}</label>
+                          <input
+                            type="number"
+                            value={editingUser.bonusPoints}
+                            onChange={(e) => setEditingUser({ ...editingUser, bonusPoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#9c27b0' }}
+                          />
+                          <small style={{ color: '#9c27b0', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar'
+                              ? '⚠️ تُحسب للرتبة فقط ولا تُحسب كأرباح إطلاقاً (لا للعضو ولا للأعضاء العلويين)'
+                              : '⚠️ Counts towards rank only, no profit calculated (not for member or upline)'}
+                          </small>
+                        </div>
+                      </div>
+                      <div className="um-form-row">
+                        <div className="um-form-group">
+                          <label style={{ color: '#4caf50' }}>🏆 {language === 'ar' ? 'نقاط الربح (مسابقات)' : 'Profit Points (Competitions)'}</label>
+                          <input
+                            type="number"
+                            value={editingUser.profitPoints || 0}
+                            onChange={(e) => setEditingUser({ ...editingUser, profitPoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#4caf50' }}
+                          />
+                          <small style={{ color: '#4caf50', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar'
+                              ? '💰 تُحسب كأرباح شخصية للعضو (للمسابقات والجوائز)'
+                              : '💰 Calculated as personal profit for the member (for competitions & prizes)'}
+                          </small>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="um-form-row">
                     <div className="um-form-group">
@@ -570,26 +901,69 @@ const UserManagement = () => {
                     >
                       <option value="customer">{language === 'ar' ? 'زبون' : 'Customer'}</option>
                       <option value="member">{language === 'ar' ? 'عضو' : 'Member'}</option>
-                      <option value="supplier">{language === 'ar' ? 'مورد' : 'Supplier'}</option>
+                      {currentUser?.role === 'super_admin' && (
+                        <option value="regional_admin">{language === 'ar' ? 'ادمن منطقة' : 'Regional Admin'}</option>
+                      )}
                     </select>
                   </div>
                 </div>
 
+                {/* Region field for regional_admin, member, and customer */}
+                {currentUser?.role === 'super_admin' && (newUser.role === 'regional_admin' || newUser.role === 'member' || newUser.role === 'customer') && (
+                  <div className="um-form-row">
+                    <div className="um-form-group">
+                      <label>{language === 'ar' ? 'المنطقة' : 'Region'}</label>
+                      <select
+                        value={newUser.region || ''}
+                        onChange={(e) => setNewUser({ ...newUser, region: e.target.value })}
+                      >
+                        <option value="">{language === 'ar' ? 'اختر المنطقة' : 'Select Region'}</option>
+                        {regions.map((region) => (
+                          <option key={region._id} value={region._id}>
+                            {language === 'ar' ? region.nameAr : region.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 <div className="um-form-row">
                   <div className="um-form-group">
-                    <label>{language === 'ar' ? 'الدولة' : 'Country'}</label>
-                    <input
-                      type="text"
+                    <label>{language === 'ar' ? 'الدولة *' : 'Country *'}</label>
+                    <select
                       value={newUser.country}
                       onChange={(e) => setNewUser({ ...newUser, country: e.target.value })}
-                    />
+                      required
+                    >
+                      <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
+                      <option value="العراق">العراق - Iraq</option>
+                      <option value="فلسطين">فلسطين - Palestine</option>
+                      <option value="الأردن">الأردن - Jordan</option>
+                      <option value="سوريا">سوريا - Syria</option>
+                      <option value="لبنان">لبنان - Lebanon</option>
+                      <option value="مصر">مصر - Egypt</option>
+                      <option value="السعودية">السعودية - Saudi Arabia</option>
+                      <option value="الإمارات">الإمارات - UAE</option>
+                      <option value="الكويت">الكويت - Kuwait</option>
+                      <option value="قطر">قطر - Qatar</option>
+                      <option value="البحرين">البحرين - Bahrain</option>
+                      <option value="عمان">عمان - Oman</option>
+                      <option value="اليمن">اليمن - Yemen</option>
+                      <option value="المغرب">المغرب - Morocco</option>
+                      <option value="الجزائر">الجزائر - Algeria</option>
+                      <option value="تونس">تونس - Tunisia</option>
+                      <option value="ليبيا">ليبيا - Libya</option>
+                      <option value="السودان">السودان - Sudan</option>
+                    </select>
                   </div>
                   <div className="um-form-group">
-                    <label>{language === 'ar' ? 'المدينة' : 'City'}</label>
+                    <label>{language === 'ar' ? 'المدينة *' : 'City *'}</label>
                     <input
                       type="text"
                       value={newUser.city}
                       onChange={(e) => setNewUser({ ...newUser, city: e.target.value })}
+                      required
                     />
                   </div>
                 </div>
@@ -615,6 +989,192 @@ const UserManagement = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Location Statistics Modal */}
+      {showLocationStats && (
+        <div className="um-modal-overlay" onClick={() => setShowLocationStats(false)}>
+          <div className="um-modal um-modal-stats" onClick={(e) => e.stopPropagation()}>
+            <div className="um-modal-header um-stats-header">
+              <h3>📊 {language === 'ar' ? 'إحصائيات الأعضاء حسب الموقع' : 'Members Statistics by Location'}</h3>
+              <button className="um-modal-close" onClick={() => setShowLocationStats(false)}>✕</button>
+            </div>
+            <div className="um-modal-body">
+              {/* إحصائيات حسب الدولة */}
+              <div className="um-stats-section">
+                <h4>🌍 {language === 'ar' ? 'حسب الدولة' : 'By Country'}</h4>
+                <div className="um-stats-table-wrapper">
+                  <table className="um-stats-table">
+                    <thead>
+                      <tr>
+                        <th>{language === 'ar' ? 'الدولة' : 'Country'}</th>
+                        <th>{language === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                        <th>{language === 'ar' ? 'أعضاء' : 'Members'}</th>
+                        <th>{language === 'ar' ? 'عملاء' : 'Customers'}</th>
+                        <th>{language === 'ar' ? 'النسبة' : 'Percentage'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(locationStats.byCountry)
+                        .sort((a, b) => b[1].total - a[1].total)
+                        .map(([country, stats]) => (
+                          <tr
+                            key={country}
+                            className="um-stats-row-clickable"
+                            onClick={() => {
+                              setFilterCountry(country === 'غير محدد' ? 'all' : country);
+                              setShowLocationStats(false);
+                            }}
+                          >
+                            <td className="um-country-name">
+                              <span className="um-flag">🏳️</span>
+                              {country}
+                            </td>
+                            <td className="um-stat-total">{stats.total}</td>
+                            <td className="um-stat-members">👥 {stats.members}</td>
+                            <td className="um-stat-customers">🛒 {stats.customers}</td>
+                            <td className="um-stat-percentage">
+                              <div className="um-progress-bar">
+                                <div
+                                  className="um-progress-fill"
+                                  style={{ width: `${(stats.total / users.length * 100)}%` }}
+                                ></div>
+                                <span>{((stats.total / users.length) * 100).toFixed(1)}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* إحصائيات حسب المدينة */}
+              <div className="um-stats-section">
+                <h4>🏙️ {language === 'ar' ? 'حسب المحافظة/المدينة' : 'By City/Province'}</h4>
+                <div className="um-stats-table-wrapper">
+                  <table className="um-stats-table">
+                    <thead>
+                      <tr>
+                        <th>{language === 'ar' ? 'الدولة' : 'Country'}</th>
+                        <th>{language === 'ar' ? 'المحافظة/المدينة' : 'City/Province'}</th>
+                        <th>{language === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                        <th>{language === 'ar' ? 'أعضاء' : 'Members'}</th>
+                        <th>{language === 'ar' ? 'عملاء' : 'Customers'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(locationStats.byCity)
+                        .sort((a, b) => b[1].total - a[1].total)
+                        .slice(0, 20) // أعلى 20 مدينة
+                        .map(([key, stats]) => (
+                          <tr
+                            key={key}
+                            className="um-stats-row-clickable"
+                            onClick={() => {
+                              if (stats.country !== 'غير محدد') {
+                                setFilterCountry(stats.country);
+                              }
+                              setShowLocationStats(false);
+                            }}
+                          >
+                            <td>{stats.country}</td>
+                            <td className="um-city-name">{stats.city}</td>
+                            <td className="um-stat-total">{stats.total}</td>
+                            <td className="um-stat-members">👥 {stats.members}</td>
+                            <td className="um-stat-customers">🛒 {stats.customers}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* ملخص عام */}
+              <div className="um-stats-summary">
+                <div className="um-summary-card">
+                  <span className="um-summary-icon">🌍</span>
+                  <span className="um-summary-value">{Object.keys(locationStats.byCountry).length}</span>
+                  <span className="um-summary-label">{language === 'ar' ? 'دول' : 'Countries'}</span>
+                </div>
+                <div className="um-summary-card">
+                  <span className="um-summary-icon">🏙️</span>
+                  <span className="um-summary-value">{Object.keys(locationStats.byCity).length}</span>
+                  <span className="um-summary-label">{language === 'ar' ? 'محافظات/مدن' : 'Cities'}</span>
+                </div>
+                <div className="um-summary-card">
+                  <span className="um-summary-icon">👥</span>
+                  <span className="um-summary-value">{users.filter(u => u.role === 'member').length}</span>
+                  <span className="um-summary-label">{language === 'ar' ? 'إجمالي الأعضاء' : 'Total Members'}</span>
+                </div>
+                <div className="um-summary-card">
+                  <span className="um-summary-icon">🛒</span>
+                  <span className="um-summary-value">{users.filter(u => u.role === 'customer').length}</span>
+                  <span className="um-summary-label">{language === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sponsor Code Modal */}
+      {showSponsorModal && (
+        <div className="um-modal-overlay" onClick={() => {
+          setShowSponsorModal(false);
+          setPendingRoleChange(null);
+          setSponsorCode('');
+        }}>
+          <div className="um-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="um-modal-header">
+              <h3>🎯 {language === 'ar' ? 'كود الإحالة مطلوب' : 'Sponsor Code Required'}</h3>
+              <button className="um-modal-close" onClick={() => {
+                setShowSponsorModal(false);
+                setPendingRoleChange(null);
+                setSponsorCode('');
+              }}>✕</button>
+            </div>
+            <div className="um-modal-body">
+              <p style={{ marginBottom: '1rem', color: '#666' }}>
+                {language === 'ar'
+                  ? 'عند تحويل عميل إلى عضو، يجب إدخال كود الإحالة (الراعي) لربط العضو بشجرة العمولات.'
+                  : 'When converting a customer to a member, you must enter a sponsor code to link the member to the commission tree.'}
+              </p>
+              <div className="um-form-group">
+                <label>{language === 'ar' ? 'كود الإحالة (إجباري) *' : 'Sponsor Code (Required) *'}</label>
+                <input
+                  type="text"
+                  value={sponsorCode}
+                  onChange={(e) => setSponsorCode(e.target.value.toUpperCase())}
+                  placeholder={language === 'ar' ? 'أدخل كود الراعي...' : 'Enter sponsor code...'}
+                  autoFocus
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      confirmRoleChangeWithSponsor();
+                    }
+                  }}
+                />
+                <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                  {language === 'ar'
+                    ? 'مثال: AB123456'
+                    : 'Example: AB123456'}
+                </small>
+              </div>
+            </div>
+            <div className="um-modal-footer">
+              <button className="um-save-btn" onClick={confirmRoleChangeWithSponsor}>
+                ✅ {language === 'ar' ? 'تأكيد التحويل' : 'Confirm Conversion'}
+              </button>
+              <button className="um-cancel-btn" onClick={() => {
+                setShowSponsorModal(false);
+                setPendingRoleChange(null);
+                setSponsorCode('');
+              }}>
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+            </div>
           </div>
         </div>
       )}

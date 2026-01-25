@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getProducts, getCategories } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import CallToAction from '../components/CallToAction';
@@ -9,10 +9,10 @@ import '../styles/Products.css';
 
 const Products = () => {
   const { t } = useLanguage();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const headerRef = useRef(null);
@@ -21,25 +21,17 @@ const Products = () => {
   useEffect(() => {
     fetchCategories();
 
-    // Get URL parameters
-    const categoryParam = searchParams.get('category');
-    const filterParam = searchParams.get('filter');
-
-    if (categoryParam) {
-      setSelectedCategory(categoryParam);
-    }
-
     // Animate header on mount
     gsap.fromTo(
       headerRef.current,
       { opacity: 0, y: -30 },
       { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
     );
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory, searchTerm]);
+  }, [searchParams, searchTerm]);
 
   useEffect(() => {
     // Animate product grid when products change
@@ -57,7 +49,12 @@ const Products = () => {
     try {
       setLoading(true);
       const params = {};
-      if (selectedCategory) params.category = selectedCategory;
+
+      // Get category from URL
+      const categoryParam = searchParams.get('category');
+      if (categoryParam) params.category = categoryParam;
+
+      // Get search term from state
       if (searchTerm) params.search = searchTerm;
 
       // Check for filter parameter (e.g., filter=new)
@@ -103,8 +100,19 @@ const Products = () => {
 
         <div className="category-filter">
           <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            value={searchParams.get('category') || ''}
+            onChange={(e) => {
+              const category = e.target.value;
+
+              // تحديث الـ URL مع الحفاظ على المعاملات الموجودة
+              const newParams = new URLSearchParams(searchParams);
+              if (category) {
+                newParams.set('category', category);
+              } else {
+                newParams.delete('category');
+              }
+              setSearchParams(newParams);
+            }}
           >
             <option value="">{t('allCategories')}</option>
             {categories.map((category) => (
@@ -122,7 +130,7 @@ const Products = () => {
         <div className="products-grid" ref={gridRef}>
           {products.length > 0 ? (
             products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <ProductCard key={product.id || product._id} product={product} />
             ))
           ) : (
             <div className="no-products">{t('noProducts')}</div>

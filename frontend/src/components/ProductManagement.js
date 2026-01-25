@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
+import { AuthContext } from '../context/AuthContext';
 import '../styles/ProductManagement.css';
 
 const ProductManagement = () => {
   const { language } = useLanguage();
+  const { user } = useContext(AuthContext);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -15,6 +19,8 @@ const ProductManagement = () => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showManageCategories, setShowManageCategories] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [showAddRegion, setShowAddRegion] = useState(false);
+  const [newRegionData, setNewRegionData] = useState({ nameAr: '', nameEn: '', code: '' });
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -25,8 +31,22 @@ const ProductManagement = () => {
     category: '',
     stock: '',
     points: '',
+    region: 'all', // default: all regions
+    supplier: '', // المورد المسؤول عن المنتج
     isActive: true,
-    isNewArrival: false
+    isNewArrival: false,
+    // خصم الزباين (العملاء)
+    customerDiscount: {
+      enabled: false,
+      originalPrice: '',
+      discountedPrice: ''
+    },
+    // خصم الأعضاء
+    subscriberDiscount: {
+      enabled: false,
+      originalPrice: '',
+      discountedPrice: ''
+    }
   });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
@@ -34,6 +54,14 @@ const ProductManagement = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    if (user && user.role === 'super_admin') {
+      fetchRegions();
+      fetchSuppliers();
+    }
+    // regional_admin يحتاج أيضاً لمعلومات المناطق لعرض اسم منطقته
+    if (user && user.role === 'regional_admin') {
+      fetchRegions();
+    }
   }, []);
 
   const fetchProducts = async () => {
@@ -54,6 +82,63 @@ const ProductManagement = () => {
       setCategories(response.data.categories || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
+    }
+  };
+
+  const fetchRegions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/regions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('Fetched regions:', response.data);
+      setRegions(response.data.regions || response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching regions:', err);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const allUsers = response.data.users || [];
+      setSuppliers(allUsers.filter(u => u.role === 'supplier'));
+    } catch (err) {
+      console.error('Error fetching suppliers:', err);
+    }
+  };
+
+  const handleAddRegion = async () => {
+    if (!newRegionData.nameAr.trim() || !newRegionData.nameEn.trim() || !newRegionData.code.trim()) {
+      setError(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        'http://localhost:5000/api/regions',
+        {
+          name: newRegionData.nameEn.trim(), // Use English name as the main name
+          nameAr: newRegionData.nameAr.trim(),
+          nameEn: newRegionData.nameEn.trim(),
+          code: newRegionData.code.trim().toUpperCase()
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setMessage(language === 'ar' ? 'تم إضافة المنطقة بنجاح!' : 'Region added successfully!');
+      setNewRegionData({ nameAr: '', nameEn: '', code: '' });
+      setShowAddRegion(false);
+      fetchRegions();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || (language === 'ar' ? 'فشل في إضافة المنطقة' : 'Failed to add region'));
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -156,9 +241,23 @@ const ProductManagement = () => {
       formDataToSend.append('isActive', formData.isActive);
       formDataToSend.append('isNewArrival', formData.isNewArrival);
 
+      // إضافة المنطقة (فقط لـ super_admin)
+      if (user && user.role === 'super_admin' && formData.region) {
+        formDataToSend.append('region', formData.region);
+      }
+
       if (formData.bulkPrice) formDataToSend.append('bulkPrice', formData.bulkPrice);
       if (formData.bulkMinQuantity) formDataToSend.append('bulkMinQuantity', formData.bulkMinQuantity);
       if (formData.points) formDataToSend.append('points', formData.points);
+
+      // إضافة المورد (إذا تم اختياره)
+      if (formData.supplier && formData.supplier !== '') {
+        formDataToSend.append('supplier', formData.supplier);
+      }
+
+      // إضافة بيانات الخصم
+      formDataToSend.append('customerDiscount', JSON.stringify(formData.customerDiscount));
+      formDataToSend.append('subscriberDiscount', JSON.stringify(formData.subscriberDiscount));
 
       // Append media files
       mediaFiles.forEach((file) => {
@@ -214,8 +313,20 @@ const ProductManagement = () => {
       category: product.category || '',
       stock: product.stock || '',
       points: product.points || '',
+      region: product.region?._id || product.region || 'all',
+      supplier: product.supplier?._id || product.supplier || '',
       isActive: product.isActive !== undefined ? product.isActive : true,
-      isNewArrival: product.isNewArrival || false
+      isNewArrival: product.isNewArrival || false,
+      customerDiscount: product.customerDiscount || {
+        enabled: false,
+        originalPrice: '',
+        discountedPrice: ''
+      },
+      subscriberDiscount: product.subscriberDiscount || {
+        enabled: false,
+        originalPrice: '',
+        discountedPrice: ''
+      }
     });
 
     // Load existing media as previews
@@ -261,8 +372,20 @@ const ProductManagement = () => {
       category: '',
       stock: '',
       points: '',
+      region: 'all',
+      supplier: '',
       isActive: true,
-      isNewArrival: false
+      isNewArrival: false,
+      customerDiscount: {
+        enabled: false,
+        originalPrice: '',
+        discountedPrice: ''
+      },
+      subscriberDiscount: {
+        enabled: false,
+        originalPrice: '',
+        discountedPrice: ''
+      }
     });
     setMediaFiles([]);
     setMediaPreviews([]);
@@ -396,6 +519,135 @@ const ProductManagement = () => {
                   />
                 </div>
 
+                {/* حقل المنطقة - للـ super_admin و regional_admin */}
+                {user && (user.role === 'super_admin' || user.role === 'regional_admin') && (
+                  <div className="pm-form-group">
+                    <label>{language === 'ar' ? 'المنطقة' : 'Region'}</label>
+
+                    {/* super_admin: يختار المنطقة */}
+                    {user.role === 'super_admin' ? (
+                      <div className="pm-category-input">
+                        <select
+                          value={showAddRegion ? '' : formData.region}
+                          onChange={(e) => {
+                            if (e.target.value === '__add_new__') {
+                              setShowAddRegion(true);
+                            } else {
+                              setFormData({ ...formData, region: e.target.value });
+                              setShowAddRegion(false);
+                            }
+                          }}
+                          className="pm-category-select"
+                        >
+                          <option value="all">{language === 'ar' ? 'جميع المناطق' : 'All Regions'}</option>
+                          {regions.map((region) => (
+                            <option key={region._id} value={region._id}>
+                              {language === 'ar' ? region.nameAr : region.nameEn}
+                            </option>
+                          ))}
+                          <option value="__add_new__">+ {language === 'ar' ? 'إضافة منطقة جديدة' : 'Add New Region'}</option>
+                        </select>
+
+                      {showAddRegion && (
+                        <div className="pm-add-category-popup pm-add-region-popup">
+                          <div style={{ marginBottom: '8px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                              {language === 'ar' ? 'الاسم بالعربي *' : 'Arabic Name *'}
+                            </label>
+                            <input
+                              type="text"
+                              value={newRegionData.nameAr}
+                              onChange={(e) => setNewRegionData({ ...newRegionData, nameAr: e.target.value })}
+                              placeholder={language === 'ar' ? 'مثال: فلسطين' : 'Example: فلسطين'}
+                              style={{ width: '100%' }}
+                              dir="rtl"
+                            />
+                          </div>
+                          <div style={{ marginBottom: '8px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                              {language === 'ar' ? 'الاسم بالإنجليزي *' : 'English Name *'}
+                            </label>
+                            <input
+                              type="text"
+                              value={newRegionData.nameEn}
+                              onChange={(e) => setNewRegionData({ ...newRegionData, nameEn: e.target.value })}
+                              placeholder={language === 'ar' ? 'مثال: Palestine' : 'Example: Palestine'}
+                              style={{ width: '100%' }}
+                              dir="ltr"
+                            />
+                          </div>
+                          <div style={{ marginBottom: '8px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                              {language === 'ar' ? 'رمز المنطقة *' : 'Region Code *'}
+                            </label>
+                            <input
+                              type="text"
+                              value={newRegionData.code}
+                              onChange={(e) => setNewRegionData({ ...newRegionData, code: e.target.value.toUpperCase() })}
+                              placeholder={language === 'ar' ? 'مثال: PS' : 'Example: PS'}
+                              maxLength="3"
+                              style={{ textTransform: 'uppercase', width: '100%' }}
+                              dir="ltr"
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }}>
+                            <button type="button" onClick={handleAddRegion} className="pm-btn-add-cat">
+                              ✓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowAddRegion(false);
+                                setNewRegionData({ nameAr: '', nameEn: '', code: '' });
+                              }}
+                              className="pm-btn-cancel-cat"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      </div>
+                    ) : (
+                      /* regional_admin: يعرض منطقته فقط (معطل) */
+                      <div>
+                        <input
+                          type="text"
+                          value={user.region ? (language === 'ar' ? user.region.nameAr : user.region.nameEn) : (language === 'ar' ? 'جاري التحميل...' : 'Loading...')}
+                          disabled
+                          className="pm-category-select"
+                          style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                        />
+                        <small style={{ display: 'block', marginTop: '5px', color: '#666', fontSize: '12px' }}>
+                          {language === 'ar' ? 'سيتم إضافة المنتج تلقائياً لمنطقتك' : 'Product will be added to your region automatically'}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* حقل المورد - يظهر فقط لـ super_admin */}
+                {user && user.role === 'super_admin' && (
+                  <div className="pm-form-group">
+                    <label>{language === 'ar' ? 'المورد' : 'Supplier'}</label>
+                    <select
+                      value={formData.supplier || ''}
+                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                      className="pm-category-select"
+                    >
+                      <option value="">{language === 'ar' ? 'لا يوجد' : 'None'}</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier._id} value={supplier._id}>
+                          {supplier.name} (@{supplier.username})
+                        </option>
+                      ))}
+                    </select>
+                    <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {language === 'ar' ? 'المورد المسؤول عن هذا المنتج' : 'Supplier responsible for this product'}
+                    </small>
+                  </div>
+                )}
+
                 <div className="pm-form-group">
                   <label>{language === 'ar' ? 'سعر العميل' : 'Customer Price'} *</label>
                   <input
@@ -418,6 +670,124 @@ const ProductManagement = () => {
                     required
                     placeholder={language === 'ar' ? 'السعر للمشتركين' : 'Price for subscribers'}
                   />
+                </div>
+
+                {/* خصم الزباين (العملاء) */}
+                <div className="pm-form-section pm-discount-section">
+                  <h4>{language === 'ar' ? 'خصم الزباين (العملاء العاديين)' : 'Customer Discount'}</h4>
+
+                  <div className="pm-form-group pm-checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={formData.customerDiscount.enabled}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          customerDiscount: {
+                            ...formData.customerDiscount,
+                            enabled: e.target.checked
+                          }
+                        })}
+                      />
+                      <span>{language === 'ar' ? 'تفعيل خصم للزباين' : 'Enable Customer Discount'}</span>
+                    </label>
+                  </div>
+
+                  {formData.customerDiscount.enabled && (
+                    <div className="pm-form-row">
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر الأصلي' : 'Original Price'}</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.customerDiscount.originalPrice}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            customerDiscount: {
+                              ...formData.customerDiscount,
+                              originalPrice: e.target.value
+                            }
+                          })}
+                          placeholder={language === 'ar' ? 'السعر قبل الخصم' : 'Price before discount'}
+                        />
+                      </div>
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر بعد الخصم' : 'Discounted Price'}</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.customerDiscount.discountedPrice}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            customerDiscount: {
+                              ...formData.customerDiscount,
+                              discountedPrice: e.target.value
+                            }
+                          })}
+                          placeholder={language === 'ar' ? 'السعر بعد الخصم' : 'Price after discount'}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* خصم الأعضاء */}
+                <div className="pm-form-section pm-discount-section">
+                  <h4>{language === 'ar' ? 'خصم الأعضاء' : 'Member Discount'}</h4>
+
+                  <div className="pm-form-group pm-checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={formData.subscriberDiscount.enabled}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          subscriberDiscount: {
+                            ...formData.subscriberDiscount,
+                            enabled: e.target.checked
+                          }
+                        })}
+                      />
+                      <span>{language === 'ar' ? 'تفعيل خصم للأعضاء' : 'Enable Member Discount'}</span>
+                    </label>
+                  </div>
+
+                  {formData.subscriberDiscount.enabled && (
+                    <div className="pm-form-row">
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر الأصلي' : 'Original Price'}</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.subscriberDiscount.originalPrice}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            subscriberDiscount: {
+                              ...formData.subscriberDiscount,
+                              originalPrice: e.target.value
+                            }
+                          })}
+                          placeholder={language === 'ar' ? 'السعر قبل الخصم' : 'Price before discount'}
+                        />
+                      </div>
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر بعد الخصم' : 'Discounted Price'}</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.subscriberDiscount.discountedPrice}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            subscriberDiscount: {
+                              ...formData.subscriberDiscount,
+                              discountedPrice: e.target.value
+                            }
+                          })}
+                          placeholder={language === 'ar' ? 'السعر بعد الخصم' : 'Price after discount'}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pm-form-group">
@@ -565,7 +935,7 @@ const ProductManagement = () => {
               </tr>
             ) : (
               products.map(product => (
-                <tr key={product._id}>
+                <tr key={product.id || product._id}>
                   <td>
                     {product.media && product.media.length > 0 ? (
                       product.media[0].type === 'video' ? (

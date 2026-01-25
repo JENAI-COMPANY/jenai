@@ -116,9 +116,21 @@
 .footer-social {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem 0;
+  padding: 2rem 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.footer-logo-container {
+  flex: 0 0 auto;
+}
+
+.social-content {
+  flex: 1;
   text-align: center;
 }
 
@@ -177,6 +189,19 @@
 
 .social-icon.whatsapp {
   background: linear-gradient(135deg, #25d366, #1ebe57);
+}
+
+.footer-logo {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s ease;
+}
+
+.footer-logo:hover {
+  filter: drop-shadow(0 4px 12px rgba(197, 168, 105, 0.4));
+  transform: scale(1.05);
 }
 
 .footer-bottom {
@@ -265,6 +290,15 @@
     height: 45px;
     font-size: 1.1rem;
   }
+
+  .footer-social {
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+  }
+
+  .footer-logo {
+    height: 100px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -316,5 +350,13 @@
 
   .copyright {
     font-size: 0.85rem;
+  }
+
+  .footer-social {
+    padding: 1rem 0.75rem;
+  }
+
+  .footer-logo {
+    height: 80px;
   }
 }

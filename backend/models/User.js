@@ -32,12 +32,14 @@ const userSchema = new mongoose.Schema({
   country: {
     type: String,
     trim: true,
-    uppercase: true
+    uppercase: true,
+    default: ''
   },
   city: {
     type: String,
     trim: true,
-    uppercase: true
+    uppercase: true,
+    default: ''
   },
   address: {
     street: String,
@@ -48,13 +50,18 @@ const userSchema = new mongoose.Schema({
   },
   // Regional admin specific fields
   region: {
-    type: String,
-    trim: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Region'
   },
   managedRegions: [{
-    type: String,
-    trim: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Region'
   }],
+  // Supplier who referred this user (for product management)
+  supplier: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   permissions: {
     canManageUsers: { type: Boolean, default: false },
     canManageProducts: { type: Boolean, default: false },
@@ -123,10 +130,9 @@ const userSchema = new mongoose.Schema({
   }],
   // Member rank/degree (9 levels)
   memberRank: {
-    type: Number,
-    default: 1,
-    min: 1,
-    max: 9
+    type: String,
+    enum: ['agent', 'bronze', 'silver', 'gold', 'ruby', 'diamond', 'double_diamond', 'regional_ambassador', 'global_ambassador'],
+    default: 'agent'
   },
   // Downline commission percentages for 5 levels
   downlineCommissionRates: {
@@ -181,6 +187,23 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // نقاط عمولة القيادة
+  leadershipPoints: {
+    type: Number,
+    default: 0
+  },
+  // نقاط المكافأة (تضاف يدوياً من الإدارة)
+  // تُحسب للرتبة فقط ولا تُحسب في توزيع الأرباح للأعضاء العلويين
+  bonusPoints: {
+    type: Number,
+    default: 0
+  },
+  // نقاط الربح (للمسابقات والجوائز)
+  // تُحسب كأرباح شخصية للعضو فقط (لا تُوزع على الأعضاء العلويين)
+  profitPoints: {
+    type: Number,
+    default: 0
+  },
   lastPointsReset: {
     type: Date,
     default: Date.now
@@ -195,7 +218,30 @@ const userSchema = new mongoose.Schema({
   },
   // Referral tracking
   referralLink: String,
+  // الشخص الذي أحال هذا العضو (الراعي)
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  // روابط الإحالة - نوعان: إحالة عميل وإحالة عضو
+  customerReferralLink: {
+    type: String,
+    trim: true
+  },
+  memberReferralLink: {
+    type: String,
+    trim: true
+  },
   referralCount: {
+    type: Number,
+    default: 0
+  },
+  // إحصائيات الإحالات
+  customerReferrals: {
+    type: Number,
+    default: 0
+  },
+  memberReferrals: {
     type: Number,
     default: 0
   },
@@ -275,9 +321,41 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.statics.generateSubscriberCode = async function(country, city) {
   const User = this;
 
-  // Get first letter of country and city (uppercase)
-  const countryCode = country ? country.charAt(0).toUpperCase() : 'X';
-  const cityCode = city ? city.charAt(0).toUpperCase() : 'X';
+  // خريطة تحويل الأحرف العربية إلى الإنجليزية
+  const arabicToEnglish = {
+    'ا': 'A', 'أ': 'A', 'إ': 'A', 'آ': 'A',
+    'ب': 'B',
+    'ت': 'T', 'ث': 'T',
+    'ج': 'J',
+    'ح': 'H', 'خ': 'K',
+    'د': 'D', 'ذ': 'D',
+    'ر': 'R', 'ز': 'Z',
+    'س': 'S', 'ش': 'S',
+    'ص': 'S', 'ض': 'D',
+    'ط': 'T', 'ظ': 'Z',
+    'ع': 'A', 'غ': 'G',
+    'ف': 'F',
+    'ق': 'Q',
+    'ك': 'K',
+    'ل': 'L',
+    'م': 'M',
+    'ن': 'N',
+    'ه': 'H',
+    'و': 'W',
+    'ي': 'Y', 'ى': 'Y',
+    'ة': 'H'
+  };
+
+  // دالة لتحويل النص العربي إلى إنجليزي
+  const convertToEnglish = (text) => {
+    if (!text || typeof text !== 'string' || text.trim() === '') return 'X';
+    const firstChar = text.charAt(0);
+    return arabicToEnglish[firstChar] || (firstChar ? firstChar.toUpperCase() : 'X');
+  };
+
+  // Get first letter of country and city (converted to English)
+  const countryCode = convertToEnglish(country);
+  const cityCode = convertToEnglish(city);
 
   let isUnique = false;
   let subscriberCode = '';
@@ -343,6 +421,28 @@ userSchema.statics.generateSupplierCode = async function() {
   }
 
   return supplierCode;
+};
+
+// Generate referral links for member
+// Creates two types: customer referral and member referral
+userSchema.methods.generateReferralLinks = function(baseUrl) {
+  if (!this.subscriberCode) {
+    throw new Error('Member must have a subscriber code to generate referral links');
+  }
+
+  const frontendUrl = baseUrl || process.env.FRONTEND_URL || 'http://localhost:3000';
+
+  // Customer referral link - for referring customers
+  this.customerReferralLink = `${frontendUrl}/register/customer?ref=${this.subscriberCode}`;
+
+  // Member referral link - for referring new members
+  this.memberReferralLink = `${frontendUrl}/register/member?ref=${this.subscriberCode}`;
+
+  return {
+    customerReferralLink: this.customerReferralLink,
+    memberReferralLink: this.memberReferralLink,
+    referralCode: this.subscriberCode
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

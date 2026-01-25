@@ -2,11 +2,13 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import '../styles/Cart.css';
 
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useContext(CartContext);
   const { isSubscriber } = useContext(AuthContext);
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const handleCheckout = () => {
@@ -16,9 +18,9 @@ const Cart = () => {
   if (cartItems.length === 0) {
     return (
       <div className="cart-empty">
-        <h2>Your cart is empty</h2>
+        <h2>{t('emptyCart')}</h2>
         <button onClick={() => navigate('/')} className="shop-btn">
-          Continue Shopping
+          {t('continueShopping')}
         </button>
       </div>
     );
@@ -26,18 +28,18 @@ const Cart = () => {
 
   return (
     <div className="cart-container">
-      <h2>Shopping Cart</h2>
+      <h2>{t('cartTitle')}</h2>
       <div className="cart-content">
         <div className="cart-items">
           {cartItems.map((item) => {
-            const displayPrice = isSubscriber ? (item.subscriberPrice || item.price || 0) : (item.price || 0);
+            const displayPrice = isSubscriber ? (item.subscriberPrice || 0) : (item.customerPrice || 0);
             return (
               <div key={item._id} className="cart-item">
                 <div className="item-image">
                   {item.images && item.images[0] ? (
                     <img src={item.images[0]} alt={item.name} />
                   ) : (
-                    <div className="no-image">No Image</div>
+                    <div className="no-image">{language === 'ar' ? 'لا توجد صورة' : 'No Image'}</div>
                   )}
                 </div>
                 <div className="item-details">
@@ -60,39 +62,27 @@ const Cart = () => {
                   onClick={() => removeFromCart(item._id)}
                   className="remove-btn"
                 >
-                  Remove
+                  {t('remove')}
                 </button>
               </div>
             );
           })}
         </div>
         <div className="cart-summary">
-          <h3>Order Summary</h3>
-          <div className="summary-row">
-            <span>Subtotal:</span>
-            <span>${getCartTotal(isSubscriber).toFixed(2)}</span>
-          </div>
-          <div className="summary-row">
-            <span>Shipping:</span>
-            <span>$10.00</span>
-          </div>
-          <div className="summary-row">
-            <span>Tax:</span>
-            <span>${(getCartTotal(isSubscriber) * 0.08).toFixed(2)}</span>
-          </div>
+          <h3>{t('orderSummary')}</h3>
           <div className="summary-total">
-            <span>Total:</span>
+            <span>{t('total')}:</span>
             <span>
-              ${(getCartTotal(isSubscriber) + 10 + getCartTotal(isSubscriber) * 0.08).toFixed(2)}
+              ${getCartTotal(isSubscriber).toFixed(2)}
             </span>
           </div>
           {isSubscriber && (
             <div className="subscriber-savings">
-              You're saving with subscriber pricing!
+              {t('subscriberSavings')}
             </div>
           )}
           <button onClick={handleCheckout} className="checkout-btn">
-            Proceed to Checkout
+            {t('proceedToCheckout')}
           </button>
         </div>
       </div>

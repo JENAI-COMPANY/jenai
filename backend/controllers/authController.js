@@ -117,11 +117,27 @@ exports.register = async (req, res) => {
 
     const user = await User.create(userData);
 
-    // Add user to sponsor's downline
+    // Add user to sponsor's downline and update referral counts
     if (userData.sponsorId) {
-      await User.findByIdAndUpdate(userData.sponsorId, {
-        $push: { downline: user._id }
-      });
+      const updateData = {
+        $push: { downline: user._id },
+        $inc: { referralCount: 1 }
+      };
+
+      // Increment specific referral type counter
+      if (role === 'customer') {
+        updateData.$inc.customerReferrals = 1;
+      } else if (role === 'member') {
+        updateData.$inc.memberReferrals = 1;
+      }
+
+      await User.findByIdAndUpdate(userData.sponsorId, updateData);
+    }
+
+    // Generate referral links for new members
+    if (role === 'member' && user.subscriberCode) {
+      user.generateReferralLinks();
+      await user.save();
     }
 
     const token = generateToken(user._id);

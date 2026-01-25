@@ -38,6 +38,7 @@
   list-style: none;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .nav-logo {
@@ -77,6 +78,7 @@
   list-style: none;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .nav-item {
@@ -93,6 +95,7 @@
   transition: all 0.3s ease;
   position: relative;
   display: inline-block;
+  white-space: nowrap;
 }
 
 .nav-link::after {
@@ -130,6 +133,7 @@
   box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .nav-button::before {

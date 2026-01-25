@@ -13,6 +13,7 @@ import SuppliersManagement from '../components/SuppliersManagement';
 import MembersManagement from '../components/MembersManagement';
 import MemberRanks from '../components/MemberRanks';
 import ProfitCalculation from '../components/ProfitCalculation';
+import RegionsManagement from '../components/RegionsManagement';
 import '../styles/Profile.css';
 
 const Profile = () => {
@@ -157,7 +158,7 @@ const Profile = () => {
             <span className="tab-label">{language === 'ar' ? 'الملف الشخصي' : 'Profile'}</span>
           </button>
 
-          {user.role === 'super_admin' && (
+          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'statistics' ? 'active' : ''}`}
               onClick={() => setActiveTab('statistics')}
@@ -167,7 +168,7 @@ const Profile = () => {
             </button>
           )}
 
-          {user.role === 'super_admin' && (
+          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => setActiveTab('users')}
@@ -177,7 +178,7 @@ const Profile = () => {
             </button>
           )}
 
-          {user.role === 'super_admin' && (
+          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`}
               onClick={() => setActiveTab('products')}
@@ -217,7 +218,7 @@ const Profile = () => {
             </button>
           )}
 
-          {user.role === 'super_admin' && (
+          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'members' ? 'active' : ''}`}
               onClick={() => setActiveTab('members')}
@@ -247,6 +248,16 @@ const Profile = () => {
             </button>
           )}
 
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'regions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('regions')}
+            >
+              <span className="tab-icon">🌍</span>
+              <span className="tab-label">{language === 'ar' ? 'إدارة المناطق' : 'Regions'}</span>
+            </button>
+          )}
+
           {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
@@ -257,7 +268,7 @@ const Profile = () => {
             </button>
           )}
 
-          {(user.role === 'customer' || user.role === 'subscriber') && (
+          {(user.role === 'customer' || user.role === 'subscriber' || user.role === 'member') && (
             <button
               className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
               onClick={() => setActiveTab('orders')}
@@ -457,21 +468,21 @@ const Profile = () => {
           )}
 
           {/* Statistics Tab */}
-          {activeTab === 'statistics' && user.role === 'super_admin' && (
+          {activeTab === 'statistics' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
               <Statistics />
             </div>
           )}
 
           {/* Users Management Tab */}
-          {activeTab === 'users' && user.role === 'super_admin' && (
+          {activeTab === 'users' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
               <UserManagement />
             </div>
           )}
 
           {/* Products Management Tab */}
-          {activeTab === 'products' && user.role === 'super_admin' && (
+          {activeTab === 'products' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
               <ProductManagement />
             </div>
@@ -499,7 +510,7 @@ const Profile = () => {
           )}
 
           {/* Members Management Tab */}
-          {activeTab === 'members' && user.role === 'super_admin' && (
+          {activeTab === 'members' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
               <MembersManagement />
             </div>
@@ -519,6 +530,13 @@ const Profile = () => {
             </div>
           )}
 
+          {/* Regions Management Tab - For Super Admin */}
+          {activeTab === 'regions' && user.role === 'super_admin' && (
+            <div className="tab-panel">
+              <RegionsManagement />
+            </div>
+          )}
+
           {/* Orders Management Tab - For Admins */}
           {activeTab === 'orders' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
@@ -526,8 +544,8 @@ const Profile = () => {
             </div>
           )}
 
-          {/* My Orders Tab - For Customers and Subscribers */}
-          {activeTab === 'orders' && (user.role === 'customer' || user.role === 'subscriber') && (
+          {/* My Orders Tab - For Customers, Subscribers, and Members */}
+          {activeTab === 'orders' && (user.role === 'customer' || user.role === 'subscriber' || user.role === 'member') && (
             <div className="tab-panel">
               <MyOrders />
             </div>

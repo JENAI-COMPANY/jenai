@@ -112,4 +112,29 @@ profitPeriodSchema.index({ periodNumber: -1 });
 profitPeriodSchema.index({ createdAt: -1 });
 profitPeriodSchema.index({ 'membersProfits.memberId': 1 });
 
+// Static method to check if a period is available (not already calculated)
+profitPeriodSchema.statics.checkPeriodAvailable = async function(startDate, endDate) {
+  const overlappingPeriod = await this.findOne({
+    $or: [
+      // New period starts during an existing period
+      {
+        startDate: { $lte: startDate },
+        endDate: { $gte: startDate }
+      },
+      // New period ends during an existing period
+      {
+        startDate: { $lte: endDate },
+        endDate: { $gte: endDate }
+      },
+      // New period completely contains an existing period
+      {
+        startDate: { $gte: startDate },
+        endDate: { $lte: endDate }
+      }
+    ]
+  });
+
+  return !overlappingPeriod; // Returns true if available (no overlap)
+};
+
 module.exports = mongoose.model('ProfitPeriod', profitPeriodSchema);

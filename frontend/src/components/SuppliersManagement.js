@@ -17,6 +17,9 @@ const SuppliersManagement = () => {
   const [editingSupplier, setEditingSupplier] = useState(null);
 
   const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
     name: '',
     companyName: '',
     phone: '',
@@ -27,7 +30,8 @@ const SuppliersManagement = () => {
     taxNumber: '',
     category: 'other',
     paymentTerms: 'cash',
-    notes: ''
+    notes: '',
+    role: 'supplier'
   });
 
   const countries = [
@@ -90,6 +94,9 @@ const SuppliersManagement = () => {
 
   const resetForm = () => {
     setFormData({
+      username: '',
+      password: '',
+      confirmPassword: '',
       name: '',
       companyName: '',
       phone: '',
@@ -100,7 +107,8 @@ const SuppliersManagement = () => {
       taxNumber: '',
       category: 'other',
       paymentTerms: 'cash',
-      notes: ''
+      notes: '',
+      role: 'supplier'
     });
     setEditingSupplier(null);
     setShowForm(false);
@@ -108,12 +116,31 @@ const SuppliersManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation for new supplier
+    if (!editingSupplier) {
+      if (!formData.username || !formData.password || !formData.name || !formData.phone) {
+        alert(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة (اسم المستخدم، كلمة المرور، الاسم، رقم الهاتف)' : 'Please fill all required fields (username, password, name, phone)');
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        alert(language === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
+        return;
+      }
+    }
+
     try {
       if (editingSupplier) {
-        await updateSupplier(editingSupplier._id, formData);
+        // For update, don't send password fields if empty
+        const { password, confirmPassword, username, role, ...updateData } = formData;
+        await updateSupplier(editingSupplier._id, updateData);
         alert(language === 'ar' ? 'تم تحديث المورد بنجاح' : 'Supplier updated successfully');
       } else {
-        await createSupplier(formData);
+        // For create, remove confirmPassword and ensure role is set
+        const { confirmPassword, ...supplierData } = formData;
+        supplierData.role = 'supplier';
+        await createSupplier(supplierData);
         alert(language === 'ar' ? 'تم إضافة المورد بنجاح' : 'Supplier added successfully');
       }
       resetForm();
@@ -180,6 +207,41 @@ const SuppliersManagement = () => {
         <form onSubmit={handleSubmit} className="supplier-form product-form">
           <h4>{editingSupplier ? (language === 'ar' ? 'تعديل المورد' : 'Edit Supplier') : (language === 'ar' ? 'إضافة مورد جديد' : 'Add New Supplier')}</h4>
           <div className="form-grid">
+            {!editingSupplier && (
+              <>
+                <div className="form-group">
+                  <label>{language === 'ar' ? 'اسم المستخدم' : 'Username'} *</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                    placeholder={language === 'ar' ? 'اسم المستخدم للدخول' : 'Username for login'}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{language === 'ar' ? 'كلمة المرور' : 'Password'} *</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'} *</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </>
+            )}
             <div className="form-group">
               <label>{language === 'ar' ? 'اسم المورد' : 'Supplier Name'} *</label>
               <input

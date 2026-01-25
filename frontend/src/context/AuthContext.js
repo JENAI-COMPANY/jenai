@@ -64,7 +64,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // إزالة معلومات المستخدم
     localStorage.removeItem('token');
+
+    // إزالة سلة التسوق للمستخدم الحالي
+    if (user && user._id) {
+      localStorage.removeItem(`cartItems_${user._id}`);
+    }
+
     setToken(null);
     setUser(null);
   };

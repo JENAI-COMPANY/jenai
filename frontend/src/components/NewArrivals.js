@@ -62,7 +62,7 @@ const NewArrivals = () => {
 
       <div className="new-arrivals-grid">
         {newProducts.map((product) => (
-          <div key={product._id} className="new-arrival-item">
+          <div key={product.id || product._id} className="new-arrival-item">
             <span className="new-badge">
               {language === 'ar' ? 'جديد' : 'NEW'}
             </span>

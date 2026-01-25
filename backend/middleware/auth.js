@@ -15,7 +15,7 @@ exports.protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id);
+    req.user = await User.findById(decoded.id).populate('region', 'name nameAr nameEn code');
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Not authorized to access this route' });
@@ -64,12 +64,58 @@ exports.isAdmin = (req, res, next) => {
   next();
 };
 
-// Check if user is subscriber
+// Check if user is subscriber or super admin
 exports.isSubscriber = (req, res, next) => {
-  if (req.user.role !== 'subscriber') {
+  if (req.user.role !== 'subscriber' && req.user.role !== 'super_admin') {
     return res.status(403).json({
       message: 'Access denied. Subscriber privileges required.'
     });
+  }
+  next();
+};
+
+// Check if user is member or super admin
+exports.memberOnly = (req, res, next) => {
+  if (req.user.role !== 'member' && req.user.role !== 'super_admin') {
+    return res.status(403).json({
+      message: 'Access denied. Member privileges required.',
+      messageAr: 'غير مصرح. صلاحيات العضو مطلوبة.'
+    });
+  }
+  next();
+};
+
+// Check if user is supplier or super admin
+exports.isSupplier = (req, res, next) => {
+  if (req.user.role !== 'supplier' && req.user.role !== 'super_admin') {
+    return res.status(403).json({
+      message: 'Access denied. Supplier privileges required.',
+      messageAr: 'غير مصرح. صلاحيات المورد مطلوبة.'
+    });
+  }
+  next();
+};
+
+// Check if supplier is active
+exports.checkSupplierActive = async (req, res, next) => {
+  if (req.user.role === 'supplier' && !req.user.isActive) {
+    return res.status(403).json({
+      message: 'Your supplier account is inactive. Please contact admin.',
+      messageAr: 'حساب المورد الخاص بك غير نشط. يرجى التواصل مع الإدارة.'
+    });
+  }
+  next();
+};
+
+// Check if supplier has managed categories
+exports.checkSupplierCategories = async (req, res, next) => {
+  if (req.user.role === 'supplier') {
+    if (!req.user.managedCategories || req.user.managedCategories.length === 0) {
+      return res.status(403).json({
+        message: 'No categories assigned to your account. Please contact admin.',
+        messageAr: 'لا توجد أقسام مخصصة لحسابك. يرجى التواصل مع الإدارة.'
+      });
+    }
   }
   next();
 };
@@ -85,7 +131,7 @@ exports.optionalAuth = async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id);
+      req.user = await User.findById(decoded.id).populate('region', 'name nameAr nameEn code');
     } catch (error) {
       // Token invalid, continue without user
       req.user = null;

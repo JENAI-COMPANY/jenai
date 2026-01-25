@@ -9,12 +9,17 @@ const getAuthHeader = () => {
 
 // Products
 export const getProducts = async (params = {}) => {
-  const { data } = await axios.get(`${API_URL}/products`, { params });
+  const { data } = await axios.get(`${API_URL}/products`, {
+    params,
+    headers: getAuthHeader()
+  });
   return data;
 };
 
 export const getProduct = async (id) => {
-  const { data } = await axios.get(`${API_URL}/products/${id}`);
+  const { data } = await axios.get(`${API_URL}/products/${id}`, {
+    headers: getAuthHeader()
+  });
   return data;
 };
 
@@ -40,7 +45,9 @@ export const deleteProduct = async (id) => {
 };
 
 export const getCategories = async () => {
-  const { data } = await axios.get(`${API_URL}/categories`);
+  const { data } = await axios.get(`${API_URL}/categories`, {
+    headers: getAuthHeader()
+  });
   return data;
 };
 
@@ -75,6 +82,22 @@ export const getAllOrders = async () => {
 
 export const updateOrderStatus = async (id, status) => {
   const { data } = await axios.put(`${API_URL}/orders/${id}/status`, { status }, {
+    headers: getAuthHeader()
+  });
+  return data;
+};
+
+// User cancel order (only for pending orders)
+export const userCancelOrder = async (id, reason = '') => {
+  const { data } = await axios.put(`${API_URL}/orders/${id}/user-cancel`, { reason }, {
+    headers: getAuthHeader()
+  });
+  return data;
+};
+
+// User update order (only for pending orders)
+export const userUpdateOrder = async (id, updateData) => {
+  const { data } = await axios.put(`${API_URL}/orders/${id}/user-update`, updateData, {
     headers: getAuthHeader()
   });
   return data;
@@ -118,18 +141,42 @@ export const updateSubscriberStatus = async (id, statusData) => {
 
 // Services
 export const getAllServices = async (params = {}) => {
-  const { data } = await axios.get(`${API_URL}/services`, { params });
+  const { data } = await axios.get(`${API_URL}/services`, {
+    params,
+    headers: getAuthHeader()
+  });
   return data;
 };
 
 export const getService = async (id) => {
-  const { data } = await axios.get(`${API_URL}/services/${id}`);
+  const { data } = await axios.get(`${API_URL}/services/${id}`, {
+    headers: getAuthHeader()
+  });
   return data;
 };
 
 export const createService = async (serviceData) => {
-  const { data } = await axios.post(`${API_URL}/services`, serviceData, {
-    headers: getAuthHeader()
+  const formData = new FormData();
+
+  // Append all service data fields
+  Object.keys(serviceData).forEach(key => {
+    if (key === 'images' && serviceData[key]) {
+      // Handle multiple images
+      Array.from(serviceData[key]).forEach(file => {
+        formData.append('images', file);
+      });
+    } else if (key === 'socialMedia' && typeof serviceData[key] === 'object') {
+      formData.append(key, JSON.stringify(serviceData[key]));
+    } else if (serviceData[key] !== undefined && serviceData[key] !== null && key !== 'images') {
+      formData.append(key, serviceData[key]);
+    }
+  });
+
+  const { data } = await axios.post(`${API_URL}/services`, formData, {
+    headers: {
+      ...getAuthHeader(),
+      'Content-Type': 'multipart/form-data'
+    }
   });
   return data;
 };
@@ -171,8 +218,25 @@ export const getAllServiceUsage = async (params = {}) => {
 };
 
 export const reviewServiceUsage = async (usageId, reviewData) => {
-  const { data } = await axios.put(`${API_URL}/services/usage/${usageId}/review`, reviewData, {
-    headers: getAuthHeader()
+  const formData = new FormData();
+
+  // Append all review data fields
+  Object.keys(reviewData).forEach(key => {
+    if (key === 'invoiceImages' && reviewData[key]) {
+      // Handle multiple invoice images
+      Array.from(reviewData[key]).forEach(file => {
+        formData.append('invoiceImages', file);
+      });
+    } else if (reviewData[key] !== undefined && reviewData[key] !== null && key !== 'invoiceImages') {
+      formData.append(key, reviewData[key]);
+    }
+  });
+
+  const { data } = await axios.put(`${API_URL}/services/usage/${usageId}/review`, formData, {
+    headers: {
+      ...getAuthHeader(),
+      'Content-Type': 'multipart/form-data'
+    }
   });
   return data;
 };
@@ -185,7 +249,9 @@ export const addServiceReview = async (serviceId, reviewData) => {
 };
 
 export const getServiceCategories = async () => {
-  const { data } = await axios.get(`${API_URL}/services/categories`);
+  const { data } = await axios.get(`${API_URL}/services/categories`, {
+    headers: getAuthHeader()
+  });
   return data;
 };
 
@@ -206,28 +272,28 @@ export const getSupplier = async (id) => {
 };
 
 export const createSupplier = async (supplierData) => {
-  const { data } = await axios.post(`${API_URL}/suppliers`, supplierData, {
+  const { data } = await axios.post(`${API_URL}/admin/users`, supplierData, {
     headers: getAuthHeader()
   });
   return data;
 };
 
 export const updateSupplier = async (id, supplierData) => {
-  const { data } = await axios.put(`${API_URL}/suppliers/${id}`, supplierData, {
+  const { data } = await axios.put(`${API_URL}/admin/users/${id}`, supplierData, {
     headers: getAuthHeader()
   });
   return data;
 };
 
 export const deleteSupplier = async (id) => {
-  const { data } = await axios.delete(`${API_URL}/suppliers/${id}`, {
+  const { data } = await axios.delete(`${API_URL}/admin/users/${id}`, {
     headers: getAuthHeader()
   });
   return data;
 };
 
 export const toggleSupplierStatus = async (id) => {
-  const { data } = await axios.put(`${API_URL}/suppliers/${id}/status`, {}, {
+  const { data } = await axios.put(`${API_URL}/admin/users/${id}/status`, {}, {
     headers: getAuthHeader()
   });
   return data;

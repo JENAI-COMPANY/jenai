@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment files
+.env
+*.env.local
+.env.development
+.env.production
+
+# Build outputs
+build/
+dist/
+*.build
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# Uploads (keep folder structure)
+backend/uploads/products/*
+!backend/uploads/products/.gitkeep
+backend/uploads/services/*
+!backend/uploads/services/.gitkeep
+backend/uploads/sliders/*
+!backend/uploads/sliders/.gitkeep
+
+# Test files
+*.test.js
+test_results.txt
+
+# Backup files
+*_backup.js
+*_mongoose_backup.js
+
+# Temporary files
+*.tmp
+*.temp

@@ -92,6 +92,11 @@ const translations = {
     total: 'Total',
     proceedToCheckout: 'Proceed to Checkout',
     remove: 'Remove',
+    orderSummary: 'Order Summary',
+    subtotal: 'Subtotal',
+    shipping: 'Shipping',
+    tax: 'Tax',
+    subscriberSavings: "You're saving with subscriber pricing!",
 
     // Dashboard
     dashboardTitle: 'Member Dashboard',
@@ -200,6 +205,11 @@ const translations = {
     total: 'المجموع',
     proceedToCheckout: 'إتمام الشراء',
     remove: 'حذف',
+    orderSummary: 'ملخص الطلب',
+    subtotal: 'المجموع الفرعي',
+    shipping: 'الشحن',
+    tax: 'الضريبة',
+    subscriberSavings: 'أنت توفر مع أسعار الأعضاء!',
 
     // Dashboard
     dashboardTitle: 'لوحة تحكم العضو',

@@ -156,9 +156,13 @@ const MEMBER_RANKS = {
  * دالة حساب النقاط التراكمية للعضو
  * @param {Object} user - بيانات العضو
  * @returns {Number} - النقاط التراكمية
+ *
+ * النقاط التراكمية = النقاط الشخصية + نقاط الفريق + نقاط المكافأة
+ * نقاط المكافأة (bonusPoints) تُحسب للرتبة فقط ولا تُحسب كأرباح إطلاقاً (لا للعضو ولا للأعضاء العلويين)
  */
 const calculateCumulativePoints = (user) => {
   const personalPoints = user.monthlyPoints || 0;
+  const bonusPoints = user.bonusPoints || 0; // نقاط المكافأة للرتبة فقط - بدون أرباح
   const teamPoints = (
     (user.generation1Points || 0) +
     (user.generation2Points || 0) +
@@ -167,7 +171,7 @@ const calculateCumulativePoints = (user) => {
     (user.generation5Points || 0)
   );
 
-  return personalPoints + teamPoints;
+  return personalPoints + teamPoints + bonusPoints;
 };
 
 /**

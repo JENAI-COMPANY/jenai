@@ -36,6 +36,10 @@ const serviceUsageSchema = new mongoose.Schema({
   receiptImage: {
     type: String
   },
+  // Invoice images uploaded by admin when reviewing
+  invoiceImages: [{
+    type: String
+  }],
   // Points earned from this usage
   pointsEarned: {
     type: Number,

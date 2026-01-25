@@ -181,12 +181,12 @@
   text-transform: uppercase;
 }
 
-.status-badge.closed {
+.status-badge.paid {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.status-badge.calculated {
+.status-badge.finalized {
   background: #dbeafe;
   color: #1e40af;
 }

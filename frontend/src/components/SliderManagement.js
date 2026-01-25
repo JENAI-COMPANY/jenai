@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import '../styles/SliderManagement.css';
@@ -12,17 +12,14 @@ const SliderManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingSlider, setEditingSlider] = useState(null);
   const [formData, setFormData] = useState({
-    alt: '',
+    title: '',
+    description: '',
     order: 0,
     isActive: true,
     image: null
   });
 
-  useEffect(() => {
-    fetchSliders();
-  }, []);
-
-  const fetchSliders = async () => {
+  const fetchSliders = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -35,7 +32,11 @@ const SliderManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [language]);
+
+  useEffect(() => {
+    fetchSliders();
+  }, [fetchSliders]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,7 +63,8 @@ const SliderManagement = () => {
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
-      formDataToSend.append('alt', formData.alt);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
       formDataToSend.append('order', formData.order);
       formDataToSend.append('isActive', formData.isActive);
 
@@ -100,7 +102,7 @@ const SliderManagement = () => {
       }
 
       // Reset form
-      setFormData({ alt: '', order: 0, isActive: true, image: null });
+      setFormData({ title: '', description: '', order: 0, isActive: true, image: null });
       setShowAddForm(false);
       setEditingSlider(null);
       fetchSliders();
@@ -114,7 +116,8 @@ const SliderManagement = () => {
   const handleEdit = (slider) => {
     setEditingSlider(slider);
     setFormData({
-      alt: slider.alt,
+      title: slider.title || '',
+      description: slider.description || '',
       order: slider.order,
       isActive: slider.isActive,
       image: null
@@ -144,7 +147,7 @@ const SliderManagement = () => {
   const cancelEdit = () => {
     setShowAddForm(false);
     setEditingSlider(null);
-    setFormData({ alt: '', order: 0, isActive: true, image: null });
+    setFormData({ title: '', description: '', order: 0, isActive: true, image: null });
   };
 
   return (
@@ -183,11 +186,22 @@ const SliderManagement = () => {
             </div>
 
             <div className="sm-form-group">
-              <label>{language === 'ar' ? 'وصف الصورة' : 'Image Alt Text'}</label>
+              <label>{language === 'ar' ? 'عنوان الصورة' : 'Image Title'}</label>
               <input
                 type="text"
-                name="alt"
-                value={formData.alt}
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder={language === 'ar' ? 'عنوان الصورة' : 'Image title'}
+              />
+            </div>
+
+            <div className="sm-form-group">
+              <label>{language === 'ar' ? 'وصف الصورة' : 'Image Description'}</label>
+              <input
+                type="text"
+                name="description"
+                value={formData.description}
                 onChange={handleInputChange}
                 placeholder={language === 'ar' ? 'وصف الصورة' : 'Image description'}
               />
@@ -244,7 +258,7 @@ const SliderManagement = () => {
                 <div className="sm-image-container">
                   <img
                     src={`http://localhost:5000${slider.image}`}
-                    alt={slider.alt}
+                    alt={slider.title || 'Slider image'}
                     className="sm-image"
                   />
                   {!slider.isActive && (
@@ -254,7 +268,8 @@ const SliderManagement = () => {
                   )}
                 </div>
                 <div className="sm-card-content">
-                  <p className="sm-alt">{slider.alt}</p>
+                  {slider.title && <p className="sm-title"><strong>{slider.title}</strong></p>}
+                  {slider.description && <p className="sm-description">{slider.description}</p>}
                   <p className="sm-order">
                     {language === 'ar' ? 'الترتيب' : 'Order'}: {slider.order}
                   </p>

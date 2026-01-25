@@ -131,10 +131,134 @@ const productSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
-  region: {
+  // المورد الذي أضاف المنتج
+  supplier: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  // حالة الموافقة على المنتج من قبل الإدارة
+  approvalStatus: {
     type: String,
-    default: 'main',
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  // سبب الرفض (إذا تم رفض المنتج)
+  rejectionReason: {
+    type: String,
     trim: true
+  },
+  // تاريخ الموافقة
+  approvedAt: {
+    type: Date
+  },
+  // من وافق على المنتج
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  // الفرع الأساسي للمنتج
+  region: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Region',
+    required: false
+  },
+  // دعم الفروع المتعددة مع أسعار مختلفة
+  regionalPricing: [{
+    region: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Region',
+      required: true
+    },
+    customerPrice: {
+      type: Number,
+      min: 0
+    },
+    memberPrice: {
+      type: Number,
+      min: 0
+    },
+    wholesalePrice: {
+      type: Number,
+      min: 0
+    },
+    bulkPrice: {
+      type: Number,
+      min: 0
+    },
+    stock: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    }
+  }],
+  // إذا كان المنتج متاحاً لجميع الفروع
+  isGlobal: {
+    type: Boolean,
+    default: false
+  },
+  // Member and wholesale prices (for backward compatibility and global pricing)
+  memberPrice: {
+    type: Number,
+    min: 0
+  },
+  wholesalePrice: {
+    type: Number,
+    min: 0
+  },
+  // Discount system
+  hasDiscount: {
+    type: Boolean,
+    default: false
+  },
+  // خصم للزباين (العملاء العاديين)
+  customerDiscount: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    originalPrice: {
+      type: Number,
+      min: 0
+    },
+    discountedPrice: {
+      type: Number,
+      min: 0
+    },
+    discountPercentage: {
+      type: Number,
+      min: 0,
+      max: 100
+    }
+  },
+  // خصم للأعضاء
+  subscriberDiscount: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    originalPrice: {
+      type: Number,
+      min: 0
+    },
+    discountedPrice: {
+      type: Number,
+      min: 0
+    },
+    discountPercentage: {
+      type: Number,
+      min: 0,
+      max: 100
+    }
+  },
+  // Out of stock indicator
+  isOutOfStock: {
+    type: Boolean,
+    default: false
   },
   // Custom order/reservation feature
   allowCustomOrder: {

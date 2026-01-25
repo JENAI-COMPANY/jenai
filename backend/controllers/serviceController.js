@@ -75,10 +75,31 @@ exports.getService = async (req, res) => {
 // @access  Private/Admin
 exports.createService = async (req, res) => {
   try {
+    console.log('Creating service with data:', req.body);
+    console.log('Request files:', req.files);
+
     const serviceData = {
       ...req.body,
       addedBy: req.user.id
     };
+
+    // Handle image uploads
+    if (req.files && req.files.length > 0) {
+      serviceData.images = req.files.map(file => `/uploads/services/${file.filename}`);
+      // Set first image as logo if no logo specified
+      if (!serviceData.logo && serviceData.images.length > 0) {
+        serviceData.logo = serviceData.images[0];
+      }
+    }
+
+    // Parse socialMedia if it's a string (from FormData)
+    if (typeof serviceData.socialMedia === 'string') {
+      try {
+        serviceData.socialMedia = JSON.parse(serviceData.socialMedia);
+      } catch (e) {
+        console.error('Error parsing socialMedia:', e);
+      }
+    }
 
     const service = await Service.create(serviceData);
 
@@ -87,6 +108,7 @@ exports.createService = async (req, res) => {
       data: service
     });
   } catch (error) {
+    console.error('Error creating service:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -307,6 +329,9 @@ exports.getAllServiceUsage = async (req, res) => {
 // @access  Private/Admin
 exports.reviewServiceUsage = async (req, res) => {
   try {
+    console.log('Reviewing service usage with data:', req.body);
+    console.log('Request files:', req.files);
+
     const { status, reviewNotes } = req.body;
     const usage = await ServiceUsage.findById(req.params.id);
 
@@ -322,14 +347,23 @@ exports.reviewServiceUsage = async (req, res) => {
     usage.reviewedBy = req.user.id;
     usage.reviewedAt = Date.now();
 
+    // Handle invoice image uploads
+    if (req.files && req.files.length > 0) {
+      const invoiceImages = req.files.map(file => `/uploads/services/${file.filename}`);
+      usage.invoiceImages = [...(usage.invoiceImages || []), ...invoiceImages];
+    }
+
     await usage.save();
 
     // If approved, add points to user and update service usage count
     if (status === 'approved') {
-      const user = await User.findById(usage.user);
-      if (user) {
-        user.points = (user.points || 0) + usage.pointsEarned;
-        await user.save();
+      // Only add points if user is logged in (not a guest)
+      if (usage.user) {
+        const user = await User.findById(usage.user);
+        if (user) {
+          user.points = (user.points || 0) + usage.pointsEarned;
+          await user.save();
+        }
       }
 
       const service = await Service.findById(usage.service);

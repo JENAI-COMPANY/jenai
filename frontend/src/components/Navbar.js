@@ -170,6 +170,14 @@ const Navbar = () => {
                 </li>
               )}
 
+              {user?.role === 'super_admin' && (
+                <li className="nav-item">
+                  <Link to="/suppliers" className="nav-link">
+                    {language === 'ar' ? 'الموردين' : 'Suppliers'}
+                  </Link>
+                </li>
+              )}
+
               <li className="nav-item">
                 <Link to="/cart" className="nav-link">
                   {t('cart')} ({getCartCount()})

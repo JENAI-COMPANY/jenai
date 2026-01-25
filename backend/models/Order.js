@@ -103,9 +103,23 @@ const orderSchema = new mongoose.Schema({
   deliveredAt: {
     type: Date
   },
+  isCancelled: {
+    type: Boolean,
+    default: false
+  },
+  cancelledAt: {
+    type: Date
+  },
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  cancellationReason: {
+    type: String
+  },
   status: {
     type: String,
-    enum: ['pending', 'prepared', 'on_the_way', 'received'],
+    enum: ['pending', 'prepared', 'on_the_way', 'received', 'cancelled'],
     default: 'pending'
   },
   // Order tracking
@@ -132,7 +146,14 @@ const orderSchema = new mongoose.Schema({
     specifications: String,
     depositAmount: Number,
     remainingAmount: Number,
-    requestedDeliveryDate: Date
+    requestedDeliveryDate: Date,
+    additionalNotes: String,
+    adminResponse: String,
+    confirmedPrice: Number,
+    isConfirmed: {
+      type: Boolean,
+      default: false
+    }
   },
   // Network marketing commission tracking
   commissions: [{

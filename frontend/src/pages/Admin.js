@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import {
   getProducts,
   getAllOrders,
@@ -24,6 +25,8 @@ import ProfitCalculation from '../components/ProfitCalculation';
 import '../styles/Admin.css';
 
 const Admin = () => {
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin = user?.role === 'super_admin';
   const [activeTab, setActiveTab] = useState('statistics');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -633,7 +636,7 @@ const Admin = () => {
                 </thead>
                 <tbody>
                   {products.map((product) => (
-                    <tr key={product._id}>
+                    <tr key={product.id || product._id}>
                       <td>{product.name}</td>
                       <td>{product.category}</td>
                       <td>${product.price}</td>

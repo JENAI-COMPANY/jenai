@@ -8,6 +8,7 @@ exports.getSliders = async (req, res) => {
     const sliders = await Slider.find({ isActive: true }).sort({ order: 1 });
     res.json({ sliders });
   } catch (error) {
+    console.error('Error getting sliders:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -18,6 +19,7 @@ exports.getAllSliders = async (req, res) => {
     const sliders = await Slider.find().sort({ order: 1 });
     res.json({ sliders });
   } catch (error) {
+    console.error('Error getting all sliders:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -29,17 +31,19 @@ exports.createSlider = async (req, res) => {
       return res.status(400).json({ message: 'Please upload an image' });
     }
 
-    const { alt, order } = req.body;
+    const { title, description, order } = req.body;
 
-    const slider = new Slider({
-      image: `/uploads/${req.file.filename}`,
-      alt: alt || 'Slider image',
-      order: order || 0
+    const slider = await Slider.create({
+      image: `/uploads/sliders/${req.file.filename}`,
+      title: title || '',
+      description: description || '',
+      order: order || 0,
+      isActive: true
     });
 
-    await slider.save();
     res.status(201).json({ message: 'Slider image created successfully', slider });
   } catch (error) {
+    console.error('Error creating slider:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -48,7 +52,7 @@ exports.createSlider = async (req, res) => {
 exports.updateSlider = async (req, res) => {
   try {
     const { id } = req.params;
-    const { alt, order, isActive } = req.body;
+    const { title, description, order, isActive } = req.body;
 
     const slider = await Slider.findById(id);
     if (!slider) {
@@ -56,7 +60,8 @@ exports.updateSlider = async (req, res) => {
     }
 
     // Update fields
-    if (alt !== undefined) slider.alt = alt;
+    if (title !== undefined) slider.title = title;
+    if (description !== undefined) slider.description = description;
     if (order !== undefined) slider.order = order;
     if (isActive !== undefined) slider.isActive = isActive;
 
@@ -67,12 +72,13 @@ exports.updateSlider = async (req, res) => {
       if (fs.existsSync(oldImagePath)) {
         fs.unlinkSync(oldImagePath);
       }
-      slider.image = `/uploads/${req.file.filename}`;
+      slider.image = `/uploads/sliders/${req.file.filename}`;
     }
 
     await slider.save();
     res.json({ message: 'Slider updated successfully', slider });
   } catch (error) {
+    console.error('Error updating slider:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -93,9 +99,10 @@ exports.deleteSlider = async (req, res) => {
       fs.unlinkSync(imagePath);
     }
 
-    await Slider.findByIdAndDelete(id);
+    await slider.deleteOne();
     res.json({ message: 'Slider deleted successfully' });
   } catch (error) {
+    console.error('Error deleting slider:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

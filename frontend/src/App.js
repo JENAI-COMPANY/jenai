@@ -27,6 +27,7 @@ import Profile from './pages/Profile';
 import ServicesManagement from './pages/ServicesManagement';
 import Library from './pages/Library';
 import SupplierDashboard from './pages/SupplierDashboard';
+import SupplierManagement from './components/SupplierManagement';
 import ReturnPolicy from './pages/ReturnPolicy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
@@ -112,7 +113,7 @@ function App() {
                 <Route
                   path="/admin"
                   element={
-                    <PrivateRoute roles={['admin']}>
+                    <PrivateRoute roles={['regional_admin', 'super_admin']}>
                       <Admin />
                     </PrivateRoute>
                   }
@@ -120,7 +121,7 @@ function App() {
                 <Route
                   path="/services-management"
                   element={
-                    <PrivateRoute roles={['admin']}>
+                    <PrivateRoute roles={['regional_admin', 'super_admin']}>
                       <ServicesManagement />
                     </PrivateRoute>
                   }
@@ -142,9 +143,17 @@ function App() {
                   }
                 />
                 <Route
+                  path="/suppliers"
+                  element={
+                    <PrivateRoute roles={['super_admin']}>
+                      <SupplierManagement />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
                   path="/profit-periods"
                   element={
-                    <PrivateRoute roles={['admin', 'super_admin']}>
+                    <PrivateRoute roles={['super_admin']}>
                       <ProfitPeriods />
                     </PrivateRoute>
                   }

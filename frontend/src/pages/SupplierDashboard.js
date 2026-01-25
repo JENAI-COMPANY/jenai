@@ -270,7 +270,7 @@ const SupplierDashboard = () => {
               </thead>
               <tbody>
                 {filteredProducts.map((product) => (
-                  <tr key={product._id}>
+                  <tr key={product.id || product._id}>
                     <td>{product.name}</td>
                     <td><span className="badge">{product.category}</span></td>
                     <td>${product.price}</td>

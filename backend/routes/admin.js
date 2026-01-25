@@ -33,6 +33,7 @@ router.get('/users', protect, isAdmin, async (req, res) => {
     const users = await User.find(query)
       .select('-password')
       .populate('sponsorId', 'name subscriberId subscriberCode')
+      .populate('region', 'name nameAr nameEn code')
       .sort('-createdAt');
 
     res.json({
@@ -199,19 +200,38 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
     }
 
     // Update other allowed fields
-    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission'];
+    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'profitPoints'];
+
+    console.log('🔍 req.body.region:', req.body.region);
+    console.log('🔍 user.region before update:', user.region);
 
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
-        user[field] = req.body[field];
+        // Handle empty string for region (convert to null to unassign)
+        if (field === 'region' && req.body[field] === '') {
+          user[field] = null;
+          console.log('✏️ Clearing region (setting to null)');
+        } else {
+          user[field] = req.body[field];
+          if (field === 'region') {
+            console.log('✏️ Setting region to:', req.body[field]);
+          }
+        }
       }
     });
 
+    console.log('🔍 user.region after update:', user.region);
+
     await user.save();
+
+    console.log('💾 User saved. Region value:', user.region);
 
     const updatedUser = await User.findById(user._id)
       .select('-password')
-      .populate('sponsorId', 'name subscriberId subscriberCode');
+      .populate('sponsorId', 'name subscriberId subscriberCode')
+      .populate('region', 'name nameAr nameEn code');
+
+    console.log('📤 Updated user region after populate:', updatedUser.region);
 
     res.json({
       success: true,
@@ -230,7 +250,7 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
 // @access  Private/Super Admin Only
 router.put('/users/:id/role', protect, isSuperAdmin, async (req, res) => {
   try {
-    const { role } = req.body;
+    const { role, sponsorCode } = req.body;
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -241,7 +261,7 @@ router.put('/users/:id/role', protect, isSuperAdmin, async (req, res) => {
     }
 
     // Validate role
-    const validRoles = ['customer', 'subscriber', 'regional_admin', 'super_admin'];
+    const validRoles = ['customer', 'member', 'regional_admin', 'super_admin'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
@@ -249,13 +269,74 @@ router.put('/users/:id/role', protect, isSuperAdmin, async (req, res) => {
       });
     }
 
+    // إذا كان التحويل من customer إلى member، يجب وجود كود إحالة
+    if (user.role === 'customer' && role === 'member') {
+      if (!sponsorCode || sponsorCode.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: 'كود الإحالة مطلوب عند تحويل عميل إلى عضو',
+          messageAr: 'كود الإحالة مطلوب عند تحويل عميل إلى عضو'
+        });
+      }
+
+      // البحث عن الراعي بواسطة كود الإحالة
+      const sponsor = await User.findOne({ subscriberCode: sponsorCode.toUpperCase() });
+
+      if (!sponsor) {
+        return res.status(400).json({
+          success: false,
+          message: 'كود الإحالة غير صحيح',
+          messageAr: 'كود الإحالة غير صحيح'
+        });
+      }
+
+      if (sponsor.role !== 'member' && sponsor.role !== 'super_admin' && sponsor.role !== 'regional_admin') {
+        return res.status(400).json({
+          success: false,
+          message: 'الراعي يجب أن يكون عضواً',
+          messageAr: 'الراعي يجب أن يكون عضواً'
+        });
+      }
+
+      // تعيين الراعي
+      user.sponsorId = sponsor._id;
+
+      // إنشاء كود إحالة للعضو الجديد
+      user.subscriberCode = await User.generateSubscriberCode(user.country, user.city);
+
+      // إضافة العضو لقائمة downline الخاصة بالراعي
+      await User.findByIdAndUpdate(sponsor._id, {
+        $addToSet: { downline: user._id }
+      });
+
+      // ضبط الرتبة الابتدائية للعضو الجديد
+      user.memberRank = 'agent'; // أول رتبة
+    }
+
+    // إذا كان التحويل من member إلى customer، إزالة بيانات العضوية
+    if (user.role === 'member' && role === 'customer') {
+      user.memberRank = undefined;
+      user.subscriberCode = undefined;
+      user.sponsorId = undefined;
+      user.downline = [];
+      user.points = 0;
+      user.monthlyPoints = 0;
+      user.totalCommission = 0;
+      user.availableCommission = 0;
+    }
+
     user.role = role;
     await user.save();
+
+    const updatedUser = await User.findById(user._id)
+      .select('-password')
+      .populate('sponsorId', 'name subscriberCode');
 
     res.json({
       success: true,
       message: 'Role updated successfully',
-      data: user
+      messageAr: 'تم تحديث الدور بنجاح',
+      data: updatedUser
     });
   } catch (error) {
     res.status(500).json({
@@ -267,8 +348,8 @@ router.put('/users/:id/role', protect, isSuperAdmin, async (req, res) => {
 
 // @route   DELETE /api/admin/users/:id
 // @desc    Delete user
-// @access  Private/Super Admin Only
-router.delete('/users/:id', protect, isSuperAdmin, async (req, res) => {
+// @access  Private/Admin (Super Admin can delete any, Regional Admin can delete users in their region)
+router.delete('/users/:id', protect, isAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -287,7 +368,28 @@ router.delete('/users/:id', protect, isSuperAdmin, async (req, res) => {
       });
     }
 
-    await user.remove();
+    // Prevent deleting regional admin (only super admin can)
+    if (user.role === 'regional_admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only super admin can delete regional admins'
+      });
+    }
+
+    // Regional admin can only delete users in their region
+    if (req.user.role === 'regional_admin') {
+      const adminRegion = req.user.region?.toString() || req.user.regionId?.toString();
+      const userRegion = user.region?.toString() || user.regionId?.toString();
+
+      if (!adminRegion || !userRegion || adminRegion !== userRegion) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete users in your region'
+        });
+      }
+    }
+
+    await user.deleteOne();
 
     res.json({
       success: true,
@@ -306,10 +408,56 @@ router.delete('/users/:id', protect, isSuperAdmin, async (req, res) => {
 // @access  Private/Admin
 router.post('/users', protect, isAdmin, async (req, res) => {
   try {
-    const { username, name, password, phone, country, city, role, sponsorCode } = req.body;
+    console.log('=== Creating user ===');
+    console.log('Request body:', req.body);
+
+    const { username, name, password, phone, country, city, role, sponsorCode, region, companyName, taxId } = req.body;
+
+    console.log('Extracted username:', username, 'Type:', typeof username);
+    console.log('Extracted name:', name, 'Type:', typeof name);
+    console.log('Extracted password:', password, 'Type:', typeof password);
+
+    // Validate required fields
+    if (!username || !name || !password) {
+      console.log('Missing required fields');
+      return res.status(400).json({
+        success: false,
+        message: 'يرجى ملء جميع الحقول المطلوبة'
+      });
+    }
+
+    // Validate city and country are required (for referral code generation)
+    if (!country || !country.trim()) {
+      console.log('Missing country');
+      return res.status(400).json({
+        success: false,
+        message: 'الدولة مطلوبة',
+        messageEn: 'Country is required'
+      });
+    }
+
+    if (!city || !city.trim()) {
+      console.log('Missing city');
+      return res.status(400).json({
+        success: false,
+        message: 'المدينة مطلوبة',
+        messageEn: 'City is required'
+      });
+    }
+
+    // Clean and validate username (must be string)
+    console.log('About to clean username...');
+    const cleanUsername = String(username).trim();
+    console.log('Clean username:', cleanUsername);
+    if (!cleanUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'اسم المستخدم غير صالح'
+      });
+    }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    const existingUser = await User.findOne({ username: cleanUsername.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -318,7 +466,7 @@ router.post('/users', protect, isAdmin, async (req, res) => {
     }
 
     // Validate role
-    const validRoles = ['customer', 'member', 'supplier'];
+    const validRoles = ['customer', 'member', 'supplier', 'regional_admin'];
     if (role && !validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
@@ -327,14 +475,39 @@ router.post('/users', protect, isAdmin, async (req, res) => {
     }
 
     const userData = {
-      username: username.toLowerCase(),
+      username: cleanUsername.toLowerCase(),
       name,
       password,
-      phone,
-      country,
-      city,
+      phone: phone || '',
+      country: country || '',
+      city: city || '',
       role: role || 'customer'
     };
+
+    // Add companyName and taxNumber for suppliers
+    if (role === 'supplier') {
+      if (companyName) userData.companyName = companyName;
+      if (taxId) userData.taxNumber = taxId;  // Note: frontend sends taxId, but model uses taxNumber
+    }
+
+    // Add region for regional_admin
+    if (role === 'regional_admin' && region) {
+      userData.region = region;
+      userData.managedRegions = [region]; // Add to managed regions
+    }
+
+    // تصنيف تلقائي للمستخدمين حسب منطقة الادمن
+    // إذا كان الادمن الذي يضيف المستخدم هو regional_admin، يتم تصنيف المستخدم من نفس منطقة الادمن
+    if (req.user.role === 'regional_admin' && (role === 'member' || role === 'customer')) {
+      if (req.user.region) {
+        userData.region = req.user.region;
+      }
+    }
+
+    // إذا تم تحديد منطقة يدوياً من الـ frontend، نستخدمها (أولوية للاختيار اليدوي)
+    if (region && (role === 'member' || role === 'customer')) {
+      userData.region = region;
+    }
 
     // Handle sponsor for member role
     if (role === 'member' && sponsorCode) {
@@ -360,6 +533,14 @@ router.post('/users', protect, isAdmin, async (req, res) => {
     // Create user
     const newUser = await User.create(userData);
 
+    // Update region with regional admin
+    if (role === 'regional_admin' && region) {
+      const Region = require('../models/Region');
+      await Region.findByIdAndUpdate(region, {
+        regionalAdmin: newUser._id
+      });
+    }
+
     // Generate subscriber code for members
     if (role === 'member') {
       newUser.subscriberCode = await User.generateSubscriberCode(country, city);
@@ -383,9 +564,12 @@ router.post('/users', protect, isAdmin, async (req, res) => {
       data: userResponse
     });
   } catch (error) {
+    console.error('Error creating user:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -778,38 +962,74 @@ router.post('/profits/calculate', protect, isSuperAdmin, async (req, res) => {
 
       if (orderCount > 0 || profitAmount > 0) {
         membersProfits.push({
-          member: member._id,
-          name: member.name,
+          memberId: member._id,
+          memberName: member.name,
           username: member.username,
+          memberRank: member.rank || 0,
+          rankName: member.rankName || 'عضو',
+          rankNameEn: member.rankNameEn || 'Member',
+          points: {
+            personal: pointsEarned,
+            generation1: 0,
+            generation2: 0,
+            generation3: 0,
+            generation4: 0,
+            generation5: 0,
+            total: pointsEarned
+          },
+          commissions: {
+            performance: {
+              totalPoints: pointsEarned,
+              totalInShekel: pointsEarned * 0.55
+            },
+            leadership: {
+              totalCommissionPoints: 0,
+              commissionInShekel: 0,
+              hasLeadershipCommission: false
+            }
+          },
+          profit: {
+            performanceProfit: commissionEarned,
+            leadershipProfit: 0,
+            totalProfit: profitAmount,
+            conversionRate: 0.55
+          },
+          // Keep these for backward compatibility with frontend
           subscriberCode: member.subscriberCode,
           totalOrders: orderCount,
           totalSales: salesVolume,
           totalPoints: pointsEarned,
           totalCommission: commissionEarned,
-          profitAmount: profitAmount,
-          details: {
-            orderCount,
-            salesVolume,
-            pointsEarned,
-            commissionEarned,
-            downlineCount,
-            downlineSales
-          }
+          profitAmount: profitAmount
         });
 
         totalProfits += profitAmount;
       }
     }
 
+    // Get the next period number
+    const lastPeriod = await ProfitPeriod.findOne().sort({ periodNumber: -1 });
+    const nextPeriodNumber = lastPeriod ? lastPeriod.periodNumber + 1 : 1;
+
+    // Create period name
+    const periodName = `فترة ${nextPeriodNumber} - ${start.toLocaleDateString('ar-EG')} إلى ${end.toLocaleDateString('ar-EG')}`;
+
     // Create profit period record
     const profitPeriod = await ProfitPeriod.create({
+      periodName,
+      periodNumber: nextPeriodNumber,
       startDate: start,
       endDate: end,
-      status: 'calculated',
+      status: 'finalized',
       calculatedBy: req.user._id,
+      calculatedByName: req.user.name,
       totalProfits,
       totalMembers: membersProfits.length,
-      membersProfits
+      membersProfits,
+      summary: {
+        totalMembers: membersProfits.length,
+        totalProfits: totalProfits
+      }
     });
 
     res.json({
@@ -839,14 +1059,14 @@ router.put('/profits/:id/close', protect, isSuperAdmin, async (req, res) => {
       });
     }
 
-    if (profitPeriod.status === 'closed') {
+    if (profitPeriod.status === 'paid') {
       return res.status(400).json({
         success: false,
         message: 'الفترة مغلقة بالفعل'
       });
     }
 
-    profitPeriod.status = 'closed';
+    profitPeriod.status = 'paid';
     await profitPeriod.save();
 
     res.json({
@@ -890,7 +1110,7 @@ router.get('/profits/:id', protect, isSuperAdmin, async (req, res) => {
   try {
     const profitPeriod = await ProfitPeriod.findById(req.params.id)
       .populate('calculatedBy', 'name username')
-      .populate('membersProfits.member', 'name username subscriberCode');
+      .populate('membersProfits.memberId', 'name username subscriberCode');
 
     if (!profitPeriod) {
       return res.status(404).json({
@@ -1153,6 +1373,518 @@ router.get('/users/:id/rank-info', protect, isAdmin, async (req, res) => {
         },
         nextRank: nextRankInfo
       }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// ==========================================
+// إدارة الفروع (Regions Management)
+// ==========================================
+
+const Region = require('../models/Region');
+
+// @route   GET /api/admin/regions
+// @desc    Get all regions with statistics
+// @access  Private/SuperAdmin
+router.get('/regions', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const regions = await Region.find()
+      .populate('regionalAdmin', 'name email phone')
+      .sort({ createdAt: -1 });
+
+    // إضافة إحصائيات لكل فرع
+    const regionsWithStats = await Promise.all(
+      regions.map(async (region) => {
+        const members = await User.countDocuments({ region: region._id });
+        const products = await Product.countDocuments({
+          $or: [
+            { region: region._id },
+            { 'regionalPricing.region': region._id }
+          ]
+        });
+        const orders = await Order.countDocuments({ 'user': { $in: await User.find({ region: region._id }).distinct('_id') } });
+
+        return {
+          ...region.toObject(),
+          stats: {
+            ...region.stats,
+            totalMembers: members,
+            totalProducts: products,
+            totalOrders: orders
+          }
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      count: regionsWithStats.length,
+      regions: regionsWithStats
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   POST /api/admin/regions
+// @desc    Create new region
+// @access  Private/SuperAdmin
+router.post('/regions', protect, isSuperAdmin, async (req, res) => {
+  try {
+    console.log('📥 Full req.body:', req.body);
+    const { name, nameAr, nameEn, code, description, regionalAdmin, settings, contactInfo } = req.body;
+
+    console.log('📥 Extracted region data:', { name, nameAr, nameEn, code, description, regionalAdmin });
+
+    // التحقق من عدم وجود فرع بنفس الكود
+    const existingRegion = await Region.findOne({ code: code.toUpperCase() });
+    if (existingRegion) {
+      return res.status(400).json({
+        success: false,
+        message: 'Region code already exists'
+      });
+    }
+
+    console.log('🔨 Creating region with:', { name, nameAr, nameEn, code: code.toUpperCase() });
+
+    const region = await Region.create({
+      name,
+      nameAr,
+      nameEn,
+      code: code.toUpperCase(),
+      description,
+      regionalAdmin,
+      settings,
+      contactInfo
+    });
+
+    console.log('✅ Region created successfully:', region._id);
+
+    // تحديث المسؤول الإقليمي
+    if (regionalAdmin) {
+      await User.findByIdAndUpdate(regionalAdmin, {
+        role: 'regional_admin',
+        region: region._id,
+        $addToSet: { managedRegions: region._id }
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      region
+    });
+  } catch (error) {
+    console.error('❌ Error creating region:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   PUT /api/admin/regions/:id
+// @desc    Update region
+// @access  Private/SuperAdmin
+router.put('/regions/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const region = await Region.findById(req.params.id);
+
+    if (!region) {
+      return res.status(404).json({
+        success: false,
+        message: 'Region not found'
+      });
+    }
+
+    const {
+      name,
+      nameAr,
+      nameEn,
+      code,
+      description,
+      regionalAdmin,
+      isActive,
+      settings,
+      contactInfo
+    } = req.body;
+
+    if (name) region.name = name;
+    if (nameAr) region.nameAr = nameAr;
+    if (nameEn) region.nameEn = nameEn;
+    if (code) region.code = code.toUpperCase();
+    if (description !== undefined) region.description = description;
+    if (isActive !== undefined) region.isActive = isActive;
+    if (settings) region.settings = { ...region.settings, ...settings };
+    if (contactInfo) region.contactInfo = { ...region.contactInfo, ...contactInfo };
+
+    // تحديث المسؤول الإقليمي
+    if (regionalAdmin && regionalAdmin !== region.regionalAdmin?.toString()) {
+      // إزالة من المسؤول القديم
+      if (region.regionalAdmin) {
+        await User.findByIdAndUpdate(region.regionalAdmin, {
+          $pull: { managedRegions: region._id }
+        });
+      }
+
+      // إضافة للمسؤول الجديد
+      await User.findByIdAndUpdate(regionalAdmin, {
+        role: 'regional_admin',
+        region: region._id,
+        $addToSet: { managedRegions: region._id }
+      });
+
+      region.regionalAdmin = regionalAdmin;
+    }
+
+    const updatedRegion = await region.save();
+
+    res.json({
+      success: true,
+      region: updatedRegion
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/admin/regions/:id
+// @desc    Delete region
+// @access  Private/SuperAdmin
+router.delete('/regions/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const region = await Region.findById(req.params.id);
+
+    if (!region) {
+      return res.status(404).json({
+        success: false,
+        message: 'Region not found'
+      });
+    }
+
+    // التحقق من عدم وجود مستخدمين أو منتجات
+    const usersCount = await User.countDocuments({ region: region._id });
+    const productsCount = await Product.countDocuments({ region: region._id });
+
+    if (usersCount > 0 || productsCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete region. It has ${usersCount} users and ${productsCount} products.`,
+        usersCount,
+        productsCount
+      });
+    }
+
+    await region.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Region deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/admin/regions/:id/products
+// @desc    Get products for a specific region
+// @access  Private/Admin
+router.get('/regions/:id/products', protect, isAdmin, async (req, res) => {
+  try {
+    const region = await Region.findById(req.params.id);
+
+    if (!region) {
+      return res.status(404).json({
+        success: false,
+        message: 'Region not found'
+      });
+    }
+
+    const products = await Product.find({
+      $or: [
+        { region: region._id },
+        { isGlobal: true },
+        { 'regionalPricing.region': region._id }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: products.length,
+      products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/admin/regions/:id/members
+// @desc    Get members for a specific region
+// @access  Private/Admin
+router.get('/regions/:id/members', protect, isAdmin, async (req, res) => {
+  try {
+    const region = await Region.findById(req.params.id);
+
+    if (!region) {
+      return res.status(404).json({
+        success: false,
+        message: 'Region not found'
+      });
+    }
+
+    const members = await User.find({ region: region._id })
+      .select('-password')
+      .populate('sponsorId', 'name subscriberCode')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: members.length,
+      members
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// ==========================================
+// إدارة المنتجات حسب الفروع
+// ==========================================
+
+// @route   POST /api/admin/products/regional-pricing
+// @desc    Add regional pricing to a product
+// @access  Private/SuperAdmin
+router.post('/products/:productId/regional-pricing', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    const { region, customerPrice, memberPrice, wholesalePrice, bulkPrice, stock, isActive } = req.body;
+
+    // التحقق من وجود الفرع
+    const regionExists = await Region.findById(region);
+    if (!regionExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Region not found'
+      });
+    }
+
+    // التحقق من عدم وجود سعر لهذا الفرع مسبقاً
+    const existingPricing = product.regionalPricing?.find(
+      rp => rp.region.toString() === region
+    );
+
+    if (existingPricing) {
+      return res.status(400).json({
+        success: false,
+        message: 'Regional pricing for this region already exists. Use PUT to update.'
+      });
+    }
+
+    // إضافة السعر الإقليمي
+    if (!product.regionalPricing) {
+      product.regionalPricing = [];
+    }
+
+    product.regionalPricing.push({
+      region,
+      customerPrice,
+      memberPrice,
+      wholesalePrice,
+      bulkPrice,
+      stock: stock || 0,
+      isActive: isActive !== undefined ? isActive : true
+    });
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: 'Regional pricing added successfully',
+      product
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   PUT /api/admin/products/:productId/regional-pricing/:regionId
+// @desc    Update regional pricing for a product
+// @access  Private/SuperAdmin
+router.put('/products/:productId/regional-pricing/:regionId', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    const { customerPrice, memberPrice, wholesalePrice, bulkPrice, stock, isActive } = req.body;
+
+    // العثور على السعر الإقليمي وتحديثه
+    const pricingIndex = product.regionalPricing?.findIndex(
+      rp => rp.region.toString() === req.params.regionId
+    );
+
+    if (pricingIndex === -1 || pricingIndex === undefined) {
+      return res.status(404).json({
+        success: false,
+        message: 'Regional pricing not found for this region'
+      });
+    }
+
+    if (customerPrice !== undefined) product.regionalPricing[pricingIndex].customerPrice = customerPrice;
+    if (memberPrice !== undefined) product.regionalPricing[pricingIndex].memberPrice = memberPrice;
+    if (wholesalePrice !== undefined) product.regionalPricing[pricingIndex].wholesalePrice = wholesalePrice;
+    if (bulkPrice !== undefined) product.regionalPricing[pricingIndex].bulkPrice = bulkPrice;
+    if (stock !== undefined) product.regionalPricing[pricingIndex].stock = stock;
+    if (isActive !== undefined) product.regionalPricing[pricingIndex].isActive = isActive;
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: 'Regional pricing updated successfully',
+      product
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/admin/products/:productId/regional-pricing/:regionId
+// @desc    Remove regional pricing from a product
+// @access  Private/SuperAdmin
+router.delete('/products/:productId/regional-pricing/:regionId', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    // إزالة السعر الإقليمي
+    product.regionalPricing = product.regionalPricing?.filter(
+      rp => rp.region.toString() !== req.params.regionId
+    );
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: 'Regional pricing removed successfully',
+      product
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/admin/regions/statistics
+// @desc    Get comprehensive statistics for all regions
+// @access  Private/SuperAdmin
+router.get('/regions/statistics', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const regions = await Region.find();
+
+    const statistics = await Promise.all(
+      regions.map(async (region) => {
+        // إحصائيات الأعضاء
+        const totalMembers = await User.countDocuments({ region: region._id });
+        const activeMembers = await User.countDocuments({
+          region: region._id,
+          isActive: true
+        });
+
+        // إحصائيات المنتجات
+        const totalProducts = await Product.countDocuments({
+          $or: [
+            { region: region._id },
+            { 'regionalPricing.region': region._id }
+          ]
+        });
+
+        // إحصائيات الطلبات
+        const regionUsers = await User.find({ region: region._id }).distinct('_id');
+        const orders = await Order.find({ user: { $in: regionUsers } });
+        const totalOrders = orders.length;
+        const totalRevenue = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+
+        // أفضل الأعضاء
+        const topMembers = await User.find({ region: region._id })
+          .sort({ points: -1 })
+          .limit(5)
+          .select('name points memberRank');
+
+        return {
+          region: {
+            _id: region._id,
+            name: region.name,
+            nameAr: region.nameAr,
+            code: region.code
+          },
+          members: {
+            total: totalMembers,
+            active: activeMembers,
+            inactive: totalMembers - activeMembers
+          },
+          products: {
+            total: totalProducts
+          },
+          orders: {
+            total: totalOrders,
+            revenue: totalRevenue,
+            averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0
+          },
+          topMembers
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      statistics
     });
   } catch (error) {
     res.status(500).json({

@@ -14,6 +14,7 @@ const {
   getServiceCategories
 } = require('../controllers/serviceController');
 const { protect, authorize, optionalAuth } = require('../middleware/auth');
+const uploadService = require('../middleware/uploadService');
 
 // Public routes
 router.get('/', getAllServices);
@@ -28,10 +29,10 @@ router.get('/usage/my-usage', protect, getMyServiceUsage);
 router.post('/:id/usage', optionalAuth, submitServiceUsage);
 
 // Admin routes
-router.post('/', protect, authorize('super_admin', 'regional_admin'), createService);
-router.put('/:id', protect, authorize('super_admin', 'regional_admin'), updateService);
+router.post('/', protect, authorize('super_admin', 'regional_admin'), uploadService.array('images', 5), createService);
+router.put('/:id', protect, authorize('super_admin', 'regional_admin'), uploadService.array('images', 5), updateService);
 router.delete('/:id', protect, authorize('super_admin', 'regional_admin'), deleteService);
 router.get('/usage/all', protect, authorize('super_admin', 'regional_admin'), getAllServiceUsage);
-router.put('/usage/:id/review', protect, authorize('super_admin', 'regional_admin'), reviewServiceUsage);
+router.put('/usage/:id/review', protect, authorize('super_admin', 'regional_admin'), uploadService.array('invoiceImages', 5), reviewServiceUsage);
 
 module.exports = router;

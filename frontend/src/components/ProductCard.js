@@ -11,10 +11,16 @@ const ProductCard = ({ product }) => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
 
-  const hasDiscount = product.subscriberPrice < product.price;
-  const discountPercentage = hasDiscount
-    ? Math.round(((product.price - product.subscriberPrice) / product.price) * 100)
-    : 0;
+  // التحقق من الخصم للعملاء العاديين
+  const hasCustomerDiscount = product.customerDiscount?.enabled || false;
+  const customerDiscountPercentage = product.customerDiscount?.discountPercentage || 0;
+
+  // التحقق من الخصم للأعضاء
+  const hasSubscriberDiscount = product.subscriberDiscount?.enabled || false;
+  const subscriberDiscountPercentage = product.subscriberDiscount?.discountPercentage || 0;
+
+  // التحقق من نفاد المخزون
+  const isOutOfStock = product.isOutOfStock || product.stock === 0;
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
@@ -22,7 +28,7 @@ const ProductCard = ({ product }) => {
     // Check if user is authenticated
     if (!isAuthenticated) {
       // Store the current product page URL to return after login
-      localStorage.setItem('returnUrl', `/products/${product._id}`);
+      localStorage.setItem('returnUrl', `/products/${product.id || product._id}`);
       navigate('/login');
       return;
     }
@@ -31,6 +37,7 @@ const ProductCard = ({ product }) => {
       alert(language === 'ar' ? 'المنتج غير متوفر حالياً' : 'Product out of stock');
       return;
     }
+
     addToCart(product);
     alert(language === 'ar' ? 'تمت إضافة المنتج إلى السلة!' : 'Product added to cart!');
   };
@@ -48,35 +55,46 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="product-card" onClick={() => navigate(`/products/${product._id}`)}>
+    <div className="product-card" onClick={() => navigate(`/products/${product.id || product._id}`)}>
       {/* Badges */}
       <div className="badges-container">
-        {product.isNewArrival && (
+        {/* نفاد المخزون - أعلى أولوية */}
+        {isOutOfStock && (
+          <div className="badge out-of-stock-badge">
+            {language === 'ar' ? 'نفذ من المخزون' : 'Out of Stock'}
+          </div>
+        )}
+
+        {/* خصم العملاء العاديين */}
+        {!isOutOfStock && hasCustomerDiscount && !(isMember || isAdmin) && (
+          <div className="badge discount-badge customer-discount">
+            {language === 'ar' ? `خصم ${customerDiscountPercentage}%` : `${customerDiscountPercentage}% OFF`}
+          </div>
+        )}
+
+        {/* خصم الأعضاء */}
+        {!isOutOfStock && hasSubscriberDiscount && (isMember || isAdmin) && (
+          <div className="badge discount-badge subscriber-discount">
+            {language === 'ar' ? `خصم ${subscriberDiscountPercentage}%` : `${subscriberDiscountPercentage}% OFF`}
+          </div>
+        )}
+
+        {/* وصل حديثاً */}
+        {!isOutOfStock && product.isNewArrival && (
           <div className="badge new-arrival-badge">
             {language === 'ar' ? 'وصل حديثاً' : 'New Arrival'}
           </div>
         )}
-        {product.isOnSale && (
+
+        {/* عرض خاص */}
+        {!isOutOfStock && product.isOnSale && (
           <div className="badge sale-badge">
             {language === 'ar' ? 'عرض خاص' : 'Sale'}
           </div>
         )}
-        {hasDiscount && !(isMember || isAdmin) && (
-          <div className="badge subscriber-badge">
-            {language === 'ar' ? `خصم ${discountPercentage}%` : `${discountPercentage}% OFF`}
-          </div>
-        )}
-        {(isMember || isAdmin) && hasDiscount && (
-          <div className="badge subscriber-badge active">
-            {language === 'ar' ? `توفير ${discountPercentage}%` : `Save ${discountPercentage}%`}
-          </div>
-        )}
-        {product.stock <= 0 && (
-          <div className="badge out-of-stock-badge">
-            {language === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}
-          </div>
-        )}
-        {product.stock > 0 && product.stock < 10 && (
+
+        {/* كمية قليلة */}
+        {!isOutOfStock && product.stock > 0 && product.stock < 10 && (
           <div className="badge low-stock-badge">
             {language === 'ar' ? `باقي ${product.stock}` : `Only ${product.stock} left`}
           </div>
@@ -121,19 +139,28 @@ const ProductCard = ({ product }) => {
           <div className="product-price">
             {(isMember || isAdmin) ? (
               <>
-                <span className="price">${product.subscriberPrice.toFixed(2)}</span>
-                <span className="original-price">${product.price.toFixed(2)}</span>
+                {/* سعر الأعضاء */}
+                <span className="price">${product.subscriberPrice?.toFixed(2)}</span>
+                {hasSubscriberDiscount && (
+                  <span className="original-price">${product.subscriberDiscount.originalPrice?.toFixed(2)}</span>
+                )}
               </>
             ) : (
-              <span className="price">${product.price.toFixed(2)}</span>
+              <>
+                {/* سعر العملاء العاديين */}
+                <span className="price">${product.customerPrice?.toFixed(2)}</span>
+                {hasCustomerDiscount && (
+                  <span className="original-price">${product.customerDiscount.originalPrice?.toFixed(2)}</span>
+                )}
+              </>
             )}
           </div>
           <button
             onClick={handleAddToCart}
             className="add-to-cart-btn"
-            disabled={product.stock <= 0}
+            disabled={isOutOfStock}
           >
-            {product.stock <= 0
+            {isOutOfStock
               ? (language === 'ar' ? 'نفذت الكمية' : 'Out of Stock')
               : t('addToCart')}
           </button>

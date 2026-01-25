@@ -88,7 +88,7 @@ const ProfitCalculation = () => {
       setMessage(language === 'ar' ? 'تم إغلاق الفترة بنجاح!' : 'Period closed successfully!');
       fetchProfitPeriods();
       if (profitData && profitData._id === periodId) {
-        setProfitData({ ...profitData, status: 'closed' });
+        setProfitData({ ...profitData, status: 'paid' });
       }
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -128,8 +128,8 @@ const ProfitCalculation = () => {
     // Add period info
     doc.setFontSize(12);
     doc.text(`Period: ${new Date(periodData.startDate).toLocaleDateString()} - ${new Date(periodData.endDate).toLocaleDateString()}`, 14, 32);
-    doc.text(`Total Members: ${periodData.totalMembers}`, 14, 40);
-    doc.text(`Total Profits: $${periodData.totalProfits.toFixed(2)}`, 14, 48);
+    doc.text(`Total Members: ${periodData.totalMembers || periodData.summary?.totalMembers || 0}`, 14, 40);
+    doc.text(`Total Profits: $${(periodData.totalProfits || periodData.summary?.totalProfits || 0).toFixed(2)}`, 14, 48);
     doc.text(`Status: ${periodData.status.toUpperCase()}`, 14, 56);
 
     // Prepare table data
@@ -146,17 +146,17 @@ const ProfitCalculation = () => {
     ];
 
     const tableRows = periodData.membersProfits
-      .sort((a, b) => b.profitAmount - a.profitAmount)
+      .sort((a, b) => (b.profitAmount || 0) - (a.profitAmount || 0))
       .map((member, index) => [
         index + 1,
-        member.name,
+        member.memberName || member.name,
         member.username,
         member.subscriberCode,
-        member.totalOrders,
-        `$${member.totalSales.toFixed(2)}`,
-        member.totalPoints,
-        `$${member.totalCommission.toFixed(2)}`,
-        `$${member.profitAmount.toFixed(2)}`
+        member.totalOrders || 0,
+        `$${(member.totalSales || 0).toFixed(2)}`,
+        member.totalPoints || 0,
+        `$${(member.totalCommission || 0).toFixed(2)}`,
+        `$${(member.profitAmount || 0).toFixed(2)}`
       ]);
 
     // Generate table
@@ -238,10 +238,10 @@ const ProfitCalculation = () => {
                     {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
                   </div>
                   <div className="period-stats">
-                    <span>{language === 'ar' ? 'الأعضاء' : 'Members'}: {period.totalMembers}</span>
-                    <span>{language === 'ar' ? 'الأرباح' : 'Profits'}: ${period.totalProfits.toFixed(2)}</span>
+                    <span>{language === 'ar' ? 'الأعضاء' : 'Members'}: {period.totalMembers || period.summary?.totalMembers || 0}</span>
+                    <span>{language === 'ar' ? 'الأرباح' : 'Profits'}: ${(period.totalProfits || period.summary?.totalProfits || 0).toFixed(2)}</span>
                     <span className={`status-badge ${period.status}`}>
-                      {period.status === 'closed' ? (language === 'ar' ? 'مغلقة' : 'Closed') : (language === 'ar' ? 'محتسبة' : 'Calculated')}
+                      {period.status === 'paid' ? (language === 'ar' ? 'مغلقة' : 'Closed') : (language === 'ar' ? 'محتسبة' : 'Calculated')}
                     </span>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ const ProfitCalculation = () => {
                   <button onClick={() => handleViewPeriod(period._id)} className="view-btn">
                     👁️ {language === 'ar' ? 'عرض' : 'View'}
                   </button>
-                  {period.status !== 'closed' && (
+                  {period.status !== 'paid' && (
                     <button onClick={() => handleClosePeriod(period._id)} className="close-btn">
                       🔒 {language === 'ar' ? 'إغلاق' : 'Close'}
                     </button>
@@ -275,7 +275,7 @@ const ProfitCalculation = () => {
               <button onClick={() => exportToPDF(displayData)} className="export-btn">
                 📄 {language === 'ar' ? 'تصدير PDF' : 'Export PDF'}
               </button>
-              {displayData.status !== 'closed' && (
+              {displayData.status !== 'paid' && (
                 <button onClick={() => handleClosePeriod(displayData._id)} className="close-period-btn">
                   🔒 {language === 'ar' ? 'إغلاق الفترة' : 'Close Period'}
                 </button>
@@ -288,22 +288,22 @@ const ProfitCalculation = () => {
               <div className="summary-icon">👥</div>
               <div className="summary-content">
                 <div className="summary-label">{language === 'ar' ? 'إجمالي الأعضاء' : 'Total Members'}</div>
-                <div className="summary-value">{displayData.totalMembers}</div>
+                <div className="summary-value">{displayData.totalMembers || displayData.summary?.totalMembers || 0}</div>
               </div>
             </div>
             <div className="summary-card">
               <div className="summary-icon">💰</div>
               <div className="summary-content">
                 <div className="summary-label">{language === 'ar' ? 'إجمالي الأرباح' : 'Total Profits'}</div>
-                <div className="summary-value">${displayData.totalProfits.toFixed(2)}</div>
+                <div className="summary-value">${(displayData.totalProfits || displayData.summary?.totalProfits || 0).toFixed(2)}</div>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon">{displayData.status === 'closed' ? '🔒' : '📊'}</div>
+              <div className="summary-icon">{displayData.status === 'paid' ? '🔒' : '📊'}</div>
               <div className="summary-content">
                 <div className="summary-label">{language === 'ar' ? 'الحالة' : 'Status'}</div>
                 <div className="summary-value status-text">
-                  {displayData.status === 'closed' ? (language === 'ar' ? 'مغلقة' : 'Closed') : (language === 'ar' ? 'محتسبة' : 'Calculated')}
+                  {displayData.status === 'paid' ? (language === 'ar' ? 'مغلقة' : 'Closed') : (language === 'ar' ? 'محتسبة' : 'Calculated')}
                 </div>
               </div>
             </div>
@@ -326,20 +326,20 @@ const ProfitCalculation = () => {
               </thead>
               <tbody>
                 {displayData.membersProfits
-                  .sort((a, b) => b.profitAmount - a.profitAmount)
+                  .sort((a, b) => (b.profitAmount || 0) - (a.profitAmount || 0))
                   .map((member, index) => (
                     <tr key={member._id || index}>
                       <td>
                         <span className={`rank-number rank-${index + 1}`}>{index + 1}</span>
                       </td>
-                      <td className="member-name">{member.name}</td>
+                      <td className="member-name">{member.memberName || member.name}</td>
                       <td className="member-username">@{member.username}</td>
                       <td className="member-code">{member.subscriberCode}</td>
-                      <td className="text-center">{member.totalOrders}</td>
-                      <td className="text-right">${member.totalSales.toFixed(2)}</td>
-                      <td className="text-center points-cell">{member.totalPoints}</td>
-                      <td className="text-right commission-cell">${member.totalCommission.toFixed(2)}</td>
-                      <td className="text-right profit-cell">${member.profitAmount.toFixed(2)}</td>
+                      <td className="text-center">{member.totalOrders || 0}</td>
+                      <td className="text-right">${(member.totalSales || 0).toFixed(2)}</td>
+                      <td className="text-center points-cell">{member.totalPoints || 0}</td>
+                      <td className="text-right commission-cell">${(member.totalCommission || 0).toFixed(2)}</td>
+                      <td className="text-right profit-cell">${(member.profitAmount || 0).toFixed(2)}</td>
                     </tr>
                   ))}
               </tbody>

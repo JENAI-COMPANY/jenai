@@ -63,12 +63,31 @@
 }
 
 .out-of-stock-badge {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
+  font-weight: 800;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .low-stock-badge {
   background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  color: white;
+}
+
+/* Discount Badges */
+.discount-badge {
+  font-weight: 800;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.customer-discount {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+}
+
+.subscriber-discount {
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
   color: white;
 }
 

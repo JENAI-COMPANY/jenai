@@ -181,6 +181,68 @@
   cursor: pointer;
 }
 
+/* Discount Section Styles */
+.pm-form-section {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.pm-discount-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pm-discount-section h4::before {
+  content: '🏷️';
+  font-size: 1.3rem;
+}
+
+.pm-checkbox-group {
+  margin-bottom: 1rem;
+}
+
+.pm-checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #475569;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.pm-checkbox-group label:hover {
+  border-color: #6366f1;
+  background: #f8fafc;
+}
+
+.pm-checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+.pm-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
 .pm-form-actions {
   display: flex;
   gap: 1rem;

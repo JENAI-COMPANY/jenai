@@ -195,30 +195,35 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Social Media */}
+      {/* Social Media with Logo */}
       <div className="footer-social">
-        <h4 className="social-title">
-          {language === 'ar' ? 'تابعنا على وسائل التواصل' : 'Follow Us'}
-        </h4>
-        <div className="social-icons">
-          <a href={socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="social-icon facebook">
-            <i className="fab fa-facebook-f"></i>
-          </a>
-          <a href={socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="social-icon instagram">
-            <i className="fab fa-instagram"></i>
-          </a>
-          <a href={socialMedia.twitter} target="_blank" rel="noopener noreferrer" className="social-icon twitter">
-            <i className="fab fa-twitter"></i>
-          </a>
-          <a href={socialMedia.linkedin} target="_blank" rel="noopener noreferrer" className="social-icon linkedin">
-            <i className="fab fa-linkedin-in"></i>
-          </a>
-          <a href={socialMedia.youtube} target="_blank" rel="noopener noreferrer" className="social-icon youtube">
-            <i className="fab fa-youtube"></i>
-          </a>
-          <a href={socialMedia.whatsapp} target="_blank" rel="noopener noreferrer" className="social-icon whatsapp">
-            <i className="fab fa-whatsapp"></i>
-          </a>
+        <div className="footer-logo-container">
+          <img src="/logo2.png" alt="Jenai" className="footer-logo" />
+        </div>
+        <div className="social-content">
+          <h4 className="social-title">
+            {language === 'ar' ? 'تابعنا على وسائل التواصل' : 'Follow Us'}
+          </h4>
+          <div className="social-icons">
+            <a href={socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="social-icon facebook">
+              <i className="fab fa-facebook-f"></i>
+            </a>
+            <a href={socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="social-icon instagram">
+              <i className="fab fa-instagram"></i>
+            </a>
+            <a href={socialMedia.twitter} target="_blank" rel="noopener noreferrer" className="social-icon twitter">
+              <i className="fab fa-twitter"></i>
+            </a>
+            <a href={socialMedia.linkedin} target="_blank" rel="noopener noreferrer" className="social-icon linkedin">
+              <i className="fab fa-linkedin-in"></i>
+            </a>
+            <a href={socialMedia.youtube} target="_blank" rel="noopener noreferrer" className="social-icon youtube">
+              <i className="fab fa-youtube"></i>
+            </a>
+            <a href={socialMedia.whatsapp} target="_blank" rel="noopener noreferrer" className="social-icon whatsapp">
+              <i className="fab fa-whatsapp"></i>
+            </a>
+          </div>
         </div>
       </div>
 

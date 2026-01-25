@@ -27,12 +27,13 @@ const ProductDetail = () => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:5000/api/products/${id}`);
-      setProduct(response.data);
+      const productData = response.data.product || response.data;
+      setProduct(productData);
 
       // Fetch related products from the same category
-      if (response.data.category) {
+      if (productData.category) {
         const relatedResponse = await axios.get(
-          `http://localhost:5000/api/products?category=${response.data.category}&limit=4`
+          `http://localhost:5000/api/products?category=${productData.category}&limit=4`
         );
         const filtered = relatedResponse.data.products.filter(p => p._id !== id);
         setRelatedProducts(filtered.slice(0, 4));
@@ -229,10 +230,10 @@ const ProductDetail = () => {
             <div className="price-section">
               {isSubscriber ? (
                 <div className="subscriber-pricing">
-                  <div className="current-price">${(product.subscriberPrice || product.price || 0).toFixed(2)}</div>
-                  {hasDiscount && (
+                  <div className="current-price">${(product.subscriberPrice || 0).toFixed(2)}</div>
+                  {hasDiscount && product.subscriberDiscount?.originalPrice && (
                     <>
-                      <div className="original-price">${(product.price || 0).toFixed(2)}</div>
+                      <div className="original-price">${product.subscriberDiscount.originalPrice.toFixed(2)}</div>
                       <div className="discount-badge">
                         {language === 'ar' ? `توفير ${discountPercentage}%` : `Save ${discountPercentage}%`}
                       </div>
@@ -241,13 +242,14 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <div className="customer-pricing">
-                  <div className="current-price">${(product.price || 0).toFixed(2)}</div>
-                  {hasDiscount && product.subscriberPrice && (
-                    <div className="subscriber-hint">
-                      {language === 'ar'
-                        ? `سعر المشتركين: $${product.subscriberPrice.toFixed(2)}`
-                        : `Subscriber price: $${product.subscriberPrice.toFixed(2)}`}
-                    </div>
+                  <div className="current-price">${(product.customerPrice || 0).toFixed(2)}</div>
+                  {product.customerDiscount?.enabled && product.customerDiscount?.originalPrice && (
+                    <>
+                      <div className="original-price">${product.customerDiscount.originalPrice.toFixed(2)}</div>
+                      <div className="discount-badge">
+                        {language === 'ar' ? `توفير ${product.customerDiscount.discountPercentage}%` : `Save ${product.customerDiscount.discountPercentage}%`}
+                      </div>
+                    </>
                   )}
                 </div>
               )}

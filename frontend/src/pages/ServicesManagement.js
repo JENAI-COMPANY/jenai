@@ -11,6 +11,8 @@ const ServicesManagement = () => {
   const [loading, setLoading] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedInvoiceImages, setSelectedInvoiceImages] = useState([]);
 
   const [newService, setNewService] = useState({
     name: '',
@@ -63,7 +65,8 @@ const ServicesManagement = () => {
           instagram: newService.instagram,
           twitter: newService.twitter,
           website: newService.website
-        }
+        },
+        images: selectedImages
       };
 
       await createService(serviceData);
@@ -83,6 +86,7 @@ const ServicesManagement = () => {
         twitter: '',
         website: ''
       });
+      setSelectedImages([]);
       fetchData();
       alert(language === 'ar' ? 'تم إضافة الخدمة بنجاح' : 'Service added successfully');
     } catch (error) {
@@ -106,7 +110,11 @@ const ServicesManagement = () => {
 
   const handleReviewUsage = async (usageId, status) => {
     try {
-      await reviewServiceUsage(usageId, { status });
+      await reviewServiceUsage(usageId, {
+        status,
+        invoiceImages: selectedInvoiceImages
+      });
+      setSelectedInvoiceImages([]);
       fetchData();
       alert(language === 'ar'
         ? `تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب بنجاح`
@@ -115,6 +123,16 @@ const ServicesManagement = () => {
       console.error('Error reviewing usage:', error);
       alert(language === 'ar' ? 'فشل مراجعة الطلب' : 'Failed to review usage');
     }
+  };
+
+  const handleServiceImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedImages(files);
+  };
+
+  const handleInvoiceImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedInvoiceImages(files);
   };
 
   const handleImageClick = (imageUrl) => {
@@ -285,6 +303,20 @@ const ServicesManagement = () => {
                     />
                   </div>
 
+                  <h4>{language === 'ar' ? 'صور الخدمة' : 'Service Images'}</h4>
+                  <div className="form-group">
+                    <label>{language === 'ar' ? 'اختر صور الخدمة (حتى 5 صور)' : 'Select Service Images (up to 5)'}</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleServiceImagesChange}
+                    />
+                    {selectedImages.length > 0 && (
+                      <p>{language === 'ar' ? `تم اختيار ${selectedImages.length} صورة` : `${selectedImages.length} image(s) selected`}</p>
+                    )}
+                  </div>
+
                   <button type="submit" className="submit-btn">
                     {language === 'ar' ? 'إضافة الخدمة' : 'Create Service'}
                   </button>
@@ -375,19 +407,33 @@ const ServicesManagement = () => {
                       </td>
                       <td>
                         {usage.status === 'pending' && (
-                          <div className="action-buttons">
-                            <button
-                              onClick={() => handleReviewUsage(usage._id, 'approved')}
-                              className="approve-btn"
-                            >
-                              {language === 'ar' ? 'قبول' : 'Approve'}
-                            </button>
-                            <button
-                              onClick={() => handleReviewUsage(usage._id, 'rejected')}
-                              className="reject-btn"
-                            >
-                              {language === 'ar' ? 'رفض' : 'Reject'}
-                            </button>
+                          <div>
+                            <div className="form-group" style={{ marginBottom: '10px' }}>
+                              <label style={{ fontSize: '12px', display: 'block', marginBottom: '5px' }}>
+                                {language === 'ar' ? 'صور الفاتورة (اختياري)' : 'Invoice Images (Optional)'}
+                              </label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleInvoiceImagesChange}
+                                style={{ fontSize: '12px' }}
+                              />
+                            </div>
+                            <div className="action-buttons">
+                              <button
+                                onClick={() => handleReviewUsage(usage._id, 'approved')}
+                                className="approve-btn"
+                              >
+                                {language === 'ar' ? 'قبول' : 'Approve'}
+                              </button>
+                              <button
+                                onClick={() => handleReviewUsage(usage._id, 'rejected')}
+                                className="reject-btn"
+                              >
+                                {language === 'ar' ? 'رفض' : 'Reject'}
+                              </button>
+                            </div>
                           </div>
                         )}
                         {usage.status !== 'pending' && (

@@ -11,7 +11,15 @@ const OrderManagement = () => {
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState({
+    confirmedPrice: '',
+    requestedDeliveryDate: '',
+    adminResponse: '',
+    additionalNotes: ''
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -49,6 +57,68 @@ const OrderManagement = () => {
     }
   };
 
+  const handleConfirmSpecs = async () => {
+    console.log('🚀 handleConfirmSpecs called');
+    console.log('📝 Confirm data:', confirmData);
+    console.log('📦 Selected order:', selectedOrder);
+
+    try {
+      if (!confirmData.confirmedPrice || parseFloat(confirmData.confirmedPrice) <= 0) {
+        console.log('❌ Validation failed: price invalid');
+        setError(language === 'ar' ? 'السعر المؤكد مطلوب ويجب أن يكون أكبر من صفر' : 'Confirmed price is required and must be greater than 0');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+
+      console.log('✅ Validation passed, sending request...');
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      console.log('🔑 Token exists:', !!token);
+      console.log('👤 User:', user ? JSON.parse(user) : 'No user');
+      console.log('🌐 Request URL:', `http://localhost:5000/api/orders/${selectedOrder._id}/confirm-specs`);
+      console.log('📤 Request data:', confirmData);
+
+      const response = await axios.put(
+        `http://localhost:5000/api/orders/${selectedOrder._id}/confirm-specs`,
+        confirmData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log('✅ Response received:', response.data);
+
+      setMessage(language === 'ar' ? 'تم تأكيد مواصفات الطلب المخصص بنجاح!' : 'Custom order specifications confirmed successfully!');
+      setShowConfirmModal(false);
+      setConfirmData({
+        confirmedPrice: '',
+        requestedDeliveryDate: '',
+        adminResponse: '',
+        additionalNotes: ''
+      });
+      fetchOrders();
+      setSelectedOrder(null);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('❌ Error confirming specs:', err);
+      console.error('❌ Error response:', err.response?.data);
+      setError(err.response?.data?.message || err.response?.data?.messageAr || 'Failed to confirm specifications');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const openConfirmModal = (order) => {
+    console.log('🎨 Opening confirm modal for order:', order.orderNumber);
+    console.log('📋 Custom order details:', order.customOrderDetails);
+    setSelectedOrder(order);
+    setConfirmData({
+      confirmedPrice: order.customOrderDetails?.confirmedPrice || '',
+      requestedDeliveryDate: order.customOrderDetails?.requestedDeliveryDate || '',
+      adminResponse: order.customOrderDetails?.adminResponse || '',
+      additionalNotes: order.customOrderDetails?.additionalNotes || ''
+    });
+    setShowConfirmModal(true);
+    console.log('✅ Modal state set to true');
+  };
+
   const getStatusBadgeClass = (status) => {
     const statusMap = {
       pending: 'om-status-pending',
@@ -75,7 +145,10 @@ const OrderManagement = () => {
       order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.contactPhone?.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesType = filterType === 'all' ||
+      (filterType === 'custom' && order.isCustomOrder) ||
+      (filterType === 'standard' && !order.isCustomOrder);
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   if (loading) {
@@ -118,6 +191,13 @@ const OrderManagement = () => {
             <option value="received">{language === 'ar' ? 'تم الاستلام' : 'Received'}</option>
           </select>
         </div>
+        <div className="om-filter-select">
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="all">{language === 'ar' ? 'كل الأنواع' : 'All Types'}</option>
+            <option value="custom">🎨 {language === 'ar' ? 'طلبات مخصصة' : 'Custom Orders'}</option>
+            <option value="standard">📦 {language === 'ar' ? 'طلبات عادية' : 'Standard Orders'}</option>
+          </select>
+        </div>
       </div>
 
       {/* Orders Stats */}
@@ -125,6 +205,10 @@ const OrderManagement = () => {
         <div className="om-stat-card">
           <h3>{orders.length}</h3>
           <p>{language === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+        </div>
+        <div className="om-stat-card om-stat-custom">
+          <h3>{orders.filter(o => o.isCustomOrder).length}</h3>
+          <p>🎨 {language === 'ar' ? 'طلبات مخصصة' : 'Custom Orders'}</p>
         </div>
         <div className="om-stat-card">
           <h3>{orders.filter(o => o.status === 'pending').length}</h3>
@@ -152,6 +236,7 @@ const OrderManagement = () => {
               <th>{language === 'ar' ? 'رقم الطلب' : 'Order #'}</th>
               <th>{language === 'ar' ? 'العميل' : 'Customer'}</th>
               <th>{language === 'ar' ? 'الهاتف' : 'Phone'}</th>
+              <th>{language === 'ar' ? 'النوع' : 'Type'}</th>
               <th>{language === 'ar' ? 'المبلغ' : 'Total'}</th>
               <th>{language === 'ar' ? 'الحالة' : 'Status'}</th>
               <th>{language === 'ar' ? 'التاريخ' : 'Date'}</th>
@@ -167,10 +252,21 @@ const OrderManagement = () => {
               </tr>
             ) : (
               filteredOrders.map(order => (
-                <tr key={order._id}>
+                <tr key={order._id} className={order.isCustomOrder ? 'om-custom-order-row' : ''}>
                   <td className="om-order-number">{order.orderNumber}</td>
                   <td>{order.user?.name || 'N/A'}</td>
                   <td>{order.contactPhone}</td>
+                  <td>
+                    {order.isCustomOrder ? (
+                      <span className="om-custom-badge">
+                        🎨 {language === 'ar' ? 'مخصص' : 'Custom'}
+                      </span>
+                    ) : (
+                      <span className="om-standard-badge">
+                        📦 {language === 'ar' ? 'عادي' : 'Standard'}
+                      </span>
+                    )}
+                  </td>
                   <td className="om-price">${order.totalPrice?.toFixed(2)}</td>
                   <td>
                     <select
@@ -271,6 +367,67 @@ const OrderManagement = () => {
                 <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ${selectedOrder.totalPrice?.toFixed(2)}</p>
               </div>
 
+              {/* قسم الطلب المخصص */}
+              {selectedOrder.isCustomOrder && selectedOrder.customOrderDetails && (
+                <div className="om-detail-section om-custom-order-section">
+                  <h4>🎨 {language === 'ar' ? 'تفاصيل الطلب المخصص' : 'Custom Order Details'}</h4>
+
+                  <div className="om-custom-field">
+                    <strong>{language === 'ar' ? '📝 المواصفات المطلوبة:' : '📝 Specifications:'}</strong>
+                    <p className="om-specifications">{selectedOrder.customOrderDetails.specifications}</p>
+                  </div>
+
+                  {selectedOrder.customOrderDetails.requestedDeliveryDate && (
+                    <div className="om-custom-field">
+                      <strong>{language === 'ar' ? '📅 موعد التسليم المطلوب:' : '📅 Requested Delivery Date:'}</strong>
+                      <p>{new Date(selectedOrder.customOrderDetails.requestedDeliveryDate).toLocaleDateString('ar-EG', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}</p>
+                    </div>
+                  )}
+
+                  {selectedOrder.customOrderDetails.additionalNotes && (
+                    <div className="om-custom-field">
+                      <strong>{language === 'ar' ? '📋 ملاحظات إضافية:' : '📋 Additional Notes:'}</strong>
+                      <p>{selectedOrder.customOrderDetails.additionalNotes}</p>
+                    </div>
+                  )}
+
+                  {selectedOrder.customOrderDetails.confirmedPrice && (
+                    <div className="om-custom-field">
+                      <strong>{language === 'ar' ? '💰 السعر المؤكد:' : '💰 Confirmed Price:'}</strong>
+                      <p className="om-confirmed-price">${selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
+                    </div>
+                  )}
+
+                  {selectedOrder.customOrderDetails.adminResponse && (
+                    <div className="om-custom-field">
+                      <strong>{language === 'ar' ? '💬 رد الإدارة:' : '💬 Admin Response:'}</strong>
+                      <p>{selectedOrder.customOrderDetails.adminResponse}</p>
+                    </div>
+                  )}
+
+                  <div className="om-custom-status">
+                    {selectedOrder.customOrderDetails.isConfirmed ? (
+                      <span className="om-confirmed">✅ {language === 'ar' ? 'تم تأكيد الطلب' : 'Order Confirmed'}</span>
+                    ) : (
+                      <>
+                        <span className="om-pending-confirm">⏳ {language === 'ar' ? 'بانتظار التأكيد' : 'Pending Confirmation'}</span>
+                        <button
+                          className="om-confirm-btn"
+                          onClick={() => openConfirmModal(selectedOrder)}
+                        >
+                          {language === 'ar' ? 'تأكيد المواصفات' : 'Confirm Specifications'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {selectedOrder.notes && (
                 <div className="om-detail-section">
                   <h4>{language === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'}</h4>
@@ -284,6 +441,91 @@ const OrderManagement = () => {
                   <p>{selectedOrder.adminNotes}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Specifications Modal */}
+      {showConfirmModal && selectedOrder && (
+        <div className="om-modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="om-modal om-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="om-modal-header">
+              <h3>🎨 {language === 'ar' ? 'تأكيد مواصفات الطلب المخصص' : 'Confirm Custom Order Specifications'}</h3>
+              <button className="om-modal-close" onClick={() => setShowConfirmModal(false)}>✕</button>
+            </div>
+            <div className="om-modal-body">
+              <div className="om-detail-section">
+                <h4>{language === 'ar' ? 'معلومات الطلب' : 'Order Information'}</h4>
+                <p><strong>{language === 'ar' ? 'رقم الطلب:' : 'Order Number:'}</strong> {selectedOrder.orderNumber}</p>
+                <p><strong>{language === 'ar' ? 'العميل:' : 'Customer:'}</strong> {selectedOrder.user?.name}</p>
+              </div>
+
+              <div className="om-detail-section">
+                <h4>{language === 'ar' ? '📝 المواصفات المطلوبة من العميل' : '📝 Customer Requested Specifications'}</h4>
+                <div className="om-customer-specs">
+                  <p>{selectedOrder.customOrderDetails?.specifications}</p>
+                  {selectedOrder.customOrderDetails?.additionalNotes && (
+                    <p className="om-additional-notes"><strong>{language === 'ar' ? 'ملاحظات:' : 'Notes:'}</strong> {selectedOrder.customOrderDetails.additionalNotes}</p>
+                  )}
+                  {selectedOrder.customOrderDetails?.requestedDeliveryDate && (
+                    <p><strong>{language === 'ar' ? 'موعد التسليم المطلوب:' : 'Requested Delivery:'}</strong> {new Date(selectedOrder.customOrderDetails.requestedDeliveryDate).toLocaleDateString()}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="om-form-section">
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? '💰 السعر المؤكد *' : '💰 Confirmed Price *'}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={confirmData.confirmedPrice}
+                    onChange={(e) => setConfirmData({...confirmData, confirmedPrice: e.target.value})}
+                    placeholder={language === 'ar' ? 'أدخل السعر المؤكد' : 'Enter confirmed price'}
+                    required
+                  />
+                </div>
+
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? '📅 موعد التسليم المطلوب' : '📅 Requested Delivery Date'}</label>
+                  <input
+                    type="date"
+                    value={confirmData.requestedDeliveryDate ? new Date(confirmData.requestedDeliveryDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setConfirmData({...confirmData, requestedDeliveryDate: e.target.value})}
+                  />
+                </div>
+
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? '💬 رد الإدارة' : '💬 Admin Response'}</label>
+                  <textarea
+                    rows="4"
+                    value={confirmData.adminResponse}
+                    onChange={(e) => setConfirmData({...confirmData, adminResponse: e.target.value})}
+                    placeholder={language === 'ar' ? 'أدخل رد الإدارة على مواصفات الطلب...' : 'Enter admin response to specifications...'}
+                  />
+                </div>
+
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? '📋 ملاحظات إضافية' : '📋 Additional Notes'}</label>
+                  <textarea
+                    rows="3"
+                    value={confirmData.additionalNotes}
+                    onChange={(e) => setConfirmData({...confirmData, additionalNotes: e.target.value})}
+                    placeholder={language === 'ar' ? 'ملاحظات إضافية (اختياري)...' : 'Additional notes (optional)...'}
+                  />
+                </div>
+              </div>
+
+              <div className="om-modal-actions">
+                <button className="om-btn-cancel" onClick={() => setShowConfirmModal(false)}>
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button className="om-btn-confirm" onClick={handleConfirmSpecs}>
+                  ✅ {language === 'ar' ? 'تأكيد المواصفات' : 'Confirm Specifications'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

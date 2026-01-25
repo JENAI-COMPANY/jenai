@@ -45,9 +45,17 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
+app.use('/api/supplier', require('./routes/supplierProductRoutes'));
 app.use('/api/library', require('./routes/libraryRoutes'));
 app.use('/api/profits', require('./routes/profitsRoutes'));
 app.use('/api/profit-periods', require('./routes/profitPeriodRoutes'));
+app.use('/api/regions', require('./routes/regionRoutes'));
+app.use('/api/inventory', require('./routes/inventoryRoutes'));
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
+app.use('/api/greetings', require('./routes/greetingRoutes'));
+app.use('/api/polls', require('./routes/pollRoutes'));
+app.use('/api/referrals', require('./routes/referralRoutes'));
+app.use('/api/member', require('./routes/memberRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {
