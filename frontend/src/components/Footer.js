@@ -21,7 +21,7 @@ const Footer = () => {
     // Track user activity every 30 seconds
     const trackActivity = async () => {
       try {
-        await axios.post('http://localhost:5000/api/analytics/track', {
+        await axios.post('/api/analytics/track', {
           sessionId
         });
       } catch (error) {
@@ -44,7 +44,7 @@ const Footer = () => {
       const fetchActiveUsers = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await axios.get('http://localhost:5000/api/analytics/active-users/count', {
+          const response = await axios.get('/api/analytics/active-users/count', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setActiveUsersCount(response.data.count);

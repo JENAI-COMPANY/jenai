@@ -118,7 +118,7 @@ const Services = () => {
               <div className="service-icon">
                 {service.logo ? (
                   <img
-                    src={`http://localhost:5000${service.logo}`}
+                    src={`${service.logo}`}
                     alt={service.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                     onError={(e) => {

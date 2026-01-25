@@ -24,7 +24,7 @@ const ProfitCalculation = () => {
   const fetchProfitPeriods = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/profits', {
+      const response = await axios.get('/api/admin/profits', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfitPeriods(response.data.data || []);
@@ -49,14 +49,14 @@ const ProfitCalculation = () => {
 
       // Check if period is available
       await axios.post(
-        'http://localhost:5000/api/admin/profits/check-period',
+        '/api/admin/profits/check-period',
         { startDate, endDate },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       // Calculate profits
       const response = await axios.post(
-        'http://localhost:5000/api/admin/profits/calculate',
+        '/api/admin/profits/calculate',
         { startDate, endDate },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -81,7 +81,7 @@ const ProfitCalculation = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/profits/${periodId}/close`,
+        `/api/admin/profits/${periodId}/close`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -102,7 +102,7 @@ const ProfitCalculation = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/admin/profits/${periodId}`,
+        `/api/admin/profits/${periodId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSelectedPeriod(response.data.data);

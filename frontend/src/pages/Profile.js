@@ -64,7 +64,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        'http://localhost:5000/api/auth/profile',
+        '/api/auth/profile',
         formData,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -104,7 +104,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        'http://localhost:5000/api/auth/change-password',
+        '/api/auth/change-password',
         {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword

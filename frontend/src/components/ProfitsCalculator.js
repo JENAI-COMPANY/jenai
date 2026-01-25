@@ -16,7 +16,7 @@ const ProfitsCalculator = () => {
   const fetchProfits = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/profits/my-profits', {
+      const response = await axios.get('/api/profits/my-profits', {
         headers: { Authorization: `Bearer ${token}` }
       });
 

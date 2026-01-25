@@ -46,7 +46,7 @@ const UserManagement = () => {
     try {
       const token = localStorage.getItem('token');
       console.log('Fetching users with token:', token);
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('Users response:', response.data);
@@ -63,7 +63,7 @@ const UserManagement = () => {
   const fetchRegions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/regions', {
+      const response = await axios.get('/api/regions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRegions(response.data.regions || []);
@@ -86,7 +86,7 @@ const UserManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/users/${userId}/role`,
+        `/api/admin/users/${userId}/role`,
         { role: newRole },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -111,7 +111,7 @@ const UserManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000/api/admin/users/${userId}`,
+        `/api/admin/users/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage(language === 'ar' ? 'تم حذف المستخدم بنجاح!' : 'User deleted successfully!');
@@ -133,7 +133,7 @@ const UserManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/users/${pendingRoleChange.userId}/role`,
+        `/api/admin/users/${pendingRoleChange.userId}/role`,
         {
           role: pendingRoleChange.newRole,
           sponsorCode: sponsorCode.trim()
@@ -229,7 +229,7 @@ const UserManagement = () => {
       console.log('📤 Sending update data:', updateData);
 
       const response = await axios.put(
-        `http://localhost:5000/api/admin/users/${editingUser._id}`,
+        `/api/admin/users/${editingUser._id}`,
         updateData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -280,7 +280,7 @@ const UserManagement = () => {
       const { confirmPassword, ...userData } = newUser;
 
       await axios.post(
-        'http://localhost:5000/api/admin/users',
+        '/api/admin/users',
         userData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

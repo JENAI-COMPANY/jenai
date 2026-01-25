@@ -26,14 +26,14 @@ const ProductDetail = () => {
   const fetchProduct = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+      const response = await axios.get(`/api/products/${id}`);
       const productData = response.data.product || response.data;
       setProduct(productData);
 
       // Fetch related products from the same category
       if (productData.category) {
         const relatedResponse = await axios.get(
-          `http://localhost:5000/api/products?category=${productData.category}&limit=4`
+          `/api/products?category=${productData.category}&limit=4`
         );
         const filtered = relatedResponse.data.products.filter(p => p._id !== id);
         setRelatedProducts(filtered.slice(0, 4));
@@ -82,7 +82,7 @@ const ProductDetail = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:5000/api/products/${id}/reviews`,
+        `/api/products/${id}/reviews`,
         { rating, comment: reviewText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

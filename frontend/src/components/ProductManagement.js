@@ -66,7 +66,7 @@ const ProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/products');
+      const response = await axios.get('/api/products');
       setProducts(response.data.data || response.data.products || []);
       setLoading(false);
     } catch (err) {
@@ -78,7 +78,7 @@ const ProductManagement = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories');
+      const response = await axios.get('/api/categories');
       setCategories(response.data.categories || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -88,7 +88,7 @@ const ProductManagement = () => {
   const fetchRegions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/regions', {
+      const response = await axios.get('/api/regions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('Fetched regions:', response.data);
@@ -101,7 +101,7 @@ const ProductManagement = () => {
   const fetchSuppliers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const allUsers = response.data.users || [];
@@ -121,7 +121,7 @@ const ProductManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/regions',
+        '/api/regions',
         {
           name: newRegionData.nameEn.trim(), // Use English name as the main name
           nameAr: newRegionData.nameAr.trim(),
@@ -156,7 +156,7 @@ const ProductManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/categories',
+        '/api/categories',
         { name: newCategoryName.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -181,7 +181,7 @@ const ProductManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000/api/categories/${encodeURIComponent(categoryName)}`,
+        `/api/categories/${encodeURIComponent(categoryName)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -267,7 +267,7 @@ const ProductManagement = () => {
       if (editingProduct) {
         // Update existing product
         await axios.put(
-          `http://localhost:5000/api/products/${editingProduct._id}`,
+          `/api/products/${editingProduct._id}`,
           formDataToSend,
           {
             headers: {
@@ -280,7 +280,7 @@ const ProductManagement = () => {
       } else {
         // Create new product
         await axios.post(
-          'http://localhost:5000/api/products',
+          '/api/products',
           formDataToSend,
           {
             headers: {
@@ -349,7 +349,7 @@ const ProductManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/products/${productId}`, {
+      await axios.delete(`/api/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage(language === 'ar' ? 'تم حذف المنتج بنجاح!' : 'Product deleted successfully!');

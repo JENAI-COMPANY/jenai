@@ -15,7 +15,7 @@ const Academy = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/academy/courses');
+      const res = await axios.get('/api/academy/courses');
       setCourses(res.data.courses);
     } catch (error) {
       console.error('Error fetching courses:', error);

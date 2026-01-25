@@ -22,7 +22,7 @@ const Complaints = () => {
   const fetchComplaints = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/complaints/my', {
+      const res = await axios.get('/api/complaints/my', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setComplaints(res.data.complaints);
@@ -35,7 +35,7 @@ const Complaints = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/complaints', formData, {
+      await axios.post('/api/complaints', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert(language === 'ar' ? 'تم إرسال الشكوى بنجاح' : 'Complaint submitted successfully');

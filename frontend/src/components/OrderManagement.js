@@ -28,7 +28,7 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/orders', {
+      const response = await axios.get('/api/admin/orders', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOrders(response.data.orders || []);
@@ -44,7 +44,7 @@ const OrderManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/admin/orders/${orderId}/status`,
+        `/api/admin/orders/${orderId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -75,11 +75,11 @@ const OrderManagement = () => {
       const user = localStorage.getItem('user');
       console.log('🔑 Token exists:', !!token);
       console.log('👤 User:', user ? JSON.parse(user) : 'No user');
-      console.log('🌐 Request URL:', `http://localhost:5000/api/orders/${selectedOrder._id}/confirm-specs`);
+      console.log('🌐 Request URL:', `/api/orders/${selectedOrder._id}/confirm-specs`);
       console.log('📤 Request data:', confirmData);
 
       const response = await axios.put(
-        `http://localhost:5000/api/orders/${selectedOrder._id}/confirm-specs`,
+        `/api/orders/${selectedOrder._id}/confirm-specs`,
         confirmData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

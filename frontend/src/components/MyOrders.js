@@ -30,7 +30,7 @@ const MyOrders = () => {
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/orders/myorders', {
+      const response = await axios.get('/api/orders/myorders', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOrders(response.data.data || response.data.orders || []);

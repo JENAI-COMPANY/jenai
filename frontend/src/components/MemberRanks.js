@@ -21,10 +21,10 @@ const MemberRanks = () => {
     try {
       const token = localStorage.getItem('token');
       const [ranksRes, membersRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/admin/ranks', {
+        axios.get('/api/admin/ranks', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:5000/api/admin/users', {
+        axios.get('/api/admin/users', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -43,7 +43,7 @@ const MemberRanks = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:5000/api/admin/users/update-ranks',
+        '/api/admin/users/update-ranks',
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -61,7 +61,7 @@ const MemberRanks = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/admin/users/${memberId}/downline`,
+        `/api/admin/users/${memberId}/downline`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

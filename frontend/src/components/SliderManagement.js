@@ -23,7 +23,7 @@ const SliderManagement = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/sliders/all', {
+      const response = await axios.get('/api/sliders/all', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSliders(response.data.sliders);
@@ -71,7 +71,7 @@ const SliderManagement = () => {
       if (editingSlider) {
         // Update existing slider
         await axios.put(
-          `http://localhost:5000/api/sliders/${editingSlider._id}`,
+          `/api/sliders/${editingSlider._id}`,
           formDataToSend,
           {
             headers: {
@@ -89,7 +89,7 @@ const SliderManagement = () => {
         }
 
         await axios.post(
-          'http://localhost:5000/api/sliders',
+          '/api/sliders',
           formDataToSend,
           {
             headers: {
@@ -132,7 +132,7 @@ const SliderManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/sliders/${id}`, {
+      await axios.delete(`/api/sliders/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage(language === 'ar' ? 'تم حذف الصورة بنجاح!' : 'Slider deleted successfully!');
@@ -257,7 +257,7 @@ const SliderManagement = () => {
               <div key={slider._id} className="sm-card">
                 <div className="sm-image-container">
                   <img
-                    src={`http://localhost:5000${slider.image}`}
+                    src={`${slider.image}`}
                     alt={slider.title || 'Slider image'}
                     className="sm-image"
                   />

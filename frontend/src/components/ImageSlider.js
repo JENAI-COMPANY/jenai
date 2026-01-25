@@ -14,13 +14,13 @@ const ImageSlider = () => {
   useEffect(() => {
     const fetchSliders = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/sliders');
+        const response = await axios.get('/api/sliders');
 
         // If database has sliders, use them
         if (response.data.sliders && response.data.sliders.length > 0) {
           const slidersData = response.data.sliders.map(slider => ({
             id: slider._id,
-            image: `http://localhost:5000${slider.image}`,
+            image: `${slider.image}`,
             alt: slider.alt,
             fallback: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=1400&h=500&fit=crop'
           }));

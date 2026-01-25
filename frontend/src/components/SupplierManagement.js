@@ -34,7 +34,7 @@ const SupplierManagement = () => {
   const fetchSuppliers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const allUsers = response.data.users || [];
@@ -69,7 +69,7 @@ const SupplierManagement = () => {
       supplierData.role = 'supplier';
 
       await axios.post(
-        'http://localhost:5000/api/admin/users',
+        '/api/admin/users',
         supplierData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -116,7 +116,7 @@ const SupplierManagement = () => {
       };
 
       await axios.put(
-        `http://localhost:5000/api/admin/users/${editingSupplier._id}`,
+        `/api/admin/users/${editingSupplier._id}`,
         updateData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -138,7 +138,7 @@ const SupplierManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/admin/users/${supplierId}`, {
+      await axios.delete(`/api/admin/users/${supplierId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -29,7 +29,7 @@ const RegionsManagement = () => {
   const fetchRegions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/regions', {
+      const response = await axios.get('/api/regions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRegions(response.data.regions || []);
@@ -44,7 +44,7 @@ const RegionsManagement = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Filter only regional admins and super admins
@@ -74,7 +74,7 @@ const RegionsManagement = () => {
       console.log('Creating region with data:', regionData);
 
       await axios.post(
-        'http://localhost:5000/api/admin/regions',
+        '/api/admin/regions',
         regionData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -112,7 +112,7 @@ const RegionsManagement = () => {
       }
 
       await axios.put(
-        `http://localhost:5000/api/admin/regions/${editingRegion._id}`,
+        `/api/admin/regions/${editingRegion._id}`,
         regionData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -135,7 +135,7 @@ const RegionsManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000/api/admin/regions/${regionId}`,
+        `/api/admin/regions/${regionId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
