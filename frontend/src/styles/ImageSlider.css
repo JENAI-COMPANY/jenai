@@ -200,3 +200,13 @@
     height: 8px;
   }
 }
+/* Hide slider arrows and dots on mobile - swipe only */
+@media (max-width: 768px) {
+  .slider-arrow {
+    display: none !important;
+  }
+
+  .slider-dots {
+    display: none !important;
+  }
+}

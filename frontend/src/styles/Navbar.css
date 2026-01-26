@@ -229,23 +229,26 @@
 /* ===== MOBILE STYLES (max-width: 768px) ===== */
 @media (max-width: 768px) {
   .navbar {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
   }
 
   .nav-container {
     flex-wrap: wrap;
     gap: 0;
+    flex-direction: row;
   }
 
   .nav-left {
-    order: 1;
-    gap: 1rem;
-    flex: 1;
+    order: 2;
+    gap: 0.5rem;
+    flex: 0;
   }
 
   .mobile-menu-toggle {
     display: block;
-    order: 2;
+    order: 1;
+    margin-left: 0;
+    margin-right: auto;
   }
 
   /* Hide desktop elements */
@@ -324,7 +327,11 @@
   }
 
   .logo-image {
-    height: 50px;
+    height: 45px;
+  }
+
+  .nav-logo {
+    font-size: 1rem;
   }
 
   /* Mobile Dropdown */
