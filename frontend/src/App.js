@@ -35,6 +35,7 @@ import FAQ from './pages/FAQ';
 import ProfitsCalculator from './components/ProfitsCalculator';
 import ProfitPeriods from './components/ProfitPeriods';
 import './styles/App.css';
+import './styles/AdminResponsive.css';
 
 function App() {
   return (

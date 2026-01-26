@@ -1,0 +1,350 @@
+/* ===== ADMIN PANELS GLOBAL MOBILE FIXES ===== */
+/* This file fixes mobile responsiveness for all admin panels */
+
+@media (max-width: 768px) {
+  /* General Admin Container */
+  .user-management,
+  .order-management,
+  .product-management,
+  .regions-management,
+  .supplier-management,
+  .profit-calculation,
+  .slider-management,
+  .admin-container,
+  .member-ranks {
+    padding: 0.5rem !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Headers */
+  [class*='-header'],
+  .um-header,
+  .om-header,
+  .pm-header {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    padding: 1rem !important;
+  }
+
+  [class*='-header'] h2,
+  .um-header h2,
+  .om-header h2,
+  .pm-header h2 {
+    font-size: 1.25rem !important;
+  }
+
+  [class*='-header-right'],
+  .um-header-right,
+  .om-header-right {
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Buttons */
+  [class*='-btn'],
+  [class*='-button'],
+  button {
+    width: 100% !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    white-space: normal !important;
+    min-height: 44px !important;
+  }
+
+  /* Filters */
+  [class*='-filters'],
+  .um-filters,
+  .om-filters,
+  .pm-filters {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    padding: 1rem !important;
+  }
+
+  [class*='-search'],
+  .um-search,
+  .om-search,
+  .pm-search {
+    width: 100% !important;
+  }
+
+  [class*='-search'] input,
+  .um-search input,
+  .om-search input,
+  .pm-search input {
+    width: 100% !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+  }
+
+  [class*='-filter-select'] select,
+  select {
+    width: 100% !important;
+    font-size: 16px !important;
+    padding: 0.75rem !important;
+  }
+
+  /* Tables */
+  [class*='-table-wrapper'],
+  .um-table-wrapper,
+  .om-table-wrapper,
+  .pm-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 0 -0.5rem !important;
+    padding: 0 0.5rem !important;
+  }
+
+  [class*='-table'],
+  .um-table,
+  .om-table,
+  .pm-table,
+  table {
+    min-width: 600px !important;
+    font-size: 0.85rem !important;
+  }
+
+  [class*='-table'] th,
+  [class*='-table'] td,
+  table th,
+  table td {
+    padding: 0.5rem 0.35rem !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+  }
+
+  /* Cards & Stats */
+  [class*='-cards'],
+  [class*='-stats'],
+  .um-stats,
+  .om-stats,
+  .pm-stats {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  [class*='-card'],
+  [class*='-stat-card'],
+  .stat-card {
+    padding: 1rem !important;
+  }
+
+  /* Modals */
+  [class*='-modal'],
+  .um-modal,
+  .om-modal,
+  .pm-modal,
+  .modal {
+    width: 95% !important;
+    max-width: 95vw !important;
+    margin: 1rem auto !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  [class*='-modal-header'],
+  .um-modal-header,
+  .om-modal-header,
+  .pm-modal-header {
+    padding: 1rem !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+  }
+
+  [class*='-modal-body'],
+  .um-modal-body,
+  .om-modal-body,
+  .pm-modal-body {
+    padding: 1rem !important;
+  }
+
+  [class*='-modal-footer'],
+  .um-modal-footer,
+  .om-modal-footer,
+  .pm-modal-footer {
+    padding: 1rem !important;
+    flex-direction: column-reverse !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Forms */
+  [class*='-form-row'],
+  .um-form-row,
+  .om-form-row,
+  .pm-form-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  [class*='-form-group'],
+  .um-form-group,
+  .om-form-group,
+  .pm-form-group {
+    margin-bottom: 1rem !important;
+  }
+
+  [class*='-form-group'] label,
+  .um-form-group label,
+  .om-form-group label,
+  .pm-form-group label {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.4rem !important;
+    display: block !important;
+  }
+
+  [class*='-form-group'] input,
+  [class*='-form-group'] select,
+  [class*='-form-group'] textarea,
+  input,
+  select,
+  textarea {
+    width: 100% !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+    box-sizing: border-box !important;
+  }
+
+  textarea {
+    min-height: 100px !important;
+  }
+
+  /* Action Buttons in Tables */
+  [class*='-actions'],
+  .um-actions,
+  .om-actions,
+  .pm-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+  }
+
+  [class*='-action-btn'],
+  .um-action-btn,
+  .om-action-btn,
+  .pm-action-btn {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.75rem !important;
+    min-height: auto !important;
+    width: auto !important;
+  }
+
+  /* Alerts */
+  [class*='-alert'],
+  .um-alert,
+  .om-alert,
+  .pm-alert {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.85rem !important;
+    margin: 0.5rem !important;
+  }
+
+  /* Tabs */
+  [class*='-tabs'],
+  .profile-tabs,
+  .admin-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+  }
+
+  [class*='-tab'],
+  .profile-tab,
+  .admin-tab {
+    padding: 0.6rem 1rem !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    min-width: auto !important;
+  }
+
+  /* Profile Specific */
+  .profile-container {
+    padding: 0.5rem !important;
+  }
+
+  .profile-header {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+
+  .profile-avatar {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  /* Admin Dashboard Cards */
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Fix Overflow Issues */
+  * {
+    max-width: 100% !important;
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Ensure buttons are always touchable */
+  button,
+  a,
+  [role=button] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Fix text overflow */
+  [class*='-text'],
+  p,
+  span {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+  [class*='-table'],
+  table {
+    min-width: 500px !important;
+    font-size: 0.75rem !important;
+  }
+
+  [class*='-table'] th,
+  [class*='-table'] td,
+  table th,
+  table td {
+    padding: 0.4rem 0.25rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  [class*='-modal'],
+  .modal {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    min-height: 100vh !important;
+  }
+
+  [class*='-header'] h2 {
+    font-size: 1.1rem !important;
+  }
+}
+
+/* Landscape Mobile Optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  [class*='-modal'] {
+    max-height: 95vh !important;
+  }
+
+  [class*='-modal-body'] {
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+  }
+}
