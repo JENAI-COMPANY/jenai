@@ -348,3 +348,35 @@
     overflow-y: auto !important;
   }
 }
+
+/* ===== FIX FOR ICON/TEXT BUTTONS ON MOBILE ===== */
+@media (max-width: 768px) {
+  /* Fix for buttons with icons and text stacked vertically */
+  button,
+  .btn,
+  [class*='-btn'],
+  [class*='-button'],
+  a.button {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    text-align: center !important;
+  }
+
+  /* Ensure text doesn't wrap in buttons */
+  button span,
+  .btn span,
+  [class*='-btn'] span {
+    white-space: nowrap !important;
+  }
+
+  /* For icon + text buttons, keep them horizontal */
+  button svg,
+  button img,
+  .btn svg,
+  .btn img {
+    flex-shrink: 0 !important;
+  }
+}
