@@ -140,9 +140,14 @@ const OrderManagement = () => {
   };
 
   const filteredOrders = orders.filter(order => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
-      order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.orderNumber?.toLowerCase().includes(searchLower) ||
+      order.user?.name?.toLowerCase().includes(searchLower) ||
+      order.user?.username?.toLowerCase().includes(searchLower) ||
+      order.user?.subscriberCode?.toLowerCase().includes(searchLower) ||
+      order.user?.nationalId?.includes(searchTerm) ||
+      order.user?.phone?.includes(searchTerm) ||
       order.contactPhone?.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
     const matchesType = filterType === 'all' ||
@@ -177,7 +182,7 @@ const OrderManagement = () => {
         <div className="om-search">
           <input
             type="text"
-            placeholder={language === 'ar' ? 'بحث برقم الطلب، العميل أو الهاتف...' : 'Search by order number, customer or phone...'}
+            placeholder={language === 'ar' ? 'بحث برقم الطلب، الاسم، اليوزر، رقم العضوية، الهوية أو الهاتف...' : 'Search by order number, name, username, member ID, national ID or phone...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

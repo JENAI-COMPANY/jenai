@@ -156,6 +156,15 @@ const Navbar = () => {
             <li className="nav-item">
               <Link to="/contact" className="nav-link">{language === 'ar' ? 'اتصل بنا' : 'Contact Us'}</Link>
             </li>
+
+            {/* Profile link for mobile */}
+            {isAuthenticated && (
+              <li className="nav-item mobile-only">
+                <Link to="/profile" className="nav-link profile-link-mobile">
+                  👤 {user?.name || (language === 'ar' ? 'الحساب' : 'Profile')}
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
 

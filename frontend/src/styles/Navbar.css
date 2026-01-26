@@ -216,6 +216,10 @@
   display: inline-flex;
 }
 
+.mobile-only {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .navbar {
     padding: 0.75rem 1rem;
@@ -234,6 +238,10 @@
 
   .desktop-only {
     display: none;
+  }
+
+  .mobile-only {
+    display: block;
   }
 
   .mobile-menu-toggle {

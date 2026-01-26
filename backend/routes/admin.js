@@ -426,23 +426,26 @@ router.post('/users', protect, isAdmin, async (req, res) => {
       });
     }
 
-    // Validate city and country are required (for referral code generation)
-    if (!country || !country.trim()) {
-      console.log('Missing country');
-      return res.status(400).json({
-        success: false,
-        message: 'الدولة مطلوبة',
-        messageEn: 'Country is required'
-      });
-    }
+    // Validate city and country are required only for members (for referral code generation)
+    // Suppliers don't need referral codes
+    if (role === 'member' || role === 'regional_admin') {
+      if (!country || !country.trim()) {
+        console.log('Missing country');
+        return res.status(400).json({
+          success: false,
+          message: 'الدولة مطلوبة',
+          messageEn: 'Country is required'
+        });
+      }
 
-    if (!city || !city.trim()) {
-      console.log('Missing city');
-      return res.status(400).json({
-        success: false,
-        message: 'المدينة مطلوبة',
-        messageEn: 'City is required'
-      });
+      if (!city || !city.trim()) {
+        console.log('Missing city');
+        return res.status(400).json({
+          success: false,
+          message: 'المدينة مطلوبة',
+          messageEn: 'City is required'
+        });
+      }
     }
 
     // Clean and validate username (must be string)
