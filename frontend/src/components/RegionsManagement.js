@@ -47,9 +47,9 @@ const RegionsManagement = () => {
       const response = await axios.get('/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Filter only regional admins and super admins
+      // Filter only users with regional_admin role
       const admins = (response.data.users || []).filter(
-        u => u.role === 'regional_admin' || u.role === 'super_admin'
+        u => u.role === 'regional_admin'
       );
       setUsers(admins);
     } catch (err) {
