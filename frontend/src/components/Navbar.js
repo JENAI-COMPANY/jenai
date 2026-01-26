@@ -47,6 +47,11 @@ const Navbar = () => {
     }
   };
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+    setShowProductsMenu(false);
+  };
+
   return (
     <nav className="navbar">
       <div className="nav-container">
@@ -73,7 +78,7 @@ const Navbar = () => {
         <div className={`nav-center ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <ul className="nav-main-links">
             <li className="nav-item">
-              <Link to="/" className="nav-link">{t('home')}</Link>
+              <Link to="/" className="nav-link" onClick={closeMobileMenu}>{t('home')}</Link>
             </li>
 
             {/* Products Dropdown */}
@@ -98,14 +103,14 @@ const Navbar = () => {
                   <Link
                     to="/products-page?filter=new"
                     className="dropdown-item"
-                    onClick={() => setShowProductsMenu(false)}
+                    onClick={closeMobileMenu}
                   >
                     {language === 'ar' ? 'وصل حديثاً' : 'New Arrivals'}
                   </Link>
                   <Link
                     to="/products-page"
                     className="dropdown-item"
-                    onClick={() => setShowProductsMenu(false)}
+                    onClick={closeMobileMenu}
                   >
                     {language === 'ar' ? 'جميع المنتجات' : 'All Products'}
                   </Link>
@@ -120,7 +125,7 @@ const Navbar = () => {
                           key={index}
                           to={`/products-page?category=${encodeURIComponent(category)}`}
                           className="dropdown-item"
-                          onClick={() => setShowProductsMenu(false)}
+                          onClick={closeMobileMenu}
                         >
                           {category}
                         </Link>
@@ -133,7 +138,7 @@ const Navbar = () => {
 
             {(isSubscriber || isAdmin) && (
               <li className="nav-item">
-                <Link to="/academy" className="nav-link">
+                <Link to="/academy" className="nav-link" onClick={closeMobileMenu}>
                   🎓 {language === 'ar' ? 'أكاديمية جيناي' : 'Jenai Academy'}
                 </Link>
               </li>
@@ -141,26 +146,26 @@ const Navbar = () => {
 
             {(isSubscriber || isAdmin) && (
               <li className="nav-item">
-                <Link to="/library" className="nav-link">
+                <Link to="/library" className="nav-link" onClick={closeMobileMenu}>
                   📚 {language === 'ar' ? 'مكتبة جيناي' : 'Jenai Library'}
                 </Link>
               </li>
             )}
 
             <li className="nav-item">
-              <Link to="/services" className="nav-link">{language === 'ar' ? 'الخدمات' : 'Services'}</Link>
+              <Link to="/services" className="nav-link" onClick={closeMobileMenu}>{language === 'ar' ? 'الخدمات' : 'Services'}</Link>
             </li>
             <li className="nav-item">
-              <Link to="/about" className="nav-link">{language === 'ar' ? 'من نحن' : 'About Us'}</Link>
+              <Link to="/about" className="nav-link" onClick={closeMobileMenu}>{language === 'ar' ? 'من نحن' : 'About Us'}</Link>
             </li>
             <li className="nav-item">
-              <Link to="/contact" className="nav-link">{language === 'ar' ? 'اتصل بنا' : 'Contact Us'}</Link>
+              <Link to="/contact" className="nav-link" onClick={closeMobileMenu}>{language === 'ar' ? 'اتصل بنا' : 'Contact Us'}</Link>
             </li>
 
             {/* Profile link for mobile */}
             {isAuthenticated && (
               <li className="nav-item mobile-only">
-                <Link to="/profile" className="nav-link profile-link-mobile">
+                <Link to="/profile" className="nav-link profile-link-mobile" onClick={closeMobileMenu}>
                   👤 {user?.name || (language === 'ar' ? 'الحساب' : 'Profile')}
                 </Link>
               </li>
