@@ -1,0 +1,251 @@
+.instructions-page {
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 4rem;
+}
+
+.instructions-container {
+  max-width: 900px;
+  width: 100%;
+  background: white;
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.1);
+}
+
+.instructions-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.instructions-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(90deg, #3498db, #9b59b6);
+  border-radius: 2px;
+}
+
+.instructions-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 1.15rem;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.instructions-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.instruction-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e8ecf1 100%);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 2px solid #e1e8ed;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.instruction-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(180deg, #3498db, #9b59b6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.instruction-card:hover::before {
+  opacity: 1;
+}
+
+.instruction-card:hover {
+  transform: translateX(10px);
+  box-shadow: 0 8px 24px rgba(52, 152, 219, 0.15);
+  border-color: #3498db;
+}
+
+.instruction-card.highlight {
+  background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f7 100%);
+  border-color: #3498db;
+}
+
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: inline-block;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.instruction-card h3 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.instruction-card p {
+  font-size: 1.05rem;
+  color: #5a6c7d;
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+.commission-list,
+.tips-list {
+  margin-top: 1rem;
+  padding-left: 1.5rem;
+}
+
+.commission-list li,
+.tips-list li {
+  font-size: 1.05rem;
+  color: #5a6c7d;
+  line-height: 1.8;
+  margin-bottom: 0.5rem;
+}
+
+.commission-list li strong {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.instructions-footer {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 2px solid #e1e8ed;
+}
+
+.get-started-btn {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  padding: 1.25rem 3rem;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(52, 152, 219, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.get-started-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.get-started-btn:hover::before {
+  width: 400px;
+  height: 400px;
+}
+
+.get-started-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(52, 152, 219, 0.5);
+}
+
+.get-started-btn:active {
+  transform: translateY(-1px);
+}
+
+.footer-note {
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .instructions-page {
+    padding: 1rem;
+    padding-top: 2rem;
+  }
+
+  .instructions-container {
+    padding: 2rem 1.5rem;
+  }
+
+  .instructions-header h1 {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .instruction-card {
+    padding: 1.5rem;
+  }
+
+  .instruction-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .instruction-card p,
+  .commission-list li,
+  .tips-list li {
+    font-size: 0.95rem;
+  }
+
+  .card-icon {
+    font-size: 2.5rem;
+  }
+
+  .get-started-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .instructions-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .instructions-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .instruction-card {
+    padding: 1.25rem;
+  }
+}

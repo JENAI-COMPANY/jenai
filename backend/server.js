@@ -30,6 +30,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/authRoutes')); // For user profile access
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/network', require('./routes/networkRoutes'));
@@ -56,6 +57,8 @@ app.use('/api/greetings', require('./routes/greetingRoutes'));
 app.use('/api/polls', require('./routes/pollRoutes'));
 app.use('/api/referrals', require('./routes/referralRoutes'));
 app.use('/api/member', require('./routes/memberRoutes'));
+app.use('/api/permissions', require('./routes/permissionsRoutes'));
+app.use('/api/team', require('./routes/teamRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

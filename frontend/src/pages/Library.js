@@ -233,7 +233,7 @@ const Library = () => {
               <button className="close-btn" onClick={() => setShowAddModal(false)}>&times;</button>
             </div>
 
-            <form onSubmit={handleSubmit} className="book-form">
+            <form onSubmit={handleSubmit} className="book-form" autoComplete="off">
               <div className="form-row">
                 <div className="form-group">
                   <label>{language === 'ar' ? 'العنوان (English)' : 'Title (English)'}</label>

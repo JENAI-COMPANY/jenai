@@ -30,6 +30,7 @@ const ProductManagement = () => {
     bulkMinQuantity: '',
     category: '',
     stock: '',
+    weight: '',
     points: '',
     region: 'all', // default: all regions
     supplier: '', // المورد المسؤول عن المنتج
@@ -79,7 +80,10 @@ const ProductManagement = () => {
   const fetchCategories = async () => {
     try {
       const response = await axios.get('/api/categories');
-      setCategories(response.data.categories || []);
+      // Extract category names (strings) for backward compatibility with Product model
+      const cats = response.data.categories || [];
+      const categoryNames = cats.map(cat => typeof cat === 'string' ? cat : cat.name || cat.nameAr || '');
+      setCategories(categoryNames);
     } catch (err) {
       console.error('Error fetching categories:', err);
     }
@@ -248,6 +252,7 @@ const ProductManagement = () => {
 
       if (formData.bulkPrice) formDataToSend.append('bulkPrice', formData.bulkPrice);
       if (formData.bulkMinQuantity) formDataToSend.append('bulkMinQuantity', formData.bulkMinQuantity);
+      if (formData.weight) formDataToSend.append('weight', formData.weight);
       if (formData.points) formDataToSend.append('points', formData.points);
 
       // إضافة المورد (إذا تم اختياره)
@@ -312,6 +317,7 @@ const ProductManagement = () => {
       bulkMinQuantity: product.bulkMinQuantity || '',
       category: product.category || '',
       stock: product.stock || '',
+      weight: product.weight || '',
       points: product.points || '',
       region: product.region?._id || product.region || 'all',
       supplier: product.supplier?._id || product.supplier || '',
@@ -371,6 +377,7 @@ const ProductManagement = () => {
       bulkMinQuantity: '',
       category: '',
       stock: '',
+      weight: '',
       points: '',
       region: 'all',
       supplier: '',
@@ -402,6 +409,23 @@ const ProductManagement = () => {
     );
   }
 
+  // Check if user has permission to view products
+  if (user && user.role === 'regional_admin' && user.permissions && !user.permissions.canViewProducts) {
+    return (
+      <div className="pm-loading" style={{ padding: '40px', textAlign: 'center' }}>
+        <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+        <h2 style={{ color: '#dc3545', marginBottom: '10px' }}>
+          {language === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+        </h2>
+        <p style={{ color: '#666' }}>
+          {language === 'ar'
+            ? 'ليس لديك صلاحية لعرض المنتجات. يرجى التواصل مع المسؤول الرئيسي.'
+            : 'You do not have permission to view products. Please contact the main administrator.'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="product-management">
       <div className="pm-header">
@@ -422,7 +446,7 @@ const ProductManagement = () => {
               <h3>{editingProduct ? (language === 'ar' ? 'تعديل المنتج' : 'Edit Product') : (language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product')}</h3>
               <button className="pm-modal-close" onClick={resetForm}>✕</button>
             </div>
-            <form onSubmit={handleSubmit} className="pm-form">
+            <form onSubmit={handleSubmit} className="pm-form" autoComplete="off">
               <div className="pm-form-grid">
                 <div className="pm-form-group">
                   <label>{language === 'ar' ? 'اسم المنتج' : 'Product Name'} *</label>
@@ -649,7 +673,7 @@ const ProductManagement = () => {
                 )}
 
                 <div className="pm-form-group">
-                  <label>{language === 'ar' ? 'سعر العميل' : 'Customer Price'} *</label>
+                  <label>{language === 'ar' ? 'سعر الزبون' : 'Customer Price'} *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -661,7 +685,7 @@ const ProductManagement = () => {
                 </div>
 
                 <div className="pm-form-group">
-                  <label>{language === 'ar' ? 'سعر المشترك' : 'Subscriber Price'} *</label>
+                  <label>{language === 'ar' ? 'سعر العضو' : 'Subscriber Price'} *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -820,6 +844,17 @@ const ProductManagement = () => {
                 </div>
 
                 <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'الوزن (كغم)' : 'Weight (kg)'}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.weight}
+                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    placeholder={language === 'ar' ? 'اختياري' : 'Optional'}
+                  />
+                </div>
+
+                <div className="pm-form-group">
                   <label>{language === 'ar' ? 'النقاط' : 'Points'}</label>
                   <input
                     type="number"
@@ -919,8 +954,8 @@ const ProductManagement = () => {
               <th>{language === 'ar' ? 'الصورة' : 'Image'}</th>
               <th>{language === 'ar' ? 'اسم المنتج' : 'Name'}</th>
               <th>{language === 'ar' ? 'الفئة' : 'Category'}</th>
-              <th>{language === 'ar' ? 'سعر العميل' : 'Customer Price'}</th>
-              <th>{language === 'ar' ? 'سعر المشترك' : 'Subscriber Price'}</th>
+              <th>{language === 'ar' ? 'سعر الزبون' : 'Customer Price'}</th>
+              <th>{language === 'ar' ? 'سعر العضو' : 'Subscriber Price'}</th>
               <th>{language === 'ar' ? 'المخزون' : 'Stock'}</th>
               <th>{language === 'ar' ? 'الحالة' : 'Status'}</th>
               <th>{language === 'ar' ? 'الإجراءات' : 'Actions'}</th>
@@ -951,8 +986,8 @@ const ProductManagement = () => {
                   </td>
                   <td className="pm-product-name">{product.name}</td>
                   <td>{product.category || '-'}</td>
-                  <td className="pm-price">${product.customerPrice?.toFixed(2) || product.price?.toFixed(2) || '0.00'}</td>
-                  <td className="pm-price">${product.subscriberPrice?.toFixed(2) || product.price?.toFixed(2) || '0.00'}</td>
+                  <td className="pm-price">₪{product.customerPrice?.toFixed(2) || product.price?.toFixed(2) || '0.00'}</td>
+                  <td className="pm-price">₪{product.subscriberPrice?.toFixed(2) || product.price?.toFixed(2) || '0.00'}</td>
                   <td>{product.stock}</td>
                   <td>
                     <span className={`pm-status-badge ${product.isActive ? 'pm-active' : 'pm-inactive'}`}>
@@ -961,12 +996,48 @@ const ProductManagement = () => {
                   </td>
                   <td>
                     <div className="pm-actions">
-                      <button className="pm-edit-btn" onClick={() => handleEdit(product)}>
-                        {language === 'ar' ? 'تعديل' : 'Edit'}
-                      </button>
-                      <button className="pm-delete-btn" onClick={() => handleDelete(product._id)}>
-                        {language === 'ar' ? 'حذف' : 'Delete'}
-                      </button>
+                      {/* التحقق من صلاحيات مدير المنطقة */}
+                      {(() => {
+                        // Super admin يرى جميع الأزرار
+                        if (user && user.role === 'super_admin') {
+                          return (
+                            <>
+                              <button className="pm-edit-btn" onClick={() => handleEdit(product)}>
+                                {language === 'ar' ? 'تعديل' : 'Edit'}
+                              </button>
+                              <button className="pm-delete-btn" onClick={() => handleDelete(product._id)}>
+                                {language === 'ar' ? 'حذف' : 'Delete'}
+                              </button>
+                            </>
+                          );
+                        }
+                        // Regional admin يرى الأزرار فقط لمنتجات منطقته
+                        if (user && user.role === 'regional_admin') {
+                          const productRegionId = product.region ? (product.region._id || product.region) : null;
+                          const userRegionId = user.region ? (user.region._id || user.region) : null;
+
+                          if (productRegionId && userRegionId && productRegionId.toString() === userRegionId.toString()) {
+                            return (
+                              <>
+                                <button className="pm-edit-btn" onClick={() => handleEdit(product)}>
+                                  {language === 'ar' ? 'تعديل' : 'Edit'}
+                                </button>
+                                <button className="pm-delete-btn" onClick={() => handleDelete(product._id)}>
+                                  {language === 'ar' ? 'حذف' : 'Delete'}
+                                </button>
+                              </>
+                            );
+                          } else {
+                            return (
+                              <span className="pm-no-permission">
+                                {language === 'ar' ? 'لا توجد صلاحية' : 'No permission'}
+                              </span>
+                            );
+                          }
+                        }
+                        // أي دور آخر
+                        return null;
+                      })()}
                     </div>
                   </td>
                 </tr>

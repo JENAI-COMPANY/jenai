@@ -9,6 +9,7 @@ const ProfitCalculation = () => {
   const { language } = useLanguage();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [periodName, setPeriodName] = useState('');
   const [calculating, setCalculating] = useState(false);
   const [profitData, setProfitData] = useState(null);
   const [profitPeriods, setProfitPeriods] = useState([]);
@@ -24,7 +25,7 @@ const ProfitCalculation = () => {
   const fetchProfitPeriods = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/admin/profits', {
+      const response = await axios.get('/api/profit-periods', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfitPeriods(response.data.data || []);
@@ -40,6 +41,12 @@ const ProfitCalculation = () => {
       return;
     }
 
+    if (!periodName) {
+      setError(language === 'ar' ? 'يرجى إدخال اسم الدورة' : 'Please enter period name');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     setCalculating(true);
     setError('');
     setMessage('');
@@ -47,23 +54,24 @@ const ProfitCalculation = () => {
     try {
       const token = localStorage.getItem('token');
 
-      // Check if period is available
-      await axios.post(
-        '/api/admin/profits/check-period',
-        { startDate, endDate },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Calculate profits
+      // Calculate profits with period name
       const response = await axios.post(
-        '/api/admin/profits/calculate',
-        { startDate, endDate },
+        '/api/profit-periods/calculate',
+        {
+          startDate,
+          endDate,
+          periodName
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setProfitData(response.data.data);
       setMessage(language === 'ar' ? 'تم احتساب الأرباح بنجاح!' : 'Profits calculated successfully!');
       fetchProfitPeriods();
+      // Clear form
+      setStartDate('');
+      setEndDate('');
+      setPeriodName('');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || (language === 'ar' ? 'فشل في احتساب الأرباح' : 'Failed to calculate profits'));
@@ -81,8 +89,8 @@ const ProfitCalculation = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `/api/admin/profits/${periodId}/close`,
-        {},
+        `/api/profit-periods/${periodId}/status`,
+        { status: 'paid' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage(language === 'ar' ? 'تم إغلاق الفترة بنجاح!' : 'Period closed successfully!');
@@ -102,7 +110,7 @@ const ProfitCalculation = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `/api/admin/profits/${periodId}`,
+        `/api/profit-periods/${periodId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSelectedPeriod(response.data.data);
@@ -129,7 +137,7 @@ const ProfitCalculation = () => {
     doc.setFontSize(12);
     doc.text(`Period: ${new Date(periodData.startDate).toLocaleDateString()} - ${new Date(periodData.endDate).toLocaleDateString()}`, 14, 32);
     doc.text(`Total Members: ${periodData.totalMembers || periodData.summary?.totalMembers || 0}`, 14, 40);
-    doc.text(`Total Profits: $${(periodData.totalProfits || periodData.summary?.totalProfits || 0).toFixed(2)}`, 14, 48);
+    doc.text(`Total Profits: ₪${(periodData.totalProfits || periodData.summary?.totalProfits || 0).toFixed(2)}`, 14, 48);
     doc.text(`Status: ${periodData.status.toUpperCase()}`, 14, 56);
 
     // Prepare table data
@@ -153,10 +161,10 @@ const ProfitCalculation = () => {
         member.username,
         member.subscriberCode,
         member.totalOrders || 0,
-        `$${(member.totalSales || 0).toFixed(2)}`,
+        `₪${(member.totalSales || 0).toFixed(2)}`,
         member.totalPoints || 0,
-        `$${(member.totalCommission || 0).toFixed(2)}`,
-        `$${(member.profitAmount || 0).toFixed(2)}`
+        `₪${(member.totalCommission || 0).toFixed(2)}`,
+        `₪${(member.profitAmount || 0).toFixed(2)}`
       ]);
 
     // Generate table
@@ -201,7 +209,16 @@ const ProfitCalculation = () => {
         <h3>{language === 'ar' ? 'احتساب فترة جديدة' : 'Calculate New Period'}</h3>
         <div className="date-inputs">
           <div className="date-input-group">
-            <label>{language === 'ar' ? 'من تاريخ' : 'Start Date'}</label>
+            <label>{language === 'ar' ? 'اسم الدورة' : 'Period Name'} *</label>
+            <input
+              type="text"
+              value={periodName}
+              onChange={(e) => setPeriodName(e.target.value)}
+              placeholder={language === 'ar' ? 'مثال: دورة يناير 2024' : 'Example: January 2024 Period'}
+            />
+          </div>
+          <div className="date-input-group">
+            <label>{language === 'ar' ? 'من تاريخ' : 'Start Date'} *</label>
             <input
               type="date"
               value={startDate}
@@ -209,7 +226,7 @@ const ProfitCalculation = () => {
             />
           </div>
           <div className="date-input-group">
-            <label>{language === 'ar' ? 'إلى تاريخ' : 'End Date'}</label>
+            <label>{language === 'ar' ? 'إلى تاريخ' : 'End Date'} *</label>
             <input
               type="date"
               value={endDate}
@@ -234,12 +251,15 @@ const ProfitCalculation = () => {
             {profitPeriods.map((period) => (
               <div key={period._id} className="period-card">
                 <div className="period-info">
+                  <div className="period-name-header">
+                    <strong>{period.periodName || `${language === 'ar' ? 'الدورة' : 'Period'} #${period.periodNumber || ''}`}</strong>
+                  </div>
                   <div className="period-dates">
                     {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
                   </div>
                   <div className="period-stats">
                     <span>{language === 'ar' ? 'الأعضاء' : 'Members'}: {period.totalMembers || period.summary?.totalMembers || 0}</span>
-                    <span>{language === 'ar' ? 'الأرباح' : 'Profits'}: ${(period.totalProfits || period.summary?.totalProfits || 0).toFixed(2)}</span>
+                    <span>{language === 'ar' ? 'الأرباح' : 'Profits'}: ₪{(period.totalProfits || period.summary?.totalProfits || 0).toFixed(2)}</span>
                     <span className={`status-badge ${period.status}`}>
                       {period.status === 'paid' ? (language === 'ar' ? 'مغلقة' : 'Closed') : (language === 'ar' ? 'محتسبة' : 'Calculated')}
                     </span>
@@ -267,6 +287,9 @@ const ProfitCalculation = () => {
           <div className="results-header">
             <div>
               <h3>{language === 'ar' ? 'نتائج الاحتساب' : 'Calculation Results'}</h3>
+              <p className="period-name-display">
+                {displayData.periodName || `${language === 'ar' ? 'الدورة' : 'Period'} #${displayData.periodNumber || ''}`}
+              </p>
               <p className="period-info-text">
                 {language === 'ar' ? 'الفترة' : 'Period'}: {new Date(displayData.startDate).toLocaleDateString()} - {new Date(displayData.endDate).toLocaleDateString()}
               </p>
@@ -295,7 +318,7 @@ const ProfitCalculation = () => {
               <div className="summary-icon">💰</div>
               <div className="summary-content">
                 <div className="summary-label">{language === 'ar' ? 'إجمالي الأرباح' : 'Total Profits'}</div>
-                <div className="summary-value">${(displayData.totalProfits || displayData.summary?.totalProfits || 0).toFixed(2)}</div>
+                <div className="summary-value">₪{(displayData.totalProfits || displayData.summary?.totalProfits || 0).toFixed(2)}</div>
               </div>
             </div>
             <div className="summary-card">
@@ -336,10 +359,10 @@ const ProfitCalculation = () => {
                       <td className="member-username">@{member.username}</td>
                       <td className="member-code">{member.subscriberCode}</td>
                       <td className="text-center">{member.totalOrders || 0}</td>
-                      <td className="text-right">${(member.totalSales || 0).toFixed(2)}</td>
+                      <td className="text-right">₪{(member.totalSales || 0).toFixed(2)}</td>
                       <td className="text-center points-cell">{member.totalPoints || 0}</td>
-                      <td className="text-right commission-cell">${(member.totalCommission || 0).toFixed(2)}</td>
-                      <td className="text-right profit-cell">${(member.profitAmount || 0).toFixed(2)}</td>
+                      <td className="text-right commission-cell">₪{(member.totalCommission || 0).toFixed(2)}</td>
+                      <td className="text-right profit-cell">₪{(member.profitAmount || 0).toFixed(2)}</td>
                     </tr>
                   ))}
               </tbody>

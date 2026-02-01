@@ -1,0 +1,33 @@
+const mongoose = require('mongoose');
+
+const sliderSchema = new mongoose.Schema({
+  image: {
+    type: String,
+    required: true
+  },
+  title: {
+    type: String,
+    default: ''
+  },
+  description: {
+    type: String,
+    default: ''
+  },
+  alt: {
+    type: String,
+    default: 'Slider image'
+  },
+  order: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  }
+}, {
+  timestamps: true
+});
+
+module.exports = mongoose.model('Slider', sliderSchema);

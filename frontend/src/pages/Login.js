@@ -56,7 +56,7 @@ const Login = () => {
       <div className="auth-box" ref={boxRef}>
         <h2>{t('loginTitle')}</h2>
         {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit} ref={formRef}>
+        <form onSubmit={handleSubmit} ref={formRef} autoComplete="off">
           <div className="form-group">
             <label>{t('username')}</label>
             <input

@@ -101,6 +101,53 @@
   border-bottom: 3px solid #97bc62;
 }
 
+/* Points Mode Toggle */
+.points-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.toggle-btn {
+  flex: 1;
+  max-width: 200px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 2px solid #dee2e6;
+  border-radius: 10px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.toggle-btn:hover {
+  border-color: #2c5f2d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 95, 45, 0.2);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+  border-color: #2c5f2d;
+  box-shadow: 0 4px 15px rgba(44, 95, 45, 0.3);
+}
+
+.toggle-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(44, 95, 45, 0.4);
+}
+
 /* Points Grid */
 .points-grid {
   display: grid;

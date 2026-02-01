@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import { userCancelOrder, userUpdateOrder } from '../services/api';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import '../styles/MyOrders.css';
 
 const MyOrders = () => {
+  console.log('🔴🔴🔴 MyOrders component loaded - VERSION 2.0 WITH PRINT BUTTON 🔴🔴🔴');
+
   const { language } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +24,8 @@ const MyOrders = () => {
     contactPhone: '',
     alternatePhone: '',
     notes: '',
-    customOrderDetails: { specifications: '', requestedDeliveryDate: '', additionalNotes: '' }
+    customOrderDetails: { specifications: '', requestedDeliveryDate: '', additionalNotes: '' },
+    orderItems: []
   });
 
   useEffect(() => {
@@ -115,8 +120,40 @@ const MyOrders = () => {
           ? new Date(order.customOrderDetails.requestedDeliveryDate).toISOString().split('T')[0]
           : '',
         additionalNotes: order.customOrderDetails?.additionalNotes || ''
-      }
+      },
+      orderItems: order.orderItems?.map(item => ({
+        _id: item._id,
+        productId: item.product?._id || item.product,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        originalPrice: item.price
+      })) || []
     });
+  };
+
+  // تحديث كمية منتج
+  const handleQuantityChange = (index, newQuantity) => {
+    const quantity = parseInt(newQuantity) || 1;
+    if (quantity < 1) return;
+
+    const updatedItems = [...editFormData.orderItems];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      quantity: quantity
+    };
+
+    setEditFormData({
+      ...editFormData,
+      orderItems: updatedItems
+    });
+  };
+
+  // حساب المجموع الجديد
+  const calculateNewTotal = () => {
+    return editFormData.orderItems.reduce((sum, item) => {
+      return sum + (item.price * item.quantity);
+    }, 0);
   };
 
   // تأكيد تعديل الطلب
@@ -132,7 +169,11 @@ const MyOrders = () => {
         shippingAddress: editFormData.shippingAddress,
         contactPhone: editFormData.contactPhone,
         alternatePhone: editFormData.alternatePhone,
-        notes: editFormData.notes
+        notes: editFormData.notes,
+        orderItems: editFormData.orderItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }))
       };
 
       // إضافة بيانات الطلب المخصص إذا كان طلب مخصص
@@ -151,6 +192,155 @@ const MyOrders = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // طباعة الطلب كـ PDF
+  const handlePrintOrder = (order) => {
+    const doc = new jsPDF();
+    const isArabic = language === 'ar';
+
+    // عنوان الوثيقة
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text(isArabic ? 'فاتورة الطلب' : 'Order Invoice', 105, 20, { align: 'center' });
+
+    // معلومات الشركة
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Jenai for Cooperative Marketing', 105, 30, { align: 'center' });
+
+    let yPos = 45;
+
+    // معلومات الطلب
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(isArabic ? 'Order Info' : 'معلومات الطلب', 15, yPos);
+    yPos += 8;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${isArabic ? 'Order Number' : 'رقم الطلب'}: ${order.orderNumber}`, 15, yPos);
+    yPos += 6;
+    doc.text(`${isArabic ? 'Status' : 'الحالة'}: ${getStatusLabel(order.status)}`, 15, yPos);
+    yPos += 6;
+    doc.text(`${isArabic ? 'Date' : 'التاريخ'}: ${new Date(order.createdAt).toLocaleDateString()}`, 15, yPos);
+    yPos += 6;
+
+    const paymentMethodLabel =
+      order.paymentMethod === 'cash_on_delivery' ? (isArabic ? 'Cash on Delivery' : 'الدفع عند التوصيل') :
+      order.paymentMethod === 'cash_at_company' ? (isArabic ? 'Cash at Company' : 'كاش بالشركة') :
+      order.paymentMethod === 'reflect' ? (isArabic ? 'Reflect' : 'ريفليكت') :
+      order.paymentMethod;
+
+    doc.text(`${isArabic ? 'Payment Method' : 'طريقة الدفع'}: ${paymentMethodLabel}`, 15, yPos);
+    yPos += 12;
+
+    // معلومات التواصل
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(isArabic ? 'Contact Info' : 'معلومات التواصل', 15, yPos);
+    yPos += 8;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${isArabic ? 'Phone' : 'الهاتف'}: ${order.contactPhone || 'N/A'}`, 15, yPos);
+    yPos += 6;
+    if (order.alternatePhone) {
+      doc.text(`${isArabic ? 'Alt Phone' : 'هاتف بديل'}: ${order.alternatePhone}`, 15, yPos);
+      yPos += 6;
+    }
+    yPos += 6;
+
+    // عنوان الشحن
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(isArabic ? 'Shipping Address' : 'عنوان الشحن', 15, yPos);
+    yPos += 8;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(order.shippingAddress?.street || '', 15, yPos);
+    yPos += 6;
+    doc.text(`${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.zipCode || ''}`, 15, yPos);
+    yPos += 6;
+    doc.text(order.shippingAddress?.country || '', 15, yPos);
+    yPos += 12;
+
+    // جدول المنتجات
+    const tableColumns = [
+      isArabic ? 'Product' : 'المنتج',
+      isArabic ? 'Qty' : 'الكمية',
+      isArabic ? 'Price' : 'السعر',
+      isArabic ? 'Total' : 'المجموع'
+    ];
+
+    const tableRows = order.orderItems?.map(item => [
+      item.name,
+      item.quantity.toString(),
+      `$${item.price?.toFixed(2)}`,
+      `$${(item.quantity * item.price)?.toFixed(2)}`
+    ]) || [];
+
+    doc.autoTable({
+      head: [tableColumns],
+      body: tableRows,
+      startY: yPos,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 4 },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 30, halign: 'center' },
+        2: { cellWidth: 35, halign: 'right' },
+        3: { cellWidth: 35, halign: 'right' }
+      }
+    });
+
+    yPos = doc.lastAutoTable.finalY + 10;
+
+    // ملخص السعر
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    const summaryX = 150;
+
+    doc.text(`${isArabic ? 'Subtotal' : 'المجموع الفرعي'}:`, summaryX, yPos, { align: 'right' });
+    doc.text(`$${order.itemsPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    yPos += 6;
+
+    doc.text(`${isArabic ? 'Shipping' : 'الشحن'}:`, summaryX, yPos, { align: 'right' });
+    doc.text(`$${order.shippingPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    yPos += 6;
+
+    doc.text(`${isArabic ? 'Tax' : 'الضريبة'}:`, summaryX, yPos, { align: 'right' });
+    doc.text(`$${order.taxPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    yPos += 6;
+
+    if (order.discountAmount > 0) {
+      doc.text(`${isArabic ? 'Discount' : 'الخصم'}:`, summaryX, yPos, { align: 'right' });
+      doc.text(`-$${order.discountAmount?.toFixed(2)}`, 195, yPos, { align: 'right' });
+      yPos += 6;
+    }
+
+    // المجموع الكلي
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(`${isArabic ? 'Total' : 'الإجمالي'}:`, summaryX, yPos, { align: 'right' });
+    doc.text(`$${order.totalPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+
+    // ملاحظات
+    if (order.notes) {
+      yPos += 15;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text(isArabic ? 'Notes' : 'ملاحظات', 15, yPos);
+      yPos += 6;
+      doc.setFont(undefined, 'normal');
+      const splitNotes = doc.splitTextToSize(order.notes, 180);
+      doc.text(splitNotes, 15, yPos);
+    }
+
+    // حفظ الملف
+    doc.save(`Order-${order.orderNumber}.pdf`);
   };
 
   if (loading) {
@@ -245,7 +435,34 @@ const MyOrders = () => {
           <div className="mo-modal" onClick={(e) => e.stopPropagation()}>
             <div className="mo-modal-header">
               <h3>{language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}</h3>
-              <button className="mo-modal-close" onClick={() => setSelectedOrder(null)}>✕</button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button
+                  className="mo-print-btn"
+                  data-testid="print-order-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('🖨️ Print button clicked!', selectedOrder);
+                    handlePrintOrder(selectedOrder);
+                  }}
+                  title={language === 'ar' ? 'طباعة الطلب' : 'Print Order'}
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '14px'
+                  }}
+                >
+                  🖨️ {language === 'ar' ? 'طباعة' : 'Print'}
+                </button>
+                <button className="mo-modal-close" onClick={() => setSelectedOrder(null)}>✕</button>
+              </div>
             </div>
             <div className="mo-modal-body">
               <div className="mo-detail-section">
@@ -569,6 +786,45 @@ const MyOrders = () => {
                     />
                   </div>
                 </div>
+
+                {/* المنتجات والكميات */}
+                {!editingOrder.isCustomOrder && editFormData.orderItems.length > 0 && (
+                  <div className="mo-form-section mo-products-edit-section">
+                    <h4>🛍️ {language === 'ar' ? 'المنتجات والكميات' : 'Products & Quantities'}</h4>
+                    <div className="mo-products-edit-list">
+                      {editFormData.orderItems.map((item, index) => (
+                        <div key={index} className="mo-product-edit-item">
+                          <div className="mo-product-name">
+                            <span className="mo-product-icon">📦</span>
+                            <span>{item.name}</span>
+                          </div>
+                          <div className="mo-product-quantity">
+                            <label>{language === 'ar' ? 'الكمية' : 'Quantity'}</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => handleQuantityChange(index, e.target.value)}
+                            />
+                          </div>
+                          <div className="mo-product-subtotal">
+                            <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
+                            <span className="mo-subtotal-value">${(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mo-total-display">
+                      <span className="mo-total-label">{language === 'ar' ? 'الإجمالي الجديد:' : 'New Total:'}</span>
+                      <span className="mo-total-value">${calculateNewTotal().toFixed(2)}</span>
+                    </div>
+                    <div className="mo-edit-note">
+                      <small>ℹ️ {language === 'ar'
+                        ? 'ملاحظة: سيتم تحديث المجموع الكلي للطلب بناءً على الكميات الجديدة'
+                        : 'Note: Order total will be updated based on new quantities'}</small>
+                    </div>
+                  </div>
+                )}
 
                 {/* تفاصيل الطلب المخصص */}
                 {editingOrder.isCustomOrder && (

@@ -10,7 +10,6 @@ const MembersManagement = () => {
   const [editingMember, setEditingMember] = useState(null);
   const [editForm, setEditForm] = useState({
     sponsorCode: '',
-    commissionRate: 10,
     isActive: true
   });
 
@@ -36,7 +35,6 @@ const MembersManagement = () => {
     setEditingMember(member);
     setEditForm({
       sponsorCode: member.sponsorId?.subscriberCode || '',
-      commissionRate: member.commissionRate || 10,
       isActive: member.isActive !== false
     });
   };
@@ -50,7 +48,6 @@ const MembersManagement = () => {
     e.preventDefault();
     try {
       const updateData = {
-        commissionRate: Number(editForm.commissionRate),
         isActive: editForm.isActive
       };
 
@@ -80,7 +77,7 @@ const MembersManagement = () => {
         <div className="modal-overlay" onClick={() => setEditingMember(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3>{language === 'ar' ? 'تعديل بيانات العضو' : 'Edit Member'}: {editingMember.name}</h3>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="off">
               <div className="form-group">
                 <label>{language === 'ar' ? 'كود العضو' : 'Member Code'}</label>
                 <input
@@ -104,17 +101,6 @@ const MembersManagement = () => {
                   {editingMember.sponsorId?.name || (language === 'ar' ? 'لا يوجد' : 'None')}
                   {editingMember.sponsorId?.subscriberCode ? ` (${editingMember.sponsorId.subscriberCode})` : ''}
                 </small>
-              </div>
-              <div className="form-group">
-                <label>{language === 'ar' ? 'نسبة العمولة (%)' : 'Commission Rate (%)'}</label>
-                <input
-                  type="number"
-                  name="commissionRate"
-                  value={editForm.commissionRate}
-                  onChange={handleEditChange}
-                  min="0"
-                  max="100"
-                />
               </div>
               <div className="form-group checkbox-group">
                 <label>
@@ -153,7 +139,6 @@ const MembersManagement = () => {
               <th>{language === 'ar' ? 'المدينة' : 'City'}</th>
               <th>{language === 'ar' ? 'الراعي' : 'Sponsor'}</th>
               <th>{language === 'ar' ? 'كود الراعي' : 'Sponsor Code'}</th>
-              <th>{language === 'ar' ? 'نسبة العمولة' : 'Commission'}</th>
               <th>{language === 'ar' ? 'الحالة' : 'Status'}</th>
               <th>{language === 'ar' ? 'الإجراءات' : 'Actions'}</th>
             </tr>
@@ -168,7 +153,6 @@ const MembersManagement = () => {
                 <td>{member.city || '-'}</td>
                 <td>{member.sponsorId?.name || (language === 'ar' ? 'لا يوجد' : 'None')}</td>
                 <td>{member.sponsorId?.subscriberCode || '-'}</td>
-                <td>{member.commissionRate}%</td>
                 <td>
                   <span className={`status ${member.isActive !== false ? 'active' : 'inactive'}`}>
                     {member.isActive !== false

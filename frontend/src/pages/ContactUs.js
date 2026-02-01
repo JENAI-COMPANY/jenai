@@ -129,7 +129,7 @@ const ContactUs = () => {
           </div>
         </div>
 
-        <form className="contact-form" ref={formRef} onSubmit={handleSubmit}>
+        <form className="contact-form" ref={formRef} onSubmit={handleSubmit} autoComplete="off">
           <h2>{language === 'ar' ? 'أرسل لنا رسالة' : 'Send Us a Message'}</h2>
 
           {submitted && (

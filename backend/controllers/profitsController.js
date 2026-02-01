@@ -13,7 +13,7 @@ exports.calculateMemberProfits = async (req, res) => {
       return res.status(403).json({ message: 'هذه الخدمة متاحة للأعضاء فقط' });
     }
 
-    // جمع بيانات النقاط
+    // جمع بيانات النقاط الشهرية
     const memberData = {
       personalPoints: user.monthlyPoints || 0,
       generationsPoints: [
@@ -27,6 +27,17 @@ exports.calculateMemberProfits = async (req, res) => {
 
     // حساب أرباح الأداء (الأرباح الأساسية)
     const profitDetails = calculateTotalPoints(memberData);
+
+    // جمع النقاط التراكمية
+    const cumulativePoints = {
+      personal: user.points || 0, // النقاط التراكمية الشخصية
+      generation1: user.generation1Points || 0, // الأجيال تبقى شهرية
+      generation2: user.generation2Points || 0,
+      generation3: user.generation3Points || 0,
+      generation4: user.generation4Points || 0,
+      generation5: user.generation5Points || 0,
+      total: user.points || 0 // إجمالي النقاط التراكمية
+    };
 
     // حساب عمولة القيادة (للأعضاء من برونزي وما فوق)
     const leadershipCommission = await calculateLeadershipCommission(User, user._id);
@@ -54,6 +65,7 @@ exports.calculateMemberProfits = async (req, res) => {
           generation5: profitDetails.generationsPoints[4],
           total: profitDetails.personalPoints + profitDetails.generationsPoints.reduce((sum, p) => sum + p, 0)
         },
+        cumulativePoints: cumulativePoints,
         commissions: {
           performance: {
             personal: {

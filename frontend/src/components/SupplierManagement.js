@@ -253,7 +253,7 @@ const SupplierManagement = () => {
               <h3>{language === 'ar' ? 'إضافة مورد جديد' : 'Add New Supplier'}</h3>
               <button className="sm-modal-close" onClick={() => setShowAddForm(false)}>✕</button>
             </div>
-            <form onSubmit={handleAddSupplier}>
+            <form onSubmit={handleAddSupplier} autoComplete="off">
               <div className="sm-modal-body">
                 <div className="sm-form-row">
                   <div className="sm-form-group">

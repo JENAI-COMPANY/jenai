@@ -171,7 +171,7 @@ const SliderManagement = () => {
               ? (language === 'ar' ? 'تعديل الصورة' : 'Edit Slider')
               : (language === 'ar' ? 'إضافة صورة جديدة' : 'Add New Slider')}
           </h3>
-          <form onSubmit={handleSubmit} className="sm-form">
+          <form onSubmit={handleSubmit} className="sm-form" autoComplete="off">
             <div className="sm-form-group">
               <label>{language === 'ar' ? 'الصورة' : 'Image'}</label>
               <input

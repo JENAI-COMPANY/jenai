@@ -178,7 +178,7 @@ const ServicesManagement = () => {
               </div>
 
               {showServiceForm && (
-                <form onSubmit={handleCreateService} className="product-form">
+                <form onSubmit={handleCreateService} className="product-form" autoComplete="off">
                   <h4>{language === 'ar' ? 'معلومات الخدمة الأساسية' : 'Basic Service Information'}</h4>
                   <div className="form-grid">
                     <input

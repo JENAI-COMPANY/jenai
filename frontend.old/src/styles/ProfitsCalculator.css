@@ -1,0 +1,367 @@
+.profits-calculator {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+
+.profits-calculator.loading,
+.profits-calculator.error {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #2c5f2d;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Header */
+.profits-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profits-header h2 {
+  font-size: 2.5rem;
+  color: #2c5f2d;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* Final Profit Card */
+.final-profit-card {
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(44, 95, 45, 0.3);
+  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.profit-icon {
+  font-size: 5rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.profit-details h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.95;
+}
+
+.profit-amount {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profit-note {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Section */
+.section {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  color: #2c5f2d;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #97bc62;
+}
+
+/* Points Grid */
+.points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.point-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  border-left: 4px solid #2c5f2d;
+  transition: all 0.3s ease;
+}
+
+.point-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.point-card.personal {
+  border-left-color: #d4af37;
+  background: linear-gradient(135deg, #fffbf0 0%, #fff8e1 100%);
+}
+
+.point-card.gen-1 { border-left-color: #4caf50; }
+.point-card.gen-2 { border-left-color: #2196f3; }
+.point-card.gen-3 { border-left-color: #9c27b0; }
+.point-card.gen-4 { border-left-color: #ff9800; }
+.point-card.gen-5 { border-left-color: #f44336; }
+
+.card-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-content h4 {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.point-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c5f2d;
+  margin-bottom: 0.25rem;
+}
+
+.point-label {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0;
+}
+
+.total-points {
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.3rem;
+}
+
+/* Commissions Table */
+.commissions-table {
+  overflow-x: auto;
+}
+
+.commissions-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.commissions-table th,
+.commissions-table td {
+  padding: 1rem;
+  text-align: right;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.commissions-table thead tr {
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+}
+
+.commissions-table thead th {
+  font-weight: 600;
+}
+
+.commissions-table tbody tr {
+  transition: background 0.3s ease;
+}
+
+.commissions-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.personal-row {
+  background: linear-gradient(90deg, #fffbf0 0%, #fff8e1 50%, white 100%);
+}
+
+.gen-1-row { background: linear-gradient(90deg, #e8f5e9 0%, white 100%); }
+.gen-2-row { background: linear-gradient(90deg, #e3f2fd 0%, white 100%); }
+.gen-3-row { background: linear-gradient(90deg, #f3e5f5 0%, white 100%); }
+.gen-4-row { background: linear-gradient(90deg, #fff3e0 0%, white 100%); }
+.gen-5-row { background: linear-gradient(90deg, #ffebee 0%, white 100%); }
+
+.source-icon {
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.percentage {
+  color: #2c5f2d;
+  font-weight: 600;
+}
+
+.commission-value {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.commissions-table tfoot tr {
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.total-value {
+  color: #ffd700;
+  font-size: 1.4rem;
+}
+
+/* Formula Section */
+.formula-box {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.formula-step {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.formula-step:last-child {
+  margin-bottom: 0;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  color: #2c5f2d;
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+}
+
+.formula {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: #333;
+  border-right: 4px solid #2c5f2d;
+  margin: 0;
+}
+
+.rates-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rates-list li {
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border-right: 4px solid #97bc62;
+}
+
+/* Actions */
+.actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.refresh-button {
+  background: linear-gradient(135deg, #2c5f2d 0%, #97bc62 100%);
+  color: white;
+  border: none;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(44, 95, 45, 0.3);
+}
+
+.refresh-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(44, 95, 45, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profits-calculator {
+    padding: 1rem;
+  }
+
+  .profits-header h2 {
+    font-size: 2rem;
+  }
+
+  .final-profit-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1.5rem;
+  }
+
+  .profit-amount {
+    font-size: 2.5rem;
+  }
+
+  .points-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .commissions-table {
+    font-size: 0.9rem;
+  }
+
+  .commissions-table th,
+  .commissions-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .formula-step {
+    flex-direction: column;
+  }
+}

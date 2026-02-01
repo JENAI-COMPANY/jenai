@@ -204,7 +204,7 @@ const SuppliersManagement = () => {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="supplier-form product-form">
+        <form onSubmit={handleSubmit} className="supplier-form product-form" autoComplete="off">
           <h4>{editingSupplier ? (language === 'ar' ? 'تعديل المورد' : 'Edit Supplier') : (language === 'ar' ? 'إضافة مورد جديد' : 'Add New Supplier')}</h4>
           <div className="form-grid">
             {!editingSupplier && (

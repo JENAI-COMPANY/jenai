@@ -6,7 +6,8 @@ const {
   getProfitPeriodById,
   getMemberProfitInPeriod,
   deleteProfitPeriod,
-  updateProfitPeriodStatus
+  updateProfitPeriodStatus,
+  getMyProfitPeriods
 } = require('../controllers/profitPeriodController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -18,6 +19,16 @@ router.post(
   protect,
   authorize('admin', 'super_admin'),
   calculatePeriodProfits
+);
+
+// @route   GET /api/profit-periods/my-profits
+// @desc    الحصول على جميع دورات الأرباح الخاصة بالعضو الحالي
+// @access  Private (Member only)
+router.get(
+  '/my-profits',
+  protect,
+  authorize('member'),
+  getMyProfitPeriods
 );
 
 // @route   GET /api/profit-periods

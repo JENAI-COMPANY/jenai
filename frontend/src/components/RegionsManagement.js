@@ -175,7 +175,7 @@ const RegionsManagement = () => {
 
       {/* Add Region Form */}
       {showAddForm && (
-        <form onSubmit={handleCreateRegion} className="add-form">
+        <form onSubmit={handleCreateRegion} className="add-form" autoComplete="off">
           <div className="form-grid">
             <div className="form-group">
               <label>{language === 'ar' ? 'الاسم (عام)' : 'Name'} *</label>
@@ -269,7 +269,7 @@ const RegionsManagement = () => {
         <div className="modal-overlay" onClick={() => setEditingRegion(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>{language === 'ar' ? 'تعديل المنطقة' : 'Edit Region'}</h3>
-            <form onSubmit={handleUpdateRegion}>
+            <form onSubmit={handleUpdateRegion} autoComplete="off">
               <div className="form-grid">
                 <div className="form-group">
                   <label>{language === 'ar' ? 'الاسم (عام)' : 'Name'} *</label>

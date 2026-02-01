@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
+import { getRankImageFromNumber, getRankNameFromNumber } from '../utils/rankHelpers';
 import '../styles/MemberRanks.css';
 
 const MemberRanks = () => {
@@ -113,7 +114,7 @@ const MemberRanks = () => {
   return (
     <div className="member-ranks">
       <div className="mr-header">
-        <h2>{language === 'ar' ? 'نظام الدرجات التسع' : '9 Ranks System'}</h2>
+        <h2>{language === 'ar' ? 'رتب جيناي' : 'Jenai Ranks'}</h2>
         <button className="mr-update-btn" onClick={handleUpdateRanks}>
           🔄 {language === 'ar' ? 'تحديث الدرجات تلقائياً' : 'Auto Update Ranks'}
         </button>
@@ -131,6 +132,11 @@ const MemberRanks = () => {
           return (
             <div key={rankNum} className={`mr-rank-card ${getRankBadgeClass(parseInt(rankNum))}`}>
               <div className="mr-rank-header">
+                <img
+                  src={`/${getRankImageFromNumber(parseInt(rankNum))}`}
+                  alt={language === 'ar' ? rank.name : rank.nameEn}
+                  style={{ width: '50px', height: '50px', objectFit: 'contain', marginBottom: '10px' }}
+                />
                 <h3>{language === 'ar' ? rank.name : rank.nameEn}</h3>
                 <span className="mr-rank-number">{rankNum}</span>
               </div>
@@ -180,6 +186,11 @@ const MemberRanks = () => {
                   <td className="mr-code">{member.subscriberCode}</td>
                   <td>
                     <span className={`mr-rank-badge ${getRankBadgeClass(member.memberRank)}`}>
+                      <img
+                        src={`/${getRankImageFromNumber(member.memberRank)}`}
+                        alt={getRankName(member.memberRank)}
+                        style={{ width: '25px', height: '25px', objectFit: 'contain', marginLeft: '5px', verticalAlign: 'middle' }}
+                      />
                       {getRankName(member.memberRank)}
                     </span>
                   </td>
@@ -215,35 +226,31 @@ const MemberRanks = () => {
                 <div className="mr-summary-item">
                   <label>{language === 'ar' ? 'الدرجة:' : 'Rank:'}</label>
                   <span className={`mr-rank-badge ${getRankBadgeClass(downlineData.member.memberRank)}`}>
+                    <img
+                      src={`/${getRankImageFromNumber(downlineData.member.memberRank)}`}
+                      alt={getRankName(downlineData.member.memberRank)}
+                      style={{ width: '30px', height: '30px', objectFit: 'contain', marginLeft: '8px', verticalAlign: 'middle' }}
+                    />
                     {getRankName(downlineData.member.memberRank)}
                   </span>
                 </div>
                 <div className="mr-summary-item">
-                  <label>{language === 'ar' ? 'النقاط:' : 'Points:'}</label>
-                  <span>{downlineData.member.points?.toLocaleString() || 0}</span>
-                </div>
-                <div className="mr-summary-item">
                   <label>{language === 'ar' ? 'إجمالي الشبكة:' : 'Total Network:'}</label>
                   <span>{downlineData.statistics.totalDownline}</span>
-                </div>
-                <div className="mr-summary-item">
-                  <label>{language === 'ar' ? 'عمولة متوقعة:' : 'Est. Commission:'}</label>
-                  <span>${downlineData.statistics.estimatedDownlineCommission?.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="mr-downline-levels">
                 {[1, 2, 3, 4, 5].map(level => {
                   const levelKey = `level${level}`;
-                  const levelMembers = downlineData.downlineStructure[levelKey];
-                  const commissionRate = downlineData.member.rankConfig.downlineCommissionRates[levelKey];
+                  const levelMembers = downlineData.downlineStructure?.[levelKey] || [];
 
                   return (
                     <div key={level} className="mr-level-section">
                       <h4>
                         {language === 'ar' ? `المستوى ${level}` : `Level ${level}`}
                         <span className="mr-level-badge">
-                          {levelMembers.length} {language === 'ar' ? 'عضو' : 'members'} • {commissionRate}%
+                          {levelMembers.length} {language === 'ar' ? 'عضو' : 'members'}
                         </span>
                       </h4>
                       {levelMembers.length > 0 ? (
@@ -255,9 +262,12 @@ const MemberRanks = () => {
                                 <small>@{member.username}</small>
                               </div>
                               <div className="mr-member-stats">
-                                <span className="mr-member-points">{member.monthlyPoints || 0} pts</span>
                                 <span className={`mr-rank-badge ${getRankBadgeClass(member.memberRank)}`}>
-                                  R{member.memberRank}
+                                  <img
+                                    src={`/${getRankImageFromNumber(member.memberRank)}`}
+                                    alt={`Rank ${member.memberRank}`}
+                                    style={{ width: '25px', height: '25px', objectFit: 'contain' }}
+                                  />
                                 </span>
                               </div>
                             </div>

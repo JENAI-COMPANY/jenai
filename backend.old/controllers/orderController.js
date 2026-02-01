@@ -1,0 +1,798 @@
+const Order = require('../models/Order');
+const Product = require('../models/Product');
+const User = require('../models/User');
+const { calculatePersonalPerformancePoints, calculateOrderPoints } = require('../utils/pointsCalculator');
+
+// Create new order
+exports.createOrder = async (req, res) => {
+  try {
+    // التحقق من المستخدم
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        message: 'User not authenticated',
+        messageAr: 'المستخدم غير مصادق عليه'
+      });
+    }
+
+    const {
+      orderItems,
+      shippingAddress,
+      contactPhone,
+      alternatePhone,
+      paymentMethod,
+      itemsPrice,
+      taxPrice,
+      shippingPrice,
+      totalPrice,
+      isCustomOrder,
+      customOrderDetails
+    } = req.body;
+
+    if (!orderItems || orderItems.length === 0) {
+      return res.status(400).json({ message: 'No order items' });
+    }
+
+    // التحقق من وجود أرقام الهاتف
+    if (!contactPhone) {
+      return res.status(400).json({
+        message: 'Contact phone is required',
+        messageAr: 'رقم الهاتف الأساسي مطلوب'
+      });
+    }
+
+    // التحقق من صحة بيانات المنتجات
+    for (const item of orderItems) {
+      if (!item.product || !item.name || !item.price || !item.quantity) {
+        return res.status(400).json({
+          message: 'Invalid order items data',
+          messageAr: 'بيانات المنتجات غير صالحة'
+        });
+      }
+    }
+
+    // إعداد بيانات الطلب
+    const orderData = {
+      user: req.user._id,
+      orderItems,
+      shippingAddress,
+      contactPhone,
+      alternatePhone: alternatePhone || '',
+      paymentMethod,
+      itemsPrice,
+      taxPrice,
+      shippingPrice,
+      totalPrice,
+      isCustomOrder: isCustomOrder || false
+    };
+
+    // إضافة تفاصيل الطلب المخصص إذا وجدت
+    if (isCustomOrder && customOrderDetails) {
+      orderData.customOrderDetails = {
+        specifications: customOrderDetails.specifications,
+        requestedDeliveryDate: customOrderDetails.requestedDeliveryDate ? new Date(customOrderDetails.requestedDeliveryDate) : null,
+        additionalNotes: customOrderDetails.additionalNotes || ''
+      };
+    }
+
+    const order = await Order.create(orderData);
+
+    // Calculate points for members based on new system
+    if (req.user.role === 'member') {
+      let totalPoints = 0;
+      const products = [];
+
+      // جلب بيانات المنتجات
+      for (const item of orderItems) {
+        if (item.product) {
+          const product = await Product.findById(item.product);
+          if (product) {
+            products.push(product);
+          }
+        }
+      }
+
+      // حساب النقاط باستخدام النظام الجديد
+      // استخدام النقاط المحددة في المنتج مباشرة
+      for (const item of orderItems) {
+        if (item.product && item.points) {
+          totalPoints += item.points * item.quantity;
+        }
+      }
+
+      // إضافة النقاط للعضو وتوزيع العمولات
+      if (totalPoints > 0) {
+        // حفظ النقاط في الطلب
+        await Order.findByIdAndUpdate(order._id, {
+          totalPoints: totalPoints
+        });
+
+        // توزيع العمولات حسب النظام الجديد
+        const buyer = await User.findById(req.user._id);
+        await distributeCommissions(buyer, totalPoints);
+      }
+    }
+
+    // Calculate commissions if user is a subscriber
+    if (req.user.role === 'subscriber' && req.user.sponsorId) {
+      await calculateCommissions(order, req.user);
+    }
+
+    res.status(201).json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// دالة توزيع العمولات حسب النظام الجديد
+// ══════════════════════════════════════════════════════════════
+const distributeCommissions = async (buyer, productPoints) => {
+  try {
+    // النسب الثابتة لعمولة الأجيال (للجميع)
+    const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
+
+    // نسب عمولة القيادة حسب الرتبة
+    const LEADERSHIP_RATES = {
+      'agent': [],
+      'bronze': [0.05], // جيل 1 فقط
+      'gold': [0.05, 0.04], // جيل 1+2
+      'silver': [0.05, 0.04, 0.03], // جيل 1+2+3
+      'ruby': [0.05, 0.04, 0.03, 0.02], // جيل 1+2+3+4
+      'diamond': [0.05, 0.04, 0.03, 0.02, 0.01], // الخمسة
+      'double_diamond': [0.05, 0.04, 0.03, 0.02, 0.01],
+      'regional_ambassador': [0.05, 0.04, 0.03, 0.02, 0.01],
+      'global_ambassador': [0.05, 0.04, 0.03, 0.02, 0.01]
+    };
+
+    // معامل التحويل من نقاط إلى شيكل
+    const POINTS_TO_CURRENCY = 0.55;
+
+    // ══════════════════════════════════════
+    // 1. الربح الشخصي للمشتري (20%)
+    // ══════════════════════════════════════
+    const personalPoints = productPoints * 0.20;
+    const personalProfit = personalPoints * POINTS_TO_CURRENCY;
+
+    buyer.points = (buyer.points || 0) + productPoints;
+    buyer.monthlyPoints = (buyer.monthlyPoints || 0) + productPoints;
+    // حذف الأعشار فقط عند الحفظ النهائي
+    buyer.totalCommission = Math.floor((buyer.totalCommission || 0) + personalProfit);
+    buyer.availableCommission = Math.floor((buyer.availableCommission || 0) + personalProfit);
+    await buyer.save();
+
+    console.log(`💰 ${buyer.name} (المشتري) - نقاط: ${productPoints}, ربح شخصي: ${personalProfit} شيكل`);
+
+    // ══════════════════════════════════════
+    // 2. توزيع على الأجيال الخمسة
+    // ══════════════════════════════════════
+    let currentMemberId = buyer.referredBy;
+    let generationLevel = 0;
+
+    while (currentMemberId && generationLevel < 5) {
+      const currentMember = await User.findById(currentMemberId);
+
+      if (!currentMember || currentMember.role !== 'member') break;
+
+      // عمولة الأجيال (ثابتة)
+      const genRate = GENERATION_RATES[generationLevel];
+      const genPoints = productPoints * genRate;
+
+      // عمولة القيادة (حسب الرتبة)
+      const leadershipRates = LEADERSHIP_RATES[currentMember.memberRank] || [];
+      const leadershipRate = leadershipRates[generationLevel] || 0;
+      const leadershipPoints = productPoints * leadershipRate;
+
+      // إجمالي النقاط والربح (بدون حذف أعشار في الحسابات الوسيطة)
+      const totalPoints = genPoints + leadershipPoints;
+      const profit = totalPoints * POINTS_TO_CURRENCY;
+
+      // تحديث العضو
+      const genFieldName = `generation${generationLevel + 1}Points`;
+      currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
+
+      if (leadershipPoints > 0) {
+        currentMember.leadershipPoints = (currentMember.leadershipPoints || 0) + leadershipPoints;
+      }
+
+      // حذف الأعشار فقط عند الحفظ النهائي
+      currentMember.totalCommission = Math.floor((currentMember.totalCommission || 0) + profit);
+      currentMember.availableCommission = Math.floor((currentMember.availableCommission || 0) + profit);
+
+      await currentMember.save();
+
+      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - نقاط أجيال: ${genPoints.toFixed(2)}, نقاط قيادة: ${leadershipPoints.toFixed(2)}, ربح: ${profit} شيكل`);
+
+      // الانتقال للجيل التالي
+      currentMemberId = currentMember.referredBy;
+      generationLevel++;
+    }
+  } catch (error) {
+    console.error('❌ خطأ في توزيع العمولات:', error);
+  }
+};
+
+// تحديث نقاط الأجيال الخمسة للأعضاء العلويين (تم استبدالها بـ distributeCommissions)
+const updateGenerationsPoints = async (memberId, points) => {
+  // هذه الدالة تم استبدالها بـ distributeCommissions
+  // تم الاحتفاظ بها للتوافق مع الكود القديم
+  console.log('⚠️ updateGenerationsPoints تم استبدالها بـ distributeCommissions');
+};
+
+// Calculate and assign commissions
+const calculateCommissions = async (order, buyer) => {
+  const commissions = [];
+  let currentSponsor = await User.findById(buyer.sponsorId);
+  let level = 1;
+
+  // Calculate commissions up to 3 levels
+  while (currentSponsor && level <= 3) {
+    const commissionRate = level === 1 ? 10 : level === 2 ? 5 : 3;
+    const commissionAmount = (order.totalPrice * commissionRate) / 100;
+
+    commissions.push({
+      user: currentSponsor._id,
+      amount: commissionAmount,
+      level
+    });
+
+    // Update user's total commission
+    await User.findByIdAndUpdate(currentSponsor._id, {
+      $inc: { totalCommission: commissionAmount }
+    });
+
+    if (currentSponsor.sponsorId) {
+      currentSponsor = await User.findById(currentSponsor.sponsorId);
+      level++;
+    } else {
+      break;
+    }
+  }
+
+  // Update order with commissions
+  await Order.findByIdAndUpdate(order._id, { commissions });
+};
+
+// Get order by ID
+exports.getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('orderItems.product');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Check if user owns this order or is admin
+    if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to view this order' });
+    }
+
+    res.status(200).json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get logged in user orders
+exports.getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      orders
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all orders (Admin only)
+exports.getAllOrders = async (req, res) => {
+  try {
+    let query = {};
+
+    // Regional admins can only see orders from users in their regions
+    if (req.user && req.user.role === 'regional_admin') {
+      const User = require('../models/User');
+      // Find all users in the admin's managed regions
+      const usersInRegion = await User.find({
+        region: { $in: req.user.managedRegions }
+      }).select('_id');
+
+      const userIds = usersInRegion.map(u => u._id);
+      query.user = { $in: userIds };
+    }
+
+    const orders = await Order.find(query)
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      orders
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update order status (Admin only)
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.status = req.body.status || order.status;
+
+    if (req.body.status === 'delivered') {
+      order.isDelivered = true;
+      order.deliveredAt = Date.now();
+    }
+
+    const updatedOrder = await order.save();
+
+    res.status(200).json({
+      success: true,
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// تأكيد مواصفات الطلب المخصص (للآدمن فقط)
+exports.confirmCustomOrderSpecs = async (req, res) => {
+  try {
+    console.log('🔵 confirmCustomOrderSpecs called');
+    console.log('📦 Order ID:', req.params.id);
+    console.log('📝 Request body:', req.body);
+
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+
+    if (!order) {
+      console.log('❌ Order not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+        messageAr: 'الطلب غير موجود'
+      });
+    }
+
+    console.log('✅ Order found:', order.orderNumber);
+    console.log('📋 Is custom order:', order.isCustomOrder);
+
+    // التحقق من أن هذا طلب مخصص
+    if (!order.isCustomOrder) {
+      console.log('❌ Not a custom order');
+      return res.status(400).json({
+        success: false,
+        message: 'This is not a custom order',
+        messageAr: 'هذا ليس طلب مخصص'
+      });
+    }
+
+    const {
+      confirmedPrice,
+      requestedDeliveryDate,
+      adminResponse,
+      additionalNotes
+    } = req.body;
+
+    console.log('💰 Confirmed price:', confirmedPrice);
+
+    // التحقق من وجود السعر المؤكد
+    if (!confirmedPrice || confirmedPrice <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Confirmed price is required and must be greater than 0',
+        messageAr: 'السعر المؤكد مطلوب ويجب أن يكون أكبر من صفر'
+      });
+    }
+
+    // تحديث تفاصيل الطلب المخصص
+    if (!order.customOrderDetails) {
+      order.customOrderDetails = {};
+    }
+
+    // الحفاظ على المواصفات الأصلية
+    const originalSpecs = order.customOrderDetails.specifications || '';
+    const originalNotes = order.customOrderDetails.additionalNotes || '';
+
+    order.customOrderDetails.confirmedPrice = parseFloat(confirmedPrice);
+    order.customOrderDetails.requestedDeliveryDate = requestedDeliveryDate
+      ? new Date(requestedDeliveryDate)
+      : order.customOrderDetails.requestedDeliveryDate;
+    order.customOrderDetails.adminResponse = adminResponse || '';
+    order.customOrderDetails.additionalNotes = additionalNotes || originalNotes;
+    order.customOrderDetails.specifications = originalSpecs;
+    order.customOrderDetails.isConfirmed = true;
+
+    // إخبار Mongoose أن الـ object تغير
+    order.markModified('customOrderDetails');
+
+    // تحديث السعر الإجمالي للطلب
+    order.itemsPrice = parseFloat(confirmedPrice);
+    order.totalPrice = parseFloat(confirmedPrice) + (order.taxPrice || 0) + (order.shippingPrice || 0);
+
+    const updatedOrder = await order.save();
+
+    console.log('✅ Order saved successfully');
+    console.log('📊 Updated custom order details:', updatedOrder.customOrderDetails);
+
+    res.status(200).json({
+      success: true,
+      message: 'Custom order specifications confirmed successfully',
+      messageAr: 'تم تأكيد مواصفات الطلب المخصص بنجاح',
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error('❌ Error in confirmCustomOrderSpecs:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Update order to paid
+exports.updateOrderToPaid = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.isPaid = true;
+    order.paidAt = Date.now();
+    order.paymentResult = {
+      id: req.body.id,
+      status: req.body.status,
+      updateTime: req.body.update_time,
+      emailAddress: req.body.email_address
+    };
+
+    const updatedOrder = await order.save();
+
+    res.status(200).json({
+      success: true,
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// إلغاء الطلب وإرجاع النقاط
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'role points monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // التحقق من أن الطلب لم يتم إلغاؤه مسبقاً
+    if (order.isCancelled) {
+      return res.status(400).json({ message: 'Order is already cancelled' });
+    }
+
+    // التحقق من أن الطلب لم يتم تسليمه
+    if (order.isDelivered) {
+      return res.status(400).json({ message: 'Cannot cancel delivered order' });
+    }
+
+    const { reason } = req.body;
+
+    // إرجاع النقاط إذا كان المستخدم عضواً وتم احتساب نقاط للطلب
+    if (order.user.role === 'member' && order.totalPoints > 0) {
+      await reverseOrderPoints(order);
+    }
+
+    // تحديث حالة الطلب
+    order.isCancelled = true;
+    order.cancelledAt = Date.now();
+    order.cancelledBy = req.user._id;
+    order.cancellationReason = reason || 'No reason provided';
+    order.status = 'cancelled';
+
+    const updatedOrder = await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order cancelled successfully and points have been reversed',
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// دالة إرجاع النقاط عند إلغاء الطلب
+const reverseOrderPoints = async (order) => {
+  try {
+    // حساب النقاط التي تم إضافتها للطلب
+    const products = [];
+    let totalPoints = 0;
+
+    // جلب بيانات المنتجات
+    for (const item of order.orderItems) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        products.push(product);
+      }
+    }
+
+    // حساب النقاط باستخدام نفس المعادلة
+    for (const item of order.orderItems) {
+      const product = products.find(p => p._id.toString() === item.product.toString());
+      if (product && product.wholesalePrice && product.memberPrice) {
+        const points = calculatePersonalPerformancePoints(
+          product.wholesalePrice,
+          product.memberPrice,
+          item.quantity
+        );
+        totalPoints += points;
+      }
+    }
+
+    // خصم النقاط من العضو
+    if (totalPoints > 0) {
+      await User.findByIdAndUpdate(order.user._id, {
+        $inc: {
+          points: -totalPoints,
+          monthlyPoints: -totalPoints
+        }
+      });
+
+      // خصم نقاط الأجيال العليا
+      await reverseGenerationsPoints(order.user._id, totalPoints);
+    }
+
+    // حفظ النقاط الملغاة في الطلب
+    order.totalPoints = -totalPoints;
+  } catch (error) {
+    console.error('Error reversing order points:', error);
+    throw error;
+  }
+};
+
+// دالة خصم نقاط الأجيال الخمسة عند إلغاء الطلب
+const reverseGenerationsPoints = async (memberId, points) => {
+  try {
+    let currentMember = await User.findById(memberId);
+    let generation = 1;
+
+    // خصم نقاط الأجيال الخمسة
+    while (currentMember && currentMember.sponsorId && generation <= 5) {
+      const sponsor = await User.findById(currentMember.sponsorId);
+
+      if (sponsor && sponsor.role === 'member') {
+        const generationField = `generation${generation}Points`;
+
+        // خصم نقاط الجيل
+        await User.findByIdAndUpdate(sponsor._id, {
+          $inc: {
+            [generationField]: -points
+          }
+        });
+
+        currentMember = sponsor;
+        generation++;
+      } else {
+        break;
+      }
+    }
+  } catch (error) {
+    console.error('Error reversing generations points:', error);
+    throw error;
+  }
+};
+
+// إلغاء الطلب من قبل المستخدم (فقط عندما يكون قيد الانتظار)
+exports.userCancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'role points monthlyPoints');
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+        messageAr: 'الطلب غير موجود'
+      });
+    }
+
+    // التحقق من أن المستخدم هو صاحب الطلب
+    if (order.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to cancel this order',
+        messageAr: 'غير مصرح لك بإلغاء هذا الطلب'
+      });
+    }
+
+    // التحقق من أن الطلب قيد الانتظار فقط
+    if (order.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only cancel orders that are pending',
+        messageAr: 'يمكن إلغاء الطلبات قيد الانتظار فقط'
+      });
+    }
+
+    // التحقق من أن الطلب لم يتم إلغاؤه مسبقاً
+    if (order.isCancelled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order is already cancelled',
+        messageAr: 'الطلب ملغي مسبقاً'
+      });
+    }
+
+    const { reason } = req.body;
+
+    // إرجاع النقاط إذا كان المستخدم عضواً وتم احتساب نقاط للطلب
+    if (order.user.role === 'member' && order.totalPoints > 0) {
+      await reverseOrderPoints(order);
+    }
+
+    // تحديث حالة الطلب
+    order.isCancelled = true;
+    order.cancelledAt = Date.now();
+    order.cancelledBy = req.user._id;
+    order.cancellationReason = reason || 'Cancelled by user';
+    order.status = 'cancelled';
+
+    const updatedOrder = await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order cancelled successfully',
+      messageAr: 'تم إلغاء الطلب بنجاح',
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// تعديل الطلب من قبل المستخدم (فقط عندما يكون قيد الانتظار)
+exports.userUpdateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+        messageAr: 'الطلب غير موجود'
+      });
+    }
+
+    // التحقق من أن المستخدم هو صاحب الطلب
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this order',
+        messageAr: 'غير مصرح لك بتعديل هذا الطلب'
+      });
+    }
+
+    // التحقق من أن الطلب قيد الانتظار فقط
+    if (order.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only update orders that are pending',
+        messageAr: 'يمكن تعديل الطلبات قيد الانتظار فقط'
+      });
+    }
+
+    const {
+      shippingAddress,
+      contactPhone,
+      alternatePhone,
+      notes,
+      customOrderDetails
+    } = req.body;
+
+    // تحديث البيانات المسموح بها فقط
+    if (shippingAddress) {
+      order.shippingAddress = {
+        ...order.shippingAddress,
+        ...shippingAddress
+      };
+    }
+
+    if (contactPhone) {
+      order.contactPhone = contactPhone;
+    }
+
+    if (alternatePhone !== undefined) {
+      order.alternatePhone = alternatePhone;
+    }
+
+    if (notes !== undefined) {
+      order.notes = notes;
+    }
+
+    // تحديث تفاصيل الطلب المخصص إذا كان طلب مخصص
+    if (order.isCustomOrder && customOrderDetails) {
+      order.customOrderDetails = {
+        ...order.customOrderDetails,
+        specifications: customOrderDetails.specifications || order.customOrderDetails?.specifications,
+        requestedDeliveryDate: customOrderDetails.requestedDeliveryDate ? new Date(customOrderDetails.requestedDeliveryDate) : order.customOrderDetails?.requestedDeliveryDate,
+        additionalNotes: customOrderDetails.additionalNotes !== undefined ? customOrderDetails.additionalNotes : order.customOrderDetails?.additionalNotes
+      };
+    }
+
+    const updatedOrder = await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order updated successfully',
+      messageAr: 'تم تعديل الطلب بنجاح',
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// البحث في الطلبات بناءً على الاسم أو رقم العضوية
+exports.searchOrders = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    // البحث عن المستخدمين بناءً على الاسم أو رقم العضوية
+    const users = await User.find({
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { subscriberCode: { $regex: query, $options: 'i' } },
+        { subscriberId: { $regex: query, $options: 'i' } }
+      ]
+    }).select('_id');
+
+    const userIds = users.map(user => user._id);
+
+    // البحث عن الطلبات للمستخدمين المطابقين أو بناءً على رقم الطلب
+    const orders = await Order.find({
+      $or: [
+        { user: { $in: userIds } },
+        { orderNumber: { $regex: query, $options: 'i' } }
+      ]
+    })
+      .populate('user', 'name email subscriberCode subscriberId')
+      .populate('orderItems.product')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

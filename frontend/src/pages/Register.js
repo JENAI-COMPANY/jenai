@@ -14,6 +14,7 @@ const Register = () => {
     username: '',
     name: '',
     phone: '',
+    countryCode: '+970',
     country: '',
     city: '',
     password: '',
@@ -82,19 +83,46 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Validate username to only allow English letters, numbers, underscore, and hyphen
+    if (name === 'username') {
+      const englishOnly = value.replace(/[^a-zA-Z0-9_-]/g, '');
+      setFormData({ ...formData, [name]: englishOnly });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
+    // التحقق من تطابق كلمات المرور
     if (formData.password !== formData.confirmPassword) {
       setError(language === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
       return;
     }
 
-    // للأعضاء: الانتقال إلى صفحة الشروط والأحكام
+    // التحقق من طول كلمة المرور
+    if (formData.password.length < 6) {
+      setError(language === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
+      return;
+    }
+
+    // التحقق من جميع الحقول المطلوبة
+    if (!formData.username || !formData.name || !formData.phone || !formData.country || !formData.city) {
+      setError(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill in all required fields');
+      return;
+    }
+
+    // للأعضاء: التحقق من كود الإحالة مطلوب
+    if (selectedRole === 'member' && !formData.sponsorId) {
+      setError(language === 'ar' ? 'كود الإحالة مطلوب للأعضاء' : 'Referral code is required for members');
+      return;
+    }
+
+    // للأعضاء: الانتقال إلى صفحة الشروط والأحكام بعد التحقق من البيانات
     if (selectedRole === 'member') {
       setStep(3);
       return;
@@ -219,7 +247,7 @@ const Register = () => {
         </p>
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit} ref={formRef}>
+        <form onSubmit={handleSubmit} ref={formRef} autoComplete="off">
           <div className="form-group">
             <label>{t('username')} *</label>
             <input
@@ -246,14 +274,42 @@ const Register = () => {
 
           <div className="form-group">
             <label>{t('phoneNumber')} *</label>
-            <input
-              type="tel"
-              name="phone"
-              placeholder={t('phoneNumber')}
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <select
+                name="countryCode"
+                value={formData.countryCode}
+                onChange={handleChange}
+                style={{ width: '120px', fontSize: '14px' }}
+              >
+                <option value="+20">🇪🇬 +20</option>
+                <option value="+966">🇸🇦 +966</option>
+                <option value="+971">🇦🇪 +971</option>
+                <option value="+965">🇰🇼 +965</option>
+                <option value="+974">🇶🇦 +974</option>
+                <option value="+973">🇧🇭 +973</option>
+                <option value="+968">🇴🇲 +968</option>
+                <option value="+962">🇯🇴 +962</option>
+                <option value="+961">🇱🇧 +961</option>
+                <option value="+970">🇵🇸 +970</option>
+                <option value="+963">🇸🇾 +963</option>
+                <option value="+964">🇮🇶 +964</option>
+                <option value="+967">🇾🇪 +967</option>
+                <option value="+218">🇱🇾 +218</option>
+                <option value="+216">🇹🇳 +216</option>
+                <option value="+213">🇩🇿 +213</option>
+                <option value="+212">🇲🇦 +212</option>
+                <option value="+249">🇸🇩 +249</option>
+              </select>
+              <input
+                type="tel"
+                name="phone"
+                placeholder={language === 'ar' ? '5xxxxxxxx' : '5xxxxxxxx'}
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                style={{ flex: 1 }}
+              />
+            </div>
           </div>
 
           <div className="form-group">
@@ -265,24 +321,24 @@ const Register = () => {
               required
             >
               <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
-              <option value="Egypt">Egypt - مصر</option>
-              <option value="Saudi Arabia">Saudi Arabia - السعودية</option>
-              <option value="UAE">UAE - الإمارات</option>
-              <option value="Kuwait">Kuwait - الكويت</option>
-              <option value="Qatar">Qatar - قطر</option>
-              <option value="Bahrain">Bahrain - البحرين</option>
-              <option value="Oman">Oman - عُمان</option>
-              <option value="Jordan">Jordan - الأردن</option>
-              <option value="Lebanon">Lebanon - لبنان</option>
-              <option value="Palestine">Palestine - فلسطين</option>
-              <option value="Syria">Syria - سوريا</option>
-              <option value="Iraq">Iraq - العراق</option>
-              <option value="Yemen">Yemen - اليمن</option>
-              <option value="Libya">Libya - ليبيا</option>
-              <option value="Tunisia">Tunisia - تونس</option>
-              <option value="Algeria">Algeria - الجزائر</option>
-              <option value="Morocco">Morocco - المغرب</option>
-              <option value="Sudan">Sudan - السودان</option>
+              <option value="Egypt">🇪🇬 Egypt - مصر</option>
+              <option value="Saudi Arabia">🇸🇦 Saudi Arabia - السعودية</option>
+              <option value="UAE">🇦🇪 UAE - الإمارات</option>
+              <option value="Kuwait">🇰🇼 Kuwait - الكويت</option>
+              <option value="Qatar">🇶🇦 Qatar - قطر</option>
+              <option value="Bahrain">🇧🇭 Bahrain - البحرين</option>
+              <option value="Oman">🇴🇲 Oman - عُمان</option>
+              <option value="Jordan">🇯🇴 Jordan - الأردن</option>
+              <option value="Lebanon">🇱🇧 Lebanon - لبنان</option>
+              <option value="Palestine">🇵🇸 Palestine - فلسطين</option>
+              <option value="Syria">🇸🇾 Syria - سوريا</option>
+              <option value="Iraq">🇮🇶 Iraq - العراق</option>
+              <option value="Yemen">🇾🇪 Yemen - اليمن</option>
+              <option value="Libya">🇱🇾 Libya - ليبيا</option>
+              <option value="Tunisia">🇹🇳 Tunisia - تونس</option>
+              <option value="Algeria">🇩🇿 Algeria - الجزائر</option>
+              <option value="Morocco">🇲🇦 Morocco - المغرب</option>
+              <option value="Sudan">🇸🇩 Sudan - السودان</option>
             </select>
           </div>
 

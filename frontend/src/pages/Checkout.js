@@ -131,7 +131,7 @@ const Checkout = () => {
       <h2>Checkout</h2>
       {error && <div className="error-message">{error}</div>}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off">
         {/* قسم أرقام الهاتف - مهم جداً لضمان التوصيل */}
         <div className="checkout-section">
           <h3>📞 أرقام التواصل / Contact Numbers</h3>
@@ -365,11 +365,11 @@ const Checkout = () => {
           <div className="order-summary">
             <div className="summary-row">
               <span>Items:</span>
-              <span>${itemsPrice.toFixed(2)}</span>
+              <span>₪{itemsPrice.toFixed(2)}</span>
             </div>
             <div className="summary-total">
               <span>Total:</span>
-              <span>${totalPrice.toFixed(2)}</span>
+              <span>₪{totalPrice.toFixed(2)}</span>
             </div>
           </div>
         </div>

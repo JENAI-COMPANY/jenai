@@ -1,31 +1,26 @@
 const User = require('../models/User');
 const ProfitPeriod = require('../models/ProfitPeriod');
 const { calculateTotalPoints } = require('../utils/pointsCalculator');
-const { calculateLeadershipCommission, getRankInfo } = require('../config/memberRanks');
+const { calculateLeadershipCommission, getRankInfo, getRankNumber } = require('../config/memberRanks');
 
 /**
  * احتساب وحفظ أرباح جميع الأعضاء لفترة معينة
  */
 exports.calculatePeriodProfits = async (req, res) => {
   try {
-    const { periodName, periodNumber, startDate, endDate, notes } = req.body;
+    const { periodName, startDate, endDate, notes } = req.body;
 
     // التحقق من البيانات المطلوبة
-    if (!periodName || !periodNumber || !startDate || !endDate) {
+    if (!periodName || !startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        message: 'يرجى توفير اسم الدورة، رقم الدورة، تاريخ البداية، وتاريخ النهاية'
+        message: 'يرجى توفير اسم الدورة، تاريخ البداية، وتاريخ النهاية'
       });
     }
 
-    // التحقق من عدم وجود دورة بنفس الرقم
-    const existingPeriod = await ProfitPeriod.findOne({ periodNumber });
-    if (existingPeriod) {
-      return res.status(400).json({
-        success: false,
-        message: `دورة برقم ${periodNumber} موجودة بالفعل`
-      });
-    }
+    // توليد رقم الدورة تلقائياً (العد من 1)
+    const lastPeriod = await ProfitPeriod.findOne().sort({ periodNumber: -1 });
+    const periodNumber = lastPeriod ? (lastPeriod.periodNumber || 0) + 1 : 1;
 
     // جلب جميع الأعضاء
     const members = await User.find({ role: 'member' })
@@ -54,7 +49,8 @@ exports.calculatePeriodProfits = async (req, res) => {
 
       // حساب عمولة القيادة
       const leadershipCommission = await calculateLeadershipCommission(User, member._id);
-      const rankInfo = getRankInfo(member.memberRank);
+      const memberRankNumber = getRankNumber(member.memberRank);
+      const rankInfo = getRankInfo(memberRankNumber);
 
       // إجمالي الأرباح للعضو
       const memberTotalProfit = profitDetails.profitInShekel + leadershipCommission.commissionInShekel;
@@ -63,7 +59,7 @@ exports.calculatePeriodProfits = async (req, res) => {
         memberId: member._id,
         memberName: member.name,
         username: member.username,
-        memberRank: member.memberRank,
+        memberRank: memberRankNumber,
         rankName: rankInfo.name,
         rankNameEn: rankInfo.nameEn,
         points: {
@@ -312,6 +308,68 @@ exports.updateProfitPeriodStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating profit period status:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * الحصول على جميع دورات الأرباح الخاصة بالعضو الحالي
+ */
+exports.getMyProfitPeriods = async (req, res) => {
+  try {
+    const memberId = req.user._id;
+
+    // الحصول على جميع فترات الأرباح التي تحتوي على بيانات هذا العضو
+    const periods = await ProfitPeriod.find({
+      'membersProfits.memberId': memberId
+    })
+      .select('periodName periodNumber startDate endDate status calculatedAt membersProfits')
+      .sort({ periodNumber: -1 });
+
+    // استخراج أرباح العضو من كل فترة
+    const memberProfits = periods.map(period => {
+      const memberProfit = period.membersProfits.find(
+        mp => mp.memberId.toString() === memberId.toString()
+      );
+
+      return {
+        periodId: period._id,
+        periodName: period.periodName,
+        periodNumber: period.periodNumber,
+        startDate: period.startDate,
+        endDate: period.endDate,
+        status: period.status,
+        calculatedAt: period.calculatedAt,
+        profit: memberProfit ? {
+          performanceProfit: memberProfit.profit.performanceProfit,
+          leadershipProfit: memberProfit.profit.leadershipProfit,
+          totalProfit: memberProfit.profit.totalProfit,
+          points: memberProfit.points,
+          rankName: memberProfit.rankName
+        } : null
+      };
+    });
+
+    // حساب إجمالي الأرباح من جميع الدورات
+    const totalProfitsAllPeriods = memberProfits.reduce((sum, p) => {
+      return sum + (p.profit ? p.profit.totalProfit : 0);
+    }, 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        periods: memberProfits,
+        summary: {
+          totalPeriods: memberProfits.length,
+          totalProfitsAllPeriods: totalProfitsAllPeriods
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error getting member profit periods:', error);
     res.status(500).json({
       success: false,
       message: error.message

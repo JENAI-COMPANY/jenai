@@ -76,30 +76,15 @@ exports.getAllProducts = async (req, res) => {
       query.category = category;
     }
 
-    // فلترة تلقائية حسب منطقة المستخدم
-    let userRegionId = null;
-    if (req.user) {
-      console.log('👤 User info:', {
-        id: req.user._id,
-        username: req.user.username,
-        role: req.user.role,
-        region: req.user.region
-      });
-
-      if (req.user.region) {
-        // التعامل مع حالة populate (كائن) أو ObjectId
-        userRegionId = req.user.region._id || req.user.region;
-        console.log('🔍 User region detected:', userRegionId);
-      } else {
-        console.log('⚠️ User has no region assigned');
-      }
-    } else {
-      console.log('⚠️ No user authenticated');
+    // فلترة تلقائية لمدير المنطقة - يرى فقط منتجات منطقته
+    if (req.user && req.user.role === 'regional_admin' && req.user.region) {
+      const adminRegionId = req.user.region._id || req.user.region;
+      query.region = adminRegionId;
+      console.log('🔒 Regional admin filter: Only products from region', adminRegionId);
     }
 
-    // فلترة حسب الفرع
-    // أولوية للـ query parameter، ثم منطقة المستخدم
-    if (regionId || regionCode || userRegionId) {
+    // فلترة اختيارية حسب المنطقة (فقط للمستخدمين غير regional_admin)
+    if ((regionId || regionCode) && !(req.user && req.user.role === 'regional_admin')) {
       let region;
 
       if (regionCode && typeof regionCode === 'string') {
@@ -218,7 +203,7 @@ exports.getAllProducts = async (req, res) => {
 // Get single product
 exports.getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate('region', 'name nameAr nameEn code');
 
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });

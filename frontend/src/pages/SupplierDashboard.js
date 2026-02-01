@@ -148,7 +148,7 @@ const SupplierDashboard = () => {
 
         {/* Product Form */}
         {(showProductForm || editingProduct) && (
-          <form onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct} className="product-form">
+          <form onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct} className="product-form" autoComplete="off">
             <h4>{editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h4>
             <div className="form-grid">
               <div className="form-group">
@@ -190,11 +190,11 @@ const SupplierDashboard = () => {
                 />
               </div>
               <div className="form-group">
-                <label>سعر المشترك *</label>
+                <label>سعر العضو *</label>
                 <input
                   type="number"
                   name="subscriberPrice"
-                  placeholder="سعر المشترك"
+                  placeholder="سعر العضو"
                   value={editingProduct ? editingProduct.subscriberPrice : newProduct.subscriberPrice}
                   onChange={handleProductChange}
                   min="0"
@@ -262,7 +262,7 @@ const SupplierDashboard = () => {
                   <th>الاسم</th>
                   <th>القسم</th>
                   <th>سعر الزبون</th>
-                  <th>سعر المشترك</th>
+                  <th>سعر العضو</th>
                   <th>الكمية</th>
                   <th>العمولة %</th>
                   <th>الإجراءات</th>

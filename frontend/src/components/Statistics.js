@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { getAdminStats } from '../services/api';
-import ProfitCalculation from './ProfitCalculation';
 import '../styles/Statistics.css';
 
 const Statistics = () => {
@@ -228,11 +227,6 @@ const Statistics = () => {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Profit Calculation Section */}
-      <div style={{ marginTop: '32px' }}>
-        <ProfitCalculation />
       </div>
 
       {/* Recent Activity */}

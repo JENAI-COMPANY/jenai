@@ -14,6 +14,10 @@ import MembersManagement from '../components/MembersManagement';
 import MemberRanks from '../components/MemberRanks';
 import ProfitCalculation from '../components/ProfitCalculation';
 import RegionsManagement from '../components/RegionsManagement';
+import PermissionsManagement from '../components/PermissionsManagement';
+import CategoryManagement from '../components/CategoryManagement';
+import MyTeam from '../components/MyTeam';
+import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Profile.css';
 
 const Profile = () => {
@@ -37,6 +41,15 @@ const Profile = () => {
     phone: ''
   });
 
+  // State for profit periods
+  const [profitPeriods, setProfitPeriods] = useState([]);
+  const [loadingProfits, setLoadingProfits] = useState(false);
+
+  // State for team points view
+  const [teamData, setTeamData] = useState(null);
+  const [pointsView, setPointsView] = useState('monthly'); // 'monthly' or 'cumulative'
+  const [loadingTeam, setLoadingTeam] = useState(false);
+
   // Fetch fresh user data when component mounts
   useEffect(() => {
     if (fetchUser) {
@@ -44,6 +57,51 @@ const Profile = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch profit periods when earnings tab is active and user is a member
+  useEffect(() => {
+    if (activeTab === 'earnings' && user?.role === 'member') {
+      fetchProfitPeriods();
+      fetchTeamData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, user?.role]);
+
+  const fetchProfitPeriods = async () => {
+    try {
+      setLoadingProfits(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/profit-periods/my-profits', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setProfitPeriods(response.data.data.periods || []);
+      }
+    } catch (err) {
+      console.error('Error fetching profit periods:', err);
+    } finally {
+      setLoadingProfits(false);
+    }
+  };
+
+  const fetchTeamData = async () => {
+    try {
+      setLoadingTeam(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/team/my-team', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setTeamData(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching team data:', err);
+    } finally {
+      setLoadingTeam(false);
+    }
+  };
 
   // Update form data when user data changes
   useEffect(() => {
@@ -194,7 +252,7 @@ const Profile = () => {
               onClick={() => setActiveTab('sliders')}
             >
               <span className="tab-icon">🖼️</span>
-              <span className="tab-label">{language === 'ar' ? 'صور العرض' : 'Sliders'}</span>
+              <span className="tab-label">{language === 'ar' ? 'صور الواجهة' : 'Sliders'}</span>
             </button>
           )}
 
@@ -234,7 +292,7 @@ const Profile = () => {
               onClick={() => setActiveTab('ranks')}
             >
               <span className="tab-icon">🏆</span>
-              <span className="tab-label">{language === 'ar' ? 'الدرجات التسع' : '9 Ranks'}</span>
+              <span className="tab-label">{language === 'ar' ? 'رتب جيناي' : 'Jenai Ranks'}</span>
             </button>
           )}
 
@@ -258,6 +316,26 @@ const Profile = () => {
             </button>
           )}
 
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'permissions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('permissions')}
+            >
+              <span className="tab-icon">🔐</span>
+              <span className="tab-label">{language === 'ar' ? 'الصلاحيات' : 'Permissions'}</span>
+            </button>
+          )}
+
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
+              onClick={() => setActiveTab('categories')}
+            >
+              <span className="tab-icon">📂</span>
+              <span className="tab-label">{language === 'ar' ? 'الأقسام' : 'Categories'}</span>
+            </button>
+          )}
+
           {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
@@ -275,6 +353,26 @@ const Profile = () => {
             >
               <span className="tab-icon">📦</span>
               <span className="tab-label">{language === 'ar' ? 'طلباتي' : 'My Orders'}</span>
+            </button>
+          )}
+
+          {(user.role === 'member' || user.role === 'subscriber') && (
+            <button
+              className={`tab-btn ${activeTab === 'team' ? 'active' : ''}`}
+              onClick={() => setActiveTab('team')}
+            >
+              <span className="tab-icon">👥</span>
+              <span className="tab-label">{language === 'ar' ? 'فريقي' : 'My Team'}</span>
+            </button>
+          )}
+
+          {user.role === 'member' && (
+            <button
+              className={`tab-btn ${activeTab === 'earnings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('earnings')}
+            >
+              <span className="tab-icon">💰</span>
+              <span className="tab-label">{language === 'ar' ? 'أرباحي' : 'My Earnings'}</span>
             </button>
           )}
 
@@ -305,7 +403,7 @@ const Profile = () => {
           </div>
 
           {isEditing && (user.role === 'super_admin' || user.role === 'regional_admin') ? (
-            <form onSubmit={handleUpdateProfile} className="edit-form">
+            <form onSubmit={handleUpdateProfile} className="edit-form" autoComplete="off">
               <div className="info-grid">
                 <div className="info-item">
                   <label>{language === 'ar' ? 'الاسم:' : 'Name:'}</label>
@@ -537,6 +635,20 @@ const Profile = () => {
             </div>
           )}
 
+          {/* Permissions Management Tab - For Super Admin */}
+          {activeTab === 'permissions' && user.role === 'super_admin' && (
+            <div className="tab-panel">
+              <PermissionsManagement />
+            </div>
+          )}
+
+          {/* Category Management Tab - For Super Admin */}
+          {activeTab === 'categories' && user.role === 'super_admin' && (
+            <div className="tab-panel">
+              <CategoryManagement />
+            </div>
+          )}
+
           {/* Orders Management Tab - For Admins */}
           {activeTab === 'orders' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
@@ -548,6 +660,184 @@ const Profile = () => {
           {activeTab === 'orders' && (user.role === 'customer' || user.role === 'subscriber' || user.role === 'member') && (
             <div className="tab-panel">
               <MyOrders />
+            </div>
+          )}
+
+          {/* My Team Tab - For Members and Subscribers */}
+          {activeTab === 'team' && (user.role === 'member' || user.role === 'subscriber') && (
+            <div className="tab-panel">
+              <MyTeam />
+            </div>
+          )}
+
+          {/* My Earnings Tab - For Members */}
+          {activeTab === 'earnings' && user.role === 'member' && (
+            <div className="tab-panel">
+              <div className="earnings-section">
+                <h2>{language === 'ar' ? 'أرباحي' : 'My Earnings'}</h2>
+                <div className="earnings-cards single-card">
+                  <div className="earning-card total">
+                    <div className="earning-icon">💰</div>
+                    <div className="earning-info">
+                      <div className="earning-label">{language === 'ar' ? 'إجمالي الأرباح' : 'Total Earnings'}</div>
+                      <div className="earning-subtitle">
+                        {language === 'ar' ? 'من جميع دورات الأرباح المحتسبة' : 'From all calculated profit periods'}
+                      </div>
+                      <div className="earning-value">
+                        ₪{profitPeriods.length > 0
+                          ? profitPeriods.reduce((sum, p) => sum + (p.profit?.totalProfit || 0), 0).toFixed(2)
+                          : '0.00'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Points View Toggle */}
+                <div className="points-toggle-container">
+                  <button
+                    className={`points-toggle-btn ${pointsView === 'monthly' ? 'active' : ''}`}
+                    onClick={() => setPointsView('monthly')}
+                  >
+                    {language === 'ar' ? '📅 شهري' : '📅 Monthly'}
+                  </button>
+                  <button
+                    className={`points-toggle-btn ${pointsView === 'cumulative' ? 'active' : ''}`}
+                    onClick={() => setPointsView('cumulative')}
+                  >
+                    {language === 'ar' ? '📈 تراكمي' : '📈 Cumulative'}
+                  </button>
+                </div>
+
+                <div className="points-section">
+                  <h3>{language === 'ar' ? 'النقاط' : 'Points'}</h3>
+                  <div className="points-grid">
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'النقاط الشهرية' : 'Monthly Points'}
+                      </div>
+                      <div className="point-value">
+                        {pointsView === 'monthly' ? (user.monthlyPoints || 0) : (user.points || 0)}
+                      </div>
+                    </div>
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'إجمالي النقاط' : 'Total Points'}
+                      </div>
+                      <div className="point-value">
+                        {pointsView === 'monthly'
+                          ? (user.monthlyPoints || 0) +
+                            (user.generation1Points || 0) +
+                            (user.generation2Points || 0) +
+                            (user.generation3Points || 0) +
+                            (user.generation4Points || 0) +
+                            (user.generation5Points || 0)
+                          : (user.points || 0)}
+                      </div>
+                    </div>
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'نقاط الجيل الأول' : 'Generation 1 Points'}
+                      </div>
+                      <div className="point-value">{user.generation1Points || 0}</div>
+                    </div>
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'نقاط الجيل الثاني' : 'Generation 2 Points'}
+                      </div>
+                      <div className="point-value">{user.generation2Points || 0}</div>
+                    </div>
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'نقاط الجيل الثالث' : 'Generation 3 Points'}
+                      </div>
+                      <div className="point-value">{user.generation3Points || 0}</div>
+                    </div>
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'نقاط الجيل الرابع' : 'Generation 4 Points'}
+                      </div>
+                      <div className="point-value">{user.generation4Points || 0}</div>
+                    </div>
+                    <div className="point-card">
+                      <div className="point-label">
+                        {language === 'ar' ? 'نقاط الجيل الخامس' : 'Generation 5 Points'}
+                      </div>
+                      <div className="point-value">{user.generation5Points || 0}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="member-rank-info">
+                  <h3>{language === 'ar' ? 'معلومات الرتبة' : 'Rank Information'}</h3>
+                  <div className="rank-display">
+                    <img
+                      src={`/${getRankImage(user.memberRank || 'agent')}`}
+                      alt={getRankName(user.memberRank || 'agent', language)}
+                      className="rank-image"
+                      style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '10px' }}
+                    />
+                    <span className="rank-badge">{getRankName(user.memberRank || 'agent', language)}</span>
+                  </div>
+                </div>
+
+                {/* دورات الأرباح المحتسبة */}
+                <div className="profit-periods-section">
+                  <h3>{language === 'ar' ? 'دورات الأرباح المحتسبة' : 'Calculated Profit Periods'}</h3>
+
+                  {loadingProfits ? (
+                    <div className="loading-profits">
+                      <div className="spinner"></div>
+                      <p>{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
+                    </div>
+                  ) : profitPeriods.length === 0 ? (
+                    <div className="no-profit-periods">
+                      <div className="empty-icon">📊</div>
+                      <p>{language === 'ar' ? 'لم يتم احتساب أي دورة أرباح بعد' : 'No profit periods calculated yet'}</p>
+                    </div>
+                  ) : (
+                    <div className="profit-periods-table-container">
+                      <table className="profit-periods-table">
+                        <thead>
+                          <tr>
+                            <th>{language === 'ar' ? '#' : '#'}</th>
+                            <th>{language === 'ar' ? 'اسم الدورة' : 'Period Name'}</th>
+                            <th>{language === 'ar' ? 'رقم الدورة' : 'Period Number'}</th>
+                            <th>{language === 'ar' ? 'أرباح الأداء' : 'Performance Profit'}</th>
+                            <th>{language === 'ar' ? 'أرباح القيادة' : 'Leadership Profit'}</th>
+                            <th>{language === 'ar' ? 'إجمالي الأرباح' : 'Total Profit'}</th>
+                            <th>{language === 'ar' ? 'تاريخ الاحتساب' : 'Calculated Date'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {profitPeriods.map((period, index) => (
+                            <tr key={period.periodId}>
+                              <td>{index + 1}</td>
+                              <td className="period-name">{period.periodName}</td>
+                              <td className="period-number">{period.periodNumber}</td>
+                              <td className="profit-value">
+                                ₪{period.profit?.performanceProfit?.toFixed(2) || '0.00'}
+                              </td>
+                              <td className="profit-value">
+                                ₪{period.profit?.leadershipProfit?.toFixed(2) || '0.00'}
+                              </td>
+                              <td className="profit-value total-profit">
+                                ₪{period.profit?.totalProfit?.toFixed(2) || '0.00'}
+                              </td>
+                              <td className="calculated-date">
+                                {new Date(period.calculatedAt).toLocaleDateString(
+                                  language === 'ar' ? 'ar-EG' : 'en-US',
+                                  { year: 'numeric', month: 'short', day: 'numeric' }
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -566,7 +856,7 @@ const Profile = () => {
               {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
             </button>
           ) : (
-            <form onSubmit={handlePasswordChange} className="password-form">
+            <form onSubmit={handlePasswordChange} className="password-form" autoComplete="off">
               <div className="form-group">
                 <label>{language === 'ar' ? 'كلمة المرور الحالية:' : 'Current Password:'}</label>
                 <input

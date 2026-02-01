@@ -23,6 +23,7 @@ import Statistics from '../components/Statistics';
 import MemberRanks from '../components/MemberRanks';
 import ProfitCalculation from '../components/ProfitCalculation';
 import '../styles/Admin.css';
+import { countryCodes, allCountries } from '../utils/countryCodes';
 
 const Admin = () => {
   const { user } = useContext(AuthContext);
@@ -60,6 +61,7 @@ const Admin = () => {
     name: '',
     companyName: '',
     phone: '',
+    countryCode: '+20',
     country: '',
     city: '',
     address: '',
@@ -99,32 +101,15 @@ const Admin = () => {
     confirmPassword: '',
     name: '',
     phone: '',
+    countryCode: '+20',
     country: '',
     city: '',
     role: 'customer',
     sponsorCode: ''
   });
 
-  const countries = [
-    { value: 'Egypt', label: 'Egypt - مصر' },
-    { value: 'Saudi Arabia', label: 'Saudi Arabia - السعودية' },
-    { value: 'UAE', label: 'UAE - الإمارات' },
-    { value: 'Kuwait', label: 'Kuwait - الكويت' },
-    { value: 'Qatar', label: 'Qatar - قطر' },
-    { value: 'Bahrain', label: 'Bahrain - البحرين' },
-    { value: 'Oman', label: 'Oman - عُمان' },
-    { value: 'Jordan', label: 'Jordan - الأردن' },
-    { value: 'Lebanon', label: 'Lebanon - لبنان' },
-    { value: 'Palestine', label: 'Palestine - فلسطين' },
-    { value: 'Syria', label: 'Syria - سوريا' },
-    { value: 'Iraq', label: 'Iraq - العراق' },
-    { value: 'Yemen', label: 'Yemen - اليمن' },
-    { value: 'Libya', label: 'Libya - ليبيا' },
-    { value: 'Tunisia', label: 'Tunisia - تونس' },
-    { value: 'Algeria', label: 'Algeria - الجزائر' },
-    { value: 'Morocco', label: 'Morocco - المغرب' },
-    { value: 'Sudan', label: 'Sudan - السودان' }
-  ];
+  // استخدام قائمة الدول من الملف المشترك
+  const countries = allCountries;
 
   useEffect(() => {
     fetchData();
@@ -154,7 +139,7 @@ const Admin = () => {
       } else if (activeTab === 'subscribers') {
         const data = await getAllSubscribers();
         setSubscribers(data.subscribers);
-      } else if (activeTab === 'suppliers') {
+      } else if (activeTab === "suppliers" && isSuperAdmin) {
         const data = await getSuppliers();
         setSuppliers(data.suppliers);
       } else if (activeTab === 'members') {
@@ -247,7 +232,11 @@ const Admin = () => {
 
     try {
       // Remove confirmPassword before sending
-      const { confirmPassword, ...supplierData } = newSupplier;
+      const { confirmPassword, countryCode, ...supplierData } = newSupplier;
+      // Combine country code and phone
+      if (countryCode && newSupplier.phone) {
+        supplierData.phone = countryCode + newSupplier.phone;
+      }
       await createSupplier(supplierData);
       setShowSupplierForm(false);
       setNewSupplier({
@@ -365,7 +354,11 @@ const Admin = () => {
     }
 
     try {
-      const { confirmPassword, ...memberData } = newMember;
+      const { confirmPassword, countryCode, ...memberData } = newMember;
+      // Combine country code and phone
+      if (countryCode && newMember.phone) {
+        memberData.phone = countryCode + newMember.phone;
+      }
       await createUser(memberData);
       setShowMemberForm(false);
       setNewMember({
@@ -514,12 +507,13 @@ const Admin = () => {
         >
           الأعضاء
         </button>
-        <button
+        {isSuperAdmin && <button
           className={activeTab === 'suppliers' ? 'tab-active' : ''}
           onClick={() => setActiveTab('suppliers')}
         >
           الموردين
         </button>
+        }
         <button
           className={activeTab === 'library' ? 'tab-active' : ''}
           onClick={() => setActiveTab('library')}
@@ -560,7 +554,7 @@ const Admin = () => {
               </div>
 
               {showProductForm && (
-                <form onSubmit={handleCreateProduct} className="product-form">
+                <form onSubmit={handleCreateProduct} className="product-form" autoComplete="off">
                   <div className="form-grid">
                     <input
                       type="text"
@@ -589,7 +583,7 @@ const Admin = () => {
                     <input
                       type="number"
                       name="subscriberPrice"
-                      placeholder="سعر المشترك"
+                      placeholder="سعر العضو"
                       value={newProduct.subscriberPrice}
                       onChange={handleProductChange}
                       required
@@ -628,7 +622,7 @@ const Admin = () => {
                     <th>الاسم</th>
                     <th>الفئة</th>
                     <th>السعر</th>
-                    <th>سعر المشترك</th>
+                    <th>سعر العضو</th>
                     <th>المخزون</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
@@ -742,7 +736,7 @@ const Admin = () => {
 
               {/* Member Creation Form */}
               {showMemberForm && (
-                <form onSubmit={handleCreateMember} className="product-form">
+                <form onSubmit={handleCreateMember} className="product-form" autoComplete="off">
                   <h4>إضافة مستخدم جديد</h4>
                   <div className="form-grid">
                     <div className="form-group">
@@ -793,13 +787,28 @@ const Admin = () => {
                     </div>
                     <div className="form-group">
                       <label>رقم الهاتف</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        placeholder="رقم الهاتف"
-                        value={newMember.phone}
-                        onChange={handleMemberChange}
-                      />
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <select
+                          name="countryCode"
+                          value={newMember.countryCode}
+                          onChange={handleMemberChange}
+                          style={{ flex: '0 0 180px' }}
+                        >
+                          {countryCodes.map((item) => (
+                            <option key={item.code} value={item.code}>
+                              {item.code} - {item.country}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="رقم الهاتف"
+                          value={newMember.phone}
+                          onChange={handleMemberChange}
+                          style={{ flex: '1' }}
+                        />
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>الدولة</label>
@@ -867,7 +876,7 @@ const Admin = () => {
                 <div className="modal-overlay" onClick={() => setEditingMember(null)}>
                   <div className="modal-content" onClick={e => e.stopPropagation()}>
                     <h3>تعديل بيانات العضو: {editingMember.name}</h3>
-                    <form onSubmit={handleUpdateMember}>
+                    <form onSubmit={handleUpdateMember} autoComplete="off">
                       <div className="form-group">
                         <label>كود الراعي (Sponsor Code)</label>
                         <input
@@ -953,7 +962,7 @@ const Admin = () => {
             </div>
           )}
 
-          {activeTab === 'suppliers' && (
+          activeTab === "suppliers" && isSuperAdmin && (
             <div>
               <div className="tab-header">
                 <h3>إدارة الموردين</h3>
@@ -964,7 +973,7 @@ const Admin = () => {
 
               {/* Supplier Form (Add/Edit) */}
               {(showSupplierForm || editingSupplier) && (
-                <form onSubmit={editingSupplier ? handleUpdateSupplier : handleCreateSupplier} className="product-form supplier-form">
+                <form onSubmit={editingSupplier ? handleUpdateSupplier : handleCreateSupplier} className="product-form supplier-form" autoComplete="off">
                   <h4>{editingSupplier ? 'تعديل بيانات المورد' : 'إضافة مورد جديد'}</h4>
                   <div className="form-grid">
                     {!editingSupplier && (
@@ -1030,14 +1039,29 @@ const Admin = () => {
                     </div>
                     <div className="form-group">
                       <label>رقم الهاتف *</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        placeholder="رقم الهاتف"
-                        value={editingSupplier ? editingSupplier.phone : newSupplier.phone}
-                        onChange={handleSupplierChange}
-                        required
-                      />
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <select
+                          name="countryCode"
+                          value={editingSupplier ? (editingSupplier.countryCode || '+20') : newSupplier.countryCode}
+                          onChange={handleSupplierChange}
+                          style={{ flex: '0 0 180px' }}
+                        >
+                          {countryCodes.map((item) => (
+                            <option key={item.code} value={item.code}>
+                              {item.code} - {item.country}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="رقم الهاتف"
+                          value={editingSupplier ? editingSupplier.phone : newSupplier.phone}
+                          onChange={handleSupplierChange}
+                          required
+                          style={{ flex: '1' }}
+                        />
+                      </div>
                     </div>
                     <div className="form-group">
                       <label>الدولة *</label>
@@ -1215,7 +1239,7 @@ const Admin = () => {
 
               {/* Book Form (Add/Edit) */}
               {(showBookForm || editingBook) && (
-                <form onSubmit={editingBook ? handleUpdateBook : handleCreateBook} className="product-form">
+                <form onSubmit={editingBook ? handleUpdateBook : handleCreateBook} className="product-form" autoComplete="off">
                   <h4>{editingBook ? 'تعديل الكتاب' : 'إضافة كتاب جديد'}</h4>
                   <div className="form-grid">
                     <div className="form-group">

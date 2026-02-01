@@ -20,6 +20,14 @@ const OrderManagement = () => {
     adminResponse: '',
     additionalNotes: ''
   });
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    shippingAddress: { street: '', city: '', state: '', zipCode: '', country: '' },
+    contactPhone: '',
+    alternatePhone: '',
+    notes: '',
+    orderItems: []
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -117,6 +125,272 @@ const OrderManagement = () => {
     });
     setShowConfirmModal(true);
     console.log('✅ Modal state set to true');
+  };
+
+  // فتح نافذة التعديل
+  const openEditModal = (order, e) => {
+    e.stopPropagation();
+    setEditingOrder(order);
+    setEditFormData({
+      shippingAddress: {
+        street: order.shippingAddress?.street || '',
+        city: order.shippingAddress?.city || '',
+        state: order.shippingAddress?.state || '',
+        zipCode: order.shippingAddress?.zipCode || '',
+        country: order.shippingAddress?.country || ''
+      },
+      contactPhone: order.contactPhone || '',
+      alternatePhone: order.alternatePhone || '',
+      notes: order.notes || '',
+      orderItems: order.orderItems?.map(item => ({
+        _id: item._id,
+        productId: item.product?._id || item.product,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        originalPrice: item.price
+      })) || []
+    });
+  };
+
+  // تحديث كمية منتج
+  const handleQuantityChange = (index, newQuantity) => {
+    const quantity = parseInt(newQuantity) || 1;
+    if (quantity < 1) return;
+
+    const updatedItems = [...editFormData.orderItems];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      quantity: quantity
+    };
+
+    setEditFormData({
+      ...editFormData,
+      orderItems: updatedItems
+    });
+  };
+
+  // حساب المجموع الجديد
+  const calculateNewTotal = () => {
+    return editFormData.orderItems.reduce((sum, item) => {
+      return sum + (item.price * item.quantity);
+    }, 0);
+  };
+
+  // تأكيد تعديل الطلب
+  const handleUpdateOrder = async () => {
+    if (!editingOrder) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const updateData = {
+        shippingAddress: editFormData.shippingAddress,
+        contactPhone: editFormData.contactPhone,
+        alternatePhone: editFormData.alternatePhone,
+        notes: editFormData.notes,
+        orderItems: editFormData.orderItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }))
+      };
+
+      await axios.put(
+        `/api/admin/orders/${editingOrder._id}`,
+        updateData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setMessage(language === 'ar' ? 'تم تعديل الطلب بنجاح' : 'Order updated successfully');
+      setEditingOrder(null);
+      fetchOrders();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.messageAr || err.response?.data?.message || 'Failed to update order');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handlePrintOrder = (order) => {
+    const isArabic = language === 'ar';
+
+    // Get payment method label
+    const getPaymentMethodLabel = (method) => {
+      if (method === 'cash_on_delivery') return isArabic ? 'الدفع عند التوصيل' : 'Cash on Delivery';
+      if (method === 'cash_at_company') return isArabic ? 'كاش بالشركة' : 'Cash at Company';
+      if (method === 'reflect') return isArabic ? 'ريفليكت' : 'Reflect';
+      return method;
+    };
+
+    // Create print window
+    const printWindow = window.open('', '_blank');
+
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html dir="${isArabic ? 'rtl' : 'ltr'}">
+      <head>
+        <meta charset="UTF-8">
+        <title>Order ${order.orderNumber}</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            direction: ${isArabic ? 'rtl' : 'ltr'};
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #10b981;
+            padding-bottom: 20px;
+          }
+          .header h1 {
+            color: #10b981;
+            margin-bottom: 10px;
+          }
+          .section {
+            margin-bottom: 25px;
+          }
+          .section h3 {
+            color: #10b981;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+          }
+          .section p {
+            margin: 5px 0;
+            line-height: 1.6;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: ${isArabic ? 'right' : 'left'};
+          }
+          th {
+            background-color: #10b981;
+            color: white;
+          }
+          .total {
+            font-size: 1.3em;
+            margin-top: 15px;
+            font-weight: bold;
+          }
+          .total-amount {
+            color: #10b981;
+          }
+          @media print {
+            body {
+              padding: 10px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${isArabic ? 'فاتورة الطلب' : 'Order Invoice'}</h1>
+          <p>Jenai for Cooperative Marketing</p>
+          <p>jenai-4u.com</p>
+        </div>
+
+        <div class="section">
+          <h3>${isArabic ? 'معلومات الطلب' : 'Order Information'}</h3>
+          <p><strong>${isArabic ? 'رقم الطلب:' : 'Order Number:'}</strong> ${order.orderNumber}</p>
+          <p><strong>${isArabic ? 'الحالة:' : 'Status:'}</strong> ${getStatusLabel(order.status)}</p>
+          <p><strong>${isArabic ? 'التاريخ:' : 'Date:'}</strong> ${new Date(order.createdAt).toLocaleString(isArabic ? 'ar-EG' : 'en-US')}</p>
+          <p><strong>${isArabic ? 'طريقة الدفع:' : 'Payment Method:'}</strong> ${getPaymentMethodLabel(order.paymentMethod)}</p>
+        </div>
+
+        <div class="section">
+          <h3>${isArabic ? 'معلومات العميل' : 'Customer Information'}</h3>
+          <p><strong>${isArabic ? 'الاسم:' : 'Name:'}</strong> ${order.user?.name || 'N/A'}</p>
+          <p><strong>${isArabic ? 'الهاتف:' : 'Phone:'}</strong> ${order.contactPhone}</p>
+          ${order.alternatePhone ? `<p><strong>${isArabic ? 'هاتف بديل:' : 'Alternate Phone:'}</strong> ${order.alternatePhone}</p>` : ''}
+        </div>
+
+        <div class="section">
+          <h3>${isArabic ? 'عنوان الشحن' : 'Shipping Address'}</h3>
+          <p>${order.shippingAddress?.street || ''}</p>
+          <p>${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.zipCode || ''}</p>
+          <p>${order.shippingAddress?.country || ''}</p>
+        </div>
+
+        <div class="section">
+          <h3>${isArabic ? 'المنتجات' : 'Products'}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>${isArabic ? 'المنتج' : 'Product'}</th>
+                <th style="text-align: center;">${isArabic ? 'الكمية' : 'Quantity'}</th>
+                <th>${isArabic ? 'السعر' : 'Price'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.orderItems?.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td style="text-align: center;">${item.quantity}</td>
+                  <td>$${item.price?.toFixed(2)}</td>
+                </tr>
+              `).join('') || ''}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section">
+          <h3>${isArabic ? 'ملخص الطلب' : 'Order Summary'}</h3>
+          <p><strong>${isArabic ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> $${order.itemsPrice?.toFixed(2)}</p>
+          <p><strong>${isArabic ? 'الشحن:' : 'Shipping:'}</strong> $${order.shippingPrice?.toFixed(2)}</p>
+          <p><strong>${isArabic ? 'الضريبة:' : 'Tax:'}</strong> $${order.taxPrice?.toFixed(2)}</p>
+          ${order.discountAmount > 0 ? `<p><strong>${isArabic ? 'الخصم:' : 'Discount:'}</strong> -$${order.discountAmount?.toFixed(2)}</p>` : ''}
+          <p class="total">
+            <strong>${isArabic ? 'الإجمالي:' : 'Total:'}</strong>
+            <span class="total-amount">$${order.totalPrice?.toFixed(2)}</span>
+          </p>
+        </div>
+
+        ${order.isCustomOrder && order.customOrderDetails ? `
+          <div class="section">
+            <h3>${isArabic ? 'تفاصيل الطلب المخصص' : 'Custom Order Details'}</h3>
+            ${order.customOrderDetails.specifications ? `
+              <p><strong>${isArabic ? 'المواصفات:' : 'Specifications:'}</strong> ${order.customOrderDetails.specifications}</p>
+            ` : ''}
+            ${order.customOrderDetails.confirmedPrice ? `
+              <p><strong>${isArabic ? 'السعر المؤكد:' : 'Confirmed Price:'}</strong> $${order.customOrderDetails.confirmedPrice.toFixed(2)}</p>
+            ` : ''}
+            ${order.customOrderDetails.adminResponse ? `
+              <p><strong>${isArabic ? 'رد الإدارة:' : 'Admin Response:'}</strong> ${order.customOrderDetails.adminResponse}</p>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        ${order.notes ? `
+          <div class="section">
+            <p><strong>${isArabic ? 'ملاحظات العميل:' : 'Customer Notes:'}</strong> ${order.notes}</p>
+          </div>
+        ` : ''}
+
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(invoiceHTML);
+    printWindow.document.close();
   };
 
   const getStatusBadgeClass = (status) => {
@@ -307,7 +581,35 @@ const OrderManagement = () => {
           <div className="om-modal" onClick={(e) => e.stopPropagation()}>
             <div className="om-modal-header">
               <h3>{language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}</h3>
-              <button className="om-modal-close" onClick={() => setSelectedOrder(null)}>✕</button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button
+                  className="om-print-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePrintOrder(selectedOrder);
+                  }}
+                  title={language === 'ar' ? 'طباعة الطلب' : 'Print Order'}
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '14px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  🖨️ {language === 'ar' ? 'طباعة' : 'Print'}
+                </button>
+                <button className="om-modal-close" onClick={() => setSelectedOrder(null)}>✕</button>
+              </div>
             </div>
             <div className="om-modal-body">
               <div className="om-detail-section">
@@ -446,6 +748,198 @@ const OrderManagement = () => {
                   <p>{selectedOrder.adminNotes}</p>
                 </div>
               )}
+
+              {/* زر تعديل الطلب */}
+              {selectedOrder.status === 'pending' && (
+                <div className="om-modal-actions">
+                  <button
+                    className="om-edit-btn-large"
+                    onClick={() => {
+                      setSelectedOrder(null);
+                      openEditModal(selectedOrder, { stopPropagation: () => {} });
+                    }}
+                  >
+                    ✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div className="om-modal-overlay" onClick={() => setEditingOrder(null)}>
+          <div className="om-modal om-edit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="om-modal-header om-edit-header">
+              <h3>✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'} - {editingOrder.orderNumber}</h3>
+              <button className="om-modal-close" onClick={() => setEditingOrder(null)}>✕</button>
+            </div>
+            <div className="om-modal-body">
+              <div className="om-edit-form">
+                {/* معلومات التواصل */}
+                <div className="om-form-section">
+                  <h4>📞 {language === 'ar' ? 'معلومات التواصل' : 'Contact Information'}</h4>
+                  <div className="om-form-row">
+                    <div className="om-form-group">
+                      <label>{language === 'ar' ? 'رقم الهاتف الأساسي *' : 'Primary Phone *'}</label>
+                      <input
+                        type="tel"
+                        value={editFormData.contactPhone}
+                        onChange={(e) => setEditFormData({...editFormData, contactPhone: e.target.value})}
+                        dir="ltr"
+                        required
+                      />
+                    </div>
+                    <div className="om-form-group">
+                      <label>{language === 'ar' ? 'رقم الهاتف البديل' : 'Alternate Phone'}</label>
+                      <input
+                        type="tel"
+                        value={editFormData.alternatePhone}
+                        onChange={(e) => setEditFormData({...editFormData, alternatePhone: e.target.value})}
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* عنوان الشحن */}
+                <div className="om-form-section">
+                  <h4>📍 {language === 'ar' ? 'عنوان الشحن' : 'Shipping Address'}</h4>
+                  <div className="om-form-group">
+                    <label>{language === 'ar' ? 'العنوان التفصيلي *' : 'Street Address *'}</label>
+                    <input
+                      type="text"
+                      value={editFormData.shippingAddress.street}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        shippingAddress: {...editFormData.shippingAddress, street: e.target.value}
+                      })}
+                      required
+                    />
+                  </div>
+                  <div className="om-form-row">
+                    <div className="om-form-group">
+                      <label>{language === 'ar' ? 'المدينة *' : 'City *'}</label>
+                      <input
+                        type="text"
+                        value={editFormData.shippingAddress.city}
+                        onChange={(e) => setEditFormData({
+                          ...editFormData,
+                          shippingAddress: {...editFormData.shippingAddress, city: e.target.value}
+                        })}
+                        required
+                      />
+                    </div>
+                    <div className="om-form-group">
+                      <label>{language === 'ar' ? 'المنطقة *' : 'State *'}</label>
+                      <input
+                        type="text"
+                        value={editFormData.shippingAddress.state}
+                        onChange={(e) => setEditFormData({
+                          ...editFormData,
+                          shippingAddress: {...editFormData.shippingAddress, state: e.target.value}
+                        })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="om-form-row">
+                    <div className="om-form-group">
+                      <label>{language === 'ar' ? 'الرمز البريدي *' : 'ZIP Code *'}</label>
+                      <input
+                        type="text"
+                        value={editFormData.shippingAddress.zipCode}
+                        onChange={(e) => setEditFormData({
+                          ...editFormData,
+                          shippingAddress: {...editFormData.shippingAddress, zipCode: e.target.value}
+                        })}
+                        required
+                      />
+                    </div>
+                    <div className="om-form-group">
+                      <label>{language === 'ar' ? 'الدولة *' : 'Country *'}</label>
+                      <input
+                        type="text"
+                        value={editFormData.shippingAddress.country}
+                        onChange={(e) => setEditFormData({
+                          ...editFormData,
+                          shippingAddress: {...editFormData.shippingAddress, country: e.target.value}
+                        })}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ملاحظات */}
+                <div className="om-form-section">
+                  <h4>📝 {language === 'ar' ? 'ملاحظات' : 'Notes'}</h4>
+                  <div className="om-form-group">
+                    <textarea
+                      value={editFormData.notes}
+                      onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                      placeholder={language === 'ar' ? 'أي ملاحظات إضافية...' : 'Any additional notes...'}
+                      rows="2"
+                    />
+                  </div>
+                </div>
+
+                {/* المنتجات والكميات */}
+                {!editingOrder.isCustomOrder && editFormData.orderItems.length > 0 && (
+                  <div className="om-form-section om-products-edit-section">
+                    <h4>🛍️ {language === 'ar' ? 'المنتجات والكميات' : 'Products & Quantities'}</h4>
+                    <div className="om-products-edit-list">
+                      {editFormData.orderItems.map((item, index) => (
+                        <div key={index} className="om-product-edit-item">
+                          <div className="om-product-name">
+                            <span className="om-product-icon">📦</span>
+                            <span>{item.name}</span>
+                          </div>
+                          <div className="om-product-quantity">
+                            <label>{language === 'ar' ? 'الكمية' : 'Quantity'}</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => handleQuantityChange(index, e.target.value)}
+                            />
+                          </div>
+                          <div className="om-product-subtotal">
+                            <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
+                            <span className="om-subtotal-value">${(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="om-total-display">
+                      <span className="om-total-label">{language === 'ar' ? 'الإجمالي الجديد:' : 'New Total:'}</span>
+                      <span className="om-total-value">${calculateNewTotal().toFixed(2)}</span>
+                    </div>
+                    <div className="om-edit-note">
+                      <small>ℹ️ {language === 'ar'
+                        ? 'ملاحظة: سيتم تحديث المجموع الكلي للطلب بناءً على الكميات الجديدة'
+                        : 'Note: Order total will be updated based on new quantities'}</small>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="om-edit-actions">
+                <button
+                  className="om-btn-cancel"
+                  onClick={() => setEditingOrder(null)}
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  className="om-btn-confirm"
+                  onClick={handleUpdateOrder}
+                >
+                  {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

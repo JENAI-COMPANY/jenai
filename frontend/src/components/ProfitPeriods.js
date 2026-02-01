@@ -282,7 +282,7 @@ const ProfitPeriods = () => {
       {showCalculateForm && (
         <div className="calculate-form-container">
           <h3>{language === 'ar' ? 'احتساب دورة أرباح جديدة' : 'Calculate New Profit Period'}</h3>
-          <form onSubmit={handleCalculatePeriod} className="calculate-form">
+          <form onSubmit={handleCalculatePeriod} className="calculate-form" autoComplete="off">
             <div className="form-row">
               <div className="form-group">
                 <label>{language === 'ar' ? 'اسم الدورة' : 'Period Name'}</label>

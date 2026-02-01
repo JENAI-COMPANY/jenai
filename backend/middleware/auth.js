@@ -16,6 +16,15 @@ exports.protect = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded.id).populate('region', 'name nameAr nameEn code');
+
+    // Check if user account is active (super_admin is always allowed)
+    if (req.user && req.user.role !== 'super_admin' && req.user.isActive === false) {
+      return res.status(403).json({
+        message: 'Your account is inactive. Please contact admin.',
+        messageAr: 'حسابك غير نشط. يرجى التواصل مع الإدارة.'
+      });
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Not authorized to access this route' });

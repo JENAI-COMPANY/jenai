@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة العضو - اختبار</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      color: #667eea;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .login-section {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .profit-box {
+      background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .profit-label {
+      font-size: 14px;
+      color: #333;
+    }
+
+    .profit-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #e17055;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: right;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: bold;
+    }
+
+    tr:hover {
+      background: #f5f7fa;
+    }
+
+    .tree-node {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f5f7fa;
+      border-right: 4px solid #667eea;
+      border-radius: 5px;
+    }
+
+    .tree-node.level-1 { margin-right: 20px; }
+    .tree-node.level-2 { margin-right: 40px; }
+    .tree-node.level-3 { margin-right: 60px; }
+    .tree-node.level-4 { margin-right: 80px; }
+    .tree-node.level-5 { margin-right: 100px; }
+
+    .member-name {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .member-rank {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #667eea;
+      color: white;
+      border-radius: 20px;
+      font-size: 12px;
+      margin: 0 5px;
+    }
+
+    .member-points {
+      color: #e17055;
+      font-weight: bold;
+    }
+
+    .print-btn {
+      background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+      margin-top: 10px;
+    }
+
+    .logout-btn {
+      background: linear-gradient(135deg, #d63031 0%, #e17055 100%);
+      max-width: 200px;
+      margin: 20px auto;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .card {
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+    }
+
+    .error {
+      background: #ff7675;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .success {
+      background: #00b894;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏆 لوحة العضو - نظام جناي</h1>
+
+    <!-- قسم تسجيل الدخول -->
+    <div id="loginSection" class="card login-section">
+      <h2>تسجيل الدخول</h2>
+      <div id="loginError" class="error hidden"></div>
+      <div class="form-group">
+        <label>اسم المستخدم:</label>
+        <input type="text" id="username" value="ahmad_root">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور:</label>
+        <input type="password" id="password" value="test123">
+      </div>
+      <button onclick="login()">دخول</button>
+    </div>
+
+    <!-- قسم لوحة التحكم -->
+    <div id="dashboardSection" class="hidden">
+      <div class="card no-print">
+        <h2>معلومات العضو</h2>
+        <div id="memberInfo"></div>
+        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+      </div>
+
+      <div class="card">
+        <h2>📊 النقاط والأرباح</h2>
+        <div id="pointsSection" class="loading">جاري تحميل البيانات...</div>
+      </div>
+
+      <div class="card">
+        <h2>👥 فريقي (5 أجيال) - عرض جدول</h2>
+        <button class="print-btn no-print" onclick="window.print()">طباعة التقرير</button>
+        <div id="teamTableSection" class="loading">جاري تحميل البيانات...</div>
+      </div>
+
+      <div class="card">
+        <h2>🌳 شجرة الفريق</h2>
+        <div id="teamTreeSection" class="loading">جاري تحميل البيانات...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+    let token = localStorage.getItem('memberToken');
+
+    // التحقق من تسجيل الدخول عند تحميل الصفحة
+    if (token) {
+      showDashboard();
+      loadAllData();
+    }
+
+    // تسجيل الدخول
+    async function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('loginError');
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'فشل تسجيل الدخول');
+        }
+
+        if (data.user.role !== 'member') {
+          throw new Error('هذا المستخدم ليس عضوًا. يجب تسجيل الدخول بحساب عضو.');
+        }
+
+        token = data.token;
+        localStorage.setItem('memberToken', token);
+
+        errorDiv.classList.add('hidden');
+        showDashboard();
+        loadAllData();
+
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    // تسجيل الخروج
+    function logout() {
+      localStorage.removeItem('memberToken');
+      token = null;
+      document.getElementById('loginSection').classList.remove('hidden');
+      document.getElementById('dashboardSection').classList.add('hidden');
+    }
+
+    // إظهار لوحة التحكم
+    function showDashboard() {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+    }
+
+    // تحميل جميع البيانات
+    async function loadAllData() {
+      await loadPoints();
+      await loadTeamTable();
+      await loadTeamTree();
+    }
+
+    // جلب النقاط
+    async function loadPoints() {
+      try {
+        const response = await fetch(`${API_BASE}/member/points`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message);
+        }
+
+        const data = result.data;
+
+        // معلومات العضو
+        document.getElementById('memberInfo').innerHTML = `
+          <p><strong>الاسم:</strong> ${data.name}</p>
+          <p><strong>اسم المستخدم:</strong> ${data.username}</p>
+          <p><strong>كود العضو:</strong> ${data.memberCode}</p>
+          <p><strong>الرتبة:</strong> <span class="member-rank">${data.memberRank}</span></p>
+        `;
+
+        // النقاط والأرباح
+        document.getElementById('pointsSection').innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">النقاط الشخصية</div>
+              <div class="stat-value">${data.personalPoints}</div>
+              <div class="profit-box">
+                <div class="profit-label">الربح الشخصي</div>
+                <div class="profit-value">${data.personalProfit} ₪</div>
+              </div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">نقاط الجيل 1</div>
+              <div class="stat-value">${data.teamPoints.generation1}</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">نقاط الجيل 2</div>
+              <div class="stat-value">${data.teamPoints.generation2}</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">نقاط الجيل 3</div>
+              <div class="stat-value">${data.teamPoints.generation3}</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">نقاط الجيل 4</div>
+              <div class="stat-value">${data.teamPoints.generation4}</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">نقاط الجيل 5</div>
+              <div class="stat-value">${data.teamPoints.generation5}</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">إجمالي نقاط الفريق</div>
+              <div class="stat-value">${data.teamPoints.total}</div>
+              <div class="profit-box">
+                <div class="profit-label">ربح الفريق</div>
+                <div class="profit-value">${data.teamProfit} ₪</div>
+              </div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">نقاط القيادة</div>
+              <div class="stat-value">${data.leadershipPoints}</div>
+              <div class="profit-box">
+                <div class="profit-label">ربح القيادة</div>
+                <div class="profit-value">${data.leadershipProfit} ₪</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-box" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);">
+              <div class="stat-label" style="color: white;">إجمالي النقاط</div>
+              <div class="stat-value" style="color: white;">${data.totalPoints}</div>
+            </div>
+
+            <div class="stat-box" style="background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);">
+              <div class="stat-label" style="color: white;">إجمالي الربح</div>
+              <div class="stat-value" style="color: white;">${data.totalProfit} ₪</div>
+            </div>
+
+            <div class="stat-box" style="background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);">
+              <div class="stat-label" style="color: white;">الربح المتاح</div>
+              <div class="stat-value" style="color: white;">${data.availableCommission} ₪</div>
+            </div>
+
+            <div class="stat-box" style="background: linear-gradient(135deg, #fab1a0 0%, #e17055 100%);">
+              <div class="stat-label" style="color: white;">الربح المسحوب</div>
+              <div class="stat-value" style="color: white;">${data.withdrawnCommission} ₪</div>
+            </div>
+          </div>
+        `;
+
+      } catch (error) {
+        document.getElementById('pointsSection').innerHTML = `
+          <div class="error">خطأ في تحميل النقاط: ${error.message}</div>
+        `;
+      }
+    }
+
+    // جلب الفريق (جدول)
+    async function loadTeamTable() {
+      try {
+        const response = await fetch(`${API_BASE}/member/team`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message);
+        }
+
+        const { team, statistics } = result.data;
+
+        let html = '';
+
+        for (let i = 1; i <= 5; i++) {
+          const genKey = `generation${i}`;
+          const members = team[genKey];
+          const stats = statistics[genKey];
+
+          html += `
+            <h3>الجيل ${i} (${stats.count} أعضاء - ${stats.totalPoints} نقطة)</h3>
+            ${members.length > 0 ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>اسم المستخدم</th>
+                    <th>كود العضو</th>
+                    <th>الرتبة</th>
+                    <th>النقاط</th>
+                    <th>نقاط الشهر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${members.map(m => `
+                    <tr>
+                      <td>${m.name}</td>
+                      <td>${m.username}</td>
+                      <td>${m.memberCode}</td>
+                      <td><span class="member-rank">${m.rank}</span></td>
+                      <td class="member-points">${m.points}</td>
+                      <td>${m.monthlyPoints}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : '<p>لا يوجد أعضاء في هذا الجيل</p>'}
+          `;
+        }
+
+        html += `
+          <h3 style="margin-top: 30px;">📊 الملخص الإجمالي</h3>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">إجمالي الأعضاء</div>
+              <div class="stat-value">${statistics.total.count}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">إجمالي نقاط الفريق</div>
+              <div class="stat-value">${statistics.total.totalPoints}</div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('teamTableSection').innerHTML = html;
+
+      } catch (error) {
+        document.getElementById('teamTableSection').innerHTML = `
+          <div class="error">خطأ في تحميل الفريق: ${error.message}</div>
+        `;
+      }
+    }
+
+    // جلب الشجرة
+    async function loadTeamTree() {
+      try {
+        const response = await fetch(`${API_BASE}/member/team/tree`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message);
+        }
+
+        const { root, tree } = result.data;
+
+        let html = `
+          <div class="tree-node level-0">
+            <span class="member-name">${root.name}</span>
+            <span class="member-rank">${root.rank}</span>
+            <span class="member-points">${root.points} نقطة</span>
+            <span style="color: #666;"> (الجذر)</span>
+          </div>
+        `;
+
+        function renderNode(node, level) {
+          let result = `
+            <div class="tree-node level-${level}">
+              <span class="member-name">${node.name}</span>
+              <span class="member-rank">${node.rank}</span>
+              <span class="member-points">${node.points} نقطة</span>
+              <span style="color: #666;"> (المستوى ${level})</span>
+            </div>
+          `;
+
+          if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+              result += renderNode(child, level + 1);
+            }
+          }
+
+          return result;
+        }
+
+        for (const node of tree) {
+          html += renderNode(node, 1);
+        }
+
+        document.getElementById('teamTreeSection').innerHTML = html;
+
+      } catch (error) {
+        document.getElementById('teamTreeSection').innerHTML = `
+          <div class="error">خطأ في تحميل الشجرة: ${error.message}</div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

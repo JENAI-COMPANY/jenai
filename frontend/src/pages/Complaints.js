@@ -79,7 +79,7 @@ const Complaints = () => {
 
       {showForm && (
         <div className="complaint-form-container">
-          <form className="complaint-form" onSubmit={handleSubmit}>
+          <form className="complaint-form" onSubmit={handleSubmit} autoComplete="off">
             <h2>{language === 'ar' ? 'تقديم شكوى' : 'Submit Complaint'}</h2>
 
             <div className="form-group">

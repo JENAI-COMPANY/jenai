@@ -86,6 +86,11 @@ const productSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
+  weight: {
+    type: Number,
+    required: false,
+    min: 0
+  },
   soldCount: {
     type: Number,
     default: 0,

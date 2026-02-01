@@ -62,7 +62,6 @@ const profitPeriodSchema = new mongoose.Schema({
   },
   periodNumber: {
     type: Number,
-    required: true,
     unique: true
   },
   startDate: {

@@ -7,7 +7,14 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please provide a username'],
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        // Only allow English letters, numbers, underscore, and hyphen
+        return /^[a-zA-Z0-9_-]+$/.test(v);
+      },
+      message: 'Username must contain only English letters, numbers, underscore, and hyphen'
+    }
   },
   name: {
     type: String,
@@ -22,7 +29,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['customer', 'member', 'supplier', 'regional_admin', 'super_admin'],
+    enum: ['customer', 'member', 'supplier', 'regional_admin', 'category_admin', 'super_admin'],
     default: 'customer'
   },
   phone: {
@@ -67,7 +74,10 @@ const userSchema = new mongoose.Schema({
     canManageProducts: { type: Boolean, default: false },
     canManageOrders: { type: Boolean, default: false },
     canViewReports: { type: Boolean, default: false },
-    canManageCommissions: { type: Boolean, default: false }
+    canManageCommissions: { type: Boolean, default: false },
+    canViewMembers: { type: Boolean, default: false },
+    canManageMembers: { type: Boolean, default: false },
+    canViewProducts: { type: Boolean, default: false }
   },
   // Supplier specific fields
   supplierCode: {
@@ -119,6 +129,12 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     uppercase: true,
     length: 8
+  },
+  // Code of the person who referred this user (string code like "LD103474")
+  sponsorCode: {
+    type: String,
+    uppercase: true,
+    trim: true
   },
   sponsorId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -321,7 +337,34 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.statics.generateSubscriberCode = async function(country, city) {
   const User = this;
 
-  // خريطة تحويل الأحرف العربية إلى الإنجليزية
+  // خريطة أسماء الدول إلى حروفها الإنجليزية الصحيحة
+  const countryCodeMap = {
+    'فلسطين': 'P',  // Palestine
+    'الأردن': 'J',   // Jordan
+    'مصر': 'E',      // Egypt
+    'سوريا': 'S',    // Syria
+    'لبنان': 'L',    // Lebanon
+    'العراق': 'I',   // Iraq
+    'السعودية': 'S', // Saudi Arabia
+    'الإمارات': 'U', // UAE
+    'الكويت': 'K',   // Kuwait
+    'قطر': 'Q',      // Qatar
+    'عمان': 'O',     // Oman
+    'اليمن': 'Y',    // Yemen
+    'المغرب': 'M',   // Morocco
+    'الجزائر': 'A',  // Algeria
+    'تونس': 'T',     // Tunisia
+    'ليبيا': 'L',    // Libya
+    'السودان': 'S',  // Sudan
+    'palestine': 'P',
+    'jordan': 'J',
+    'egypt': 'E',
+    'syria': 'S',
+    'lebanon': 'L',
+    'iraq': 'I'
+  };
+
+  // خريطة تحويل الأحرف العربية إلى الإنجليزية (للمدن والحالات غير المحددة)
   const arabicToEnglish = {
     'ا': 'A', 'أ': 'A', 'إ': 'A', 'آ': 'A',
     'ب': 'B',
@@ -347,15 +390,28 @@ userSchema.statics.generateSubscriberCode = async function(country, city) {
   };
 
   // دالة لتحويل النص العربي إلى إنجليزي
-  const convertToEnglish = (text) => {
+  const convertToEnglish = (text, isCountry = false) => {
     if (!text || typeof text !== 'string' || text.trim() === '') return 'X';
+
+    // إذا كانت دولة، تحقق من الخريطة أولاً
+    if (isCountry) {
+      const lowerText = text.trim().toLowerCase();
+      if (countryCodeMap[lowerText]) {
+        return countryCodeMap[lowerText];
+      }
+      // تحقق من الاسم الكامل
+      if (countryCodeMap[text.trim()]) {
+        return countryCodeMap[text.trim()];
+      }
+    }
+
     const firstChar = text.charAt(0);
     return arabicToEnglish[firstChar] || (firstChar ? firstChar.toUpperCase() : 'X');
   };
 
   // Get first letter of country and city (converted to English)
-  const countryCode = convertToEnglish(country);
-  const cityCode = convertToEnglish(city);
+  const countryCode = convertToEnglish(country, true);  // true = isCountry
+  const cityCode = convertToEnglish(city, false);
 
   let isUnique = false;
   let subscriberCode = '';
