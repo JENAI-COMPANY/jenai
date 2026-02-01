@@ -1,10 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const { protect, isSuperAdmin, isRegionalAdmin, isAdmin } = require('../middleware/auth');
+const {
+  checkPermission,
+  checkRegionalAccess,
+  checkCategoryAccess,
+  canViewMembers,
+  canManageMembers,
+  canViewProducts,
+  canManageProducts
+} = require('../middleware/permissions');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const ProfitPeriod = require('../models/ProfitPeriod');
+const { adminUpdateOrder } = require('../controllers/orderController');
 const {
   MEMBER_RANKS,
   calculateCumulativePoints,
@@ -21,13 +31,14 @@ const {
 // @route   GET /api/admin/users
 // @desc    Get all users (Super Admin and Regional Admin)
 // @access  Private/Admin
-router.get('/users', protect, isAdmin, async (req, res) => {
+router.get('/users', protect, isAdmin, canViewMembers, async (req, res) => {
   try {
     let query = {};
 
-    // Regional admins can only see users in their regions
+    // Regional admins can only see members and customers in their regions
     if (req.user.role === 'regional_admin') {
       query.region = { $in: req.user.managedRegions };
+      query.role = { $in: ['member', 'customer'] };
     }
 
     const users = await User.find(query)
@@ -52,7 +63,7 @@ router.get('/users', protect, isAdmin, async (req, res) => {
 // @route   GET /api/admin/users/:id
 // @desc    Get single user
 // @access  Private/Admin
-router.get('/users/:id', protect, isAdmin, async (req, res) => {
+router.get('/users/:id', protect, isAdmin, canViewMembers, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
 
@@ -88,7 +99,7 @@ router.get('/users/:id', protect, isAdmin, async (req, res) => {
 // @route   PUT /api/admin/users/:id
 // @desc    Update user
 // @access  Private/Admin
-router.put('/users/:id', protect, isAdmin, async (req, res) => {
+router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -101,7 +112,11 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
 
     // Regional admins can only update users in their regions
     if (req.user.role === 'regional_admin') {
-      if (!req.user.managedRegions.includes(user.region)) {
+      // Convert ObjectIds to strings for comparison
+      const userRegionStr = user.region?.toString();
+      const managedRegionStrs = req.user.managedRegions.map(r => r.toString());
+
+      if (!userRegionStr || !managedRegionStrs.includes(userRegionStr)) {
         return res.status(403).json({
           success: false,
           message: 'Access denied to update this user'
@@ -109,7 +124,8 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
       }
 
       // Regional admins cannot change roles or critical fields
-      if (req.body.role || req.body.subscriberCode || req.body.newSponsorCode) {
+      // Check if role is being CHANGED (not just sent with same value)
+      if ((req.body.role && req.body.role !== user.role) || req.body.subscriberCode || req.body.newSponsorCode) {
         return res.status(403).json({
           success: false,
           message: 'Regional admins cannot change user roles or referral codes'
@@ -200,10 +216,12 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
     }
 
     // Update other allowed fields
-    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'profitPoints'];
+    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'profitPoints', 'isActive', 'managedCategories'];
 
     console.log('🔍 req.body.region:', req.body.region);
+    console.log('🔍 req.body.isActive:', req.body.isActive);
     console.log('🔍 user.region before update:', user.region);
+    console.log('🔍 user.isActive before update:', user.isActive);
 
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -211,7 +229,14 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
         if (field === 'region' && req.body[field] === '') {
           user[field] = null;
           console.log('✏️ Clearing region (setting to null)');
-        } else {
+        }
+        // Handle isActive - ensure it's a boolean
+        else if (field === 'isActive') {
+          // Convert to boolean explicitly
+          user[field] = req.body[field] === true || req.body[field] === 'true';
+          console.log('✏️ Setting isActive to:', user[field], 'Type:', typeof user[field], 'Original value:', req.body[field], 'Original type:', typeof req.body[field]);
+        }
+        else {
           user[field] = req.body[field];
           if (field === 'region') {
             console.log('✏️ Setting region to:', req.body[field]);
@@ -221,10 +246,12 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
     });
 
     console.log('🔍 user.region after update:', user.region);
+    console.log('🔍 user.isActive after update:', user.isActive);
 
     await user.save();
 
     console.log('💾 User saved. Region value:', user.region);
+    console.log('💾 User saved. isActive value:', user.isActive);
 
     const updatedUser = await User.findById(user._id)
       .select('-password')
@@ -232,6 +259,7 @@ router.put('/users/:id', protect, isAdmin, async (req, res) => {
       .populate('region', 'name nameAr nameEn code');
 
     console.log('📤 Updated user region after populate:', updatedUser.region);
+    console.log('📤 Updated user isActive after populate:', updatedUser.isActive);
 
     res.json({
       success: true,
@@ -349,7 +377,7 @@ router.put('/users/:id/role', protect, isSuperAdmin, async (req, res) => {
 // @route   DELETE /api/admin/users/:id
 // @desc    Delete user
 // @access  Private/Admin (Super Admin can delete any, Regional Admin can delete users in their region)
-router.delete('/users/:id', protect, isAdmin, async (req, res) => {
+router.delete('/users/:id', protect, isAdmin, canManageMembers, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -406,7 +434,7 @@ router.delete('/users/:id', protect, isAdmin, async (req, res) => {
 // @route   POST /api/admin/users
 // @desc    Create a new user (any role)
 // @access  Private/Admin
-router.post('/users', protect, isAdmin, async (req, res) => {
+router.post('/users', protect, isAdmin, canManageMembers, async (req, res) => {
   try {
     console.log('=== Creating user ===');
     console.log('Request body:', req.body);
@@ -426,9 +454,8 @@ router.post('/users', protect, isAdmin, async (req, res) => {
       });
     }
 
-    // Validate city and country are required only for members (for referral code generation)
-    // Suppliers don't need referral codes
-    if (role === 'member' || role === 'regional_admin') {
+    // Validate city and country for code generation (member only needs this)
+    if (role === 'member') {
       if (!country || !country.trim()) {
         console.log('Missing country');
         return res.status(400).json({
@@ -469,7 +496,7 @@ router.post('/users', protect, isAdmin, async (req, res) => {
     }
 
     // Validate role
-    const validRoles = ['customer', 'member', 'supplier', 'regional_admin'];
+    const validRoles = ['customer', 'member', 'supplier', 'regional_admin', 'category_admin'];
     if (role && !validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
@@ -808,6 +835,11 @@ router.get('/orders', protect, isAdmin, async (req, res) => {
     });
   }
 });
+
+// @route   PUT /api/admin/orders/:id
+// @desc    Update order details (for pending orders only)
+// @access  Private/Admin
+router.put('/orders/:id', protect, isAdmin, adminUpdateOrder);
 
 // @route   PUT /api/admin/orders/:id/status
 // @desc    Update order status
@@ -1155,7 +1187,7 @@ router.get('/ranks', protect, isAdmin, async (req, res) => {
 // @route   GET /api/admin/users/:id/downline
 // @desc    Get user's downline structure (5 levels)
 // @access  Private/Admin
-router.get('/users/:id/downline', protect, isAdmin, async (req, res) => {
+router.get('/users/:id/downline', protect, isAdmin, canViewMembers, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -1315,7 +1347,7 @@ router.post('/users/update-ranks', protect, isSuperAdmin, async (req, res) => {
 // @route   GET /api/admin/users/:id/rank-info
 // @desc    Get detailed rank information for a member
 // @access  Private/Admin
-router.get('/users/:id/rank-info', protect, isAdmin, async (req, res) => {
+router.get('/users/:id/rank-info', protect, isAdmin, canViewMembers, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -1890,6 +1922,212 @@ router.get('/regions/statistics', protect, isSuperAdmin, async (req, res) => {
       statistics
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/admin/search-users
+// @desc    Search for members and customers (for creating orders)
+// @access  Private/Super Admin Only
+router.get('/search-users', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { search } = req.query;
+    console.log('🔍 Search users request received:', { search, user: req.user?.username });
+
+    if (!search || search.trim() === '') {
+      console.log('⚠️ Empty search term');
+      return res.json({
+        success: true,
+        users: []
+      });
+    }
+
+    const searchTerm = search.trim();
+    console.log('🔎 Searching for:', searchTerm);
+
+    // Search by name, username, subscriberCode, or phone
+    const users = await User.find({
+      role: { $in: ['member', 'customer'] },
+      $or: [
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { username: { $regex: searchTerm, $options: 'i' } },
+        { subscriberCode: { $regex: searchTerm, $options: 'i' } },
+        { phone: { $regex: searchTerm, $options: 'i' } }
+      ]
+    })
+    .select('name username subscriberCode phone role address city country')
+    .limit(10)
+    .lean();
+
+    console.log(`✅ Found ${users.length} users`);
+
+    res.json({
+      success: true,
+      users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   POST /api/admin/create-order-for-user
+// @desc    Create order for a member or customer (Super Admin only)
+// @access  Private/Super Admin Only
+router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const {
+      userId,
+      items,
+      shippingAddress,
+      deliveryMethod, // 'pickup' or 'delivery'
+      paymentMethod, // 'cash_on_delivery', 'pay_at_company'
+      notes
+    } = req.body;
+
+    // Validate required fields
+    if (!userId || !items || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'معلومات الطلبية غير مكتملة'
+      });
+    }
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'المستخدم غير موجود'
+      });
+    }
+
+    // Calculate order total
+    let totalAmount = 0;
+    const orderItems = [];
+
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: `المنتج ${item.productId} غير موجود`
+        });
+      }
+
+      // Calculate price based on user role
+      let itemPrice;
+      if (user.role === 'member') {
+        itemPrice = product.subscriberPrice || product.price || 0;
+      } else {
+        itemPrice = product.customerPrice || product.price || 0;
+      }
+
+      const itemTotal = itemPrice * item.quantity;
+      totalAmount += itemTotal;
+
+      orderItems.push({
+        product: product._id,
+        productName: product.name,
+        productNameAr: product.nameAr,
+        quantity: item.quantity,
+        price: itemPrice,
+        points: product.points || 0
+      });
+    }
+
+    // Parse shipping address
+    // Handle case where user.address might be an object or string
+    let addressString = shippingAddress || 'غير محدد';
+
+    if (!shippingAddress && user.address) {
+      if (typeof user.address === 'string') {
+        addressString = user.address;
+      } else if (typeof user.address === 'object' && user.address.street) {
+        // If address is already an object, use it directly
+        addressString = `${user.address.street || ''}, ${user.address.city || ''}`;
+      }
+    }
+
+    const addressParts = addressString.split(',').map(s => s.trim());
+    const parsedAddress = {
+      street: addressParts[0] || 'غير محدد',
+      city: addressParts[1] || user.city || 'غير محدد',
+      state: addressParts[2] || user.city || 'غير محدد',
+      zipCode: '00000',
+      country: user.country || 'فلسطين'
+    };
+
+    // Create order
+    const orderData = {
+      user: userId,
+      orderItems,
+      shippingAddress: parsedAddress,
+      contactPhone: user.phone || '0000000000',
+      paymentMethod: paymentMethod === 'pay_at_company' ? 'cash_at_company' : paymentMethod || 'cash_on_delivery',
+      itemsPrice: totalAmount,
+      taxPrice: 0,
+      shippingPrice: 0,
+      totalPrice: totalAmount,
+      totalPoints: orderItems.reduce((sum, item) => sum + (item.points * item.quantity), 0),
+      isPaid: paymentMethod === 'pay_at_company',
+      paidAt: paymentMethod === 'pay_at_company' ? new Date() : null,
+      isDelivered: paymentMethod === 'pay_at_company',
+      deliveredAt: paymentMethod === 'pay_at_company' ? new Date() : null,
+      status: paymentMethod === 'pay_at_company' ? 'received' : 'pending',
+      notes: notes || `طلبية تم إنشاؤها بواسطة ${req.user.name}`
+    };
+
+    const order = await Order.create(orderData);
+
+    // If payment at company and user is member, add points immediately
+    if (paymentMethod === 'pay_at_company' && user.role === 'member') {
+      const totalPoints = orderItems.reduce((sum, item) => sum + (item.points * item.quantity), 0);
+
+      if (totalPoints > 0) {
+        user.monthlyPoints = (user.monthlyPoints || 0) + totalPoints;
+        user.points = (user.points || 0) + totalPoints;
+        await user.save();
+
+        console.log(`✅ Added ${totalPoints} points to member ${user.name}`);
+
+        // Update member rank based on new points
+        try {
+          const rankUpdate = await updateMemberRank(userId, User);
+          if (rankUpdate.updated) {
+            console.log(`🎖️ Member rank updated: ${rankUpdate.oldRank} → ${rankUpdate.newRank} (${rankUpdate.rankName}) - Rank #${rankUpdate.newRankNumber}`);
+          }
+        } catch (error) {
+          console.error('Error updating member rank:', error);
+        }
+
+        // Calculate and display downline commission (informational)
+        try {
+          const commission = await calculateDownlineCommission(User, userId);
+          console.log(`💰 Estimated downline commission: ${commission.toFixed(2)} ₪`);
+        } catch (error) {
+          console.error('Error calculating downline commission:', error);
+        }
+      }
+    }
+
+    // Populate order details
+    const populatedOrder = await Order.findById(order._id)
+      .populate('user', 'name username phone subscriberCode')
+      .populate('orderItems.product', 'name nameAr');
+
+    res.status(201).json({
+      success: true,
+      message: 'تم إنشاء الطلبية بنجاح',
+      order: populatedOrder
+    });
+  } catch (error) {
+    console.error('Error creating order for user:', error);
     res.status(500).json({
       success: false,
       message: error.message

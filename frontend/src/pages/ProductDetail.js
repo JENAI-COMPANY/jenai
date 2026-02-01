@@ -5,6 +5,7 @@ import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import ProductCard from '../components/ProductCard';
+import CreateOrderForUser from '../components/CreateOrderForUser';
 import '../styles/ProductDetail.css';
 
 const ProductDetail = () => {
@@ -22,6 +23,7 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
+  const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -230,10 +232,10 @@ const ProductDetail = () => {
             <div className="price-section">
               {isSubscriber ? (
                 <div className="subscriber-pricing">
-                  <div className="current-price">${(product.subscriberPrice || 0).toFixed(2)}</div>
+                  <div className="current-price">₪{(product.subscriberPrice || 0).toFixed(2)}</div>
                   {hasDiscount && product.subscriberDiscount?.originalPrice && (
                     <>
-                      <div className="original-price">${product.subscriberDiscount.originalPrice.toFixed(2)}</div>
+                      <div className="original-price">₪{product.subscriberDiscount.originalPrice.toFixed(2)}</div>
                       <div className="discount-badge">
                         {language === 'ar' ? `توفير ${discountPercentage}%` : `Save ${discountPercentage}%`}
                       </div>
@@ -242,10 +244,10 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <div className="customer-pricing">
-                  <div className="current-price">${(product.customerPrice || 0).toFixed(2)}</div>
+                  <div className="current-price">₪{(product.customerPrice || 0).toFixed(2)}</div>
                   {product.customerDiscount?.enabled && product.customerDiscount?.originalPrice && (
                     <>
-                      <div className="original-price">${product.customerDiscount.originalPrice.toFixed(2)}</div>
+                      <div className="original-price">₪{product.customerDiscount.originalPrice.toFixed(2)}</div>
                       <div className="discount-badge">
                         {language === 'ar' ? `توفير ${product.customerDiscount.discountPercentage}%` : `Save ${product.customerDiscount.discountPercentage}%`}
                       </div>
@@ -260,8 +262,8 @@ const ProductDetail = () => {
               <div className="bulk-pricing-info">
                 <span className="bulk-icon">📦</span>
                 {language === 'ar'
-                  ? `سعر الجملة: $${product.bulkPrice.toFixed(2)} عند شراء ${product.bulkMinQuantity} قطعة أو أكثر`
-                  : `Bulk price: $${product.bulkPrice.toFixed(2)} when buying ${product.bulkMinQuantity}+ items`}
+                  ? `سعر الجملة: ₪${product.bulkPrice.toFixed(2)} عند شراء ${product.bulkMinQuantity} قطعة أو أكثر`
+                  : `Bulk price: ₪${product.bulkPrice.toFixed(2)} when buying ${product.bulkMinQuantity}+ items`}
               </div>
             )}
 
@@ -281,6 +283,13 @@ const ProductDetail = () => {
                 </span>
               )}
             </div>
+
+            {/* Weight */}
+            {product.weight && (
+              <div className="weight-info" style={{ margin: '10px 0', color: '#666', fontSize: '14px' }}>
+                ⚖️ {language === 'ar' ? 'الوزن:' : 'Weight:'} {product.weight} {language === 'ar' ? 'كغم' : 'kg'}
+              </div>
+            )}
 
             {/* Points - Only for subscribers and admins */}
             {product.points > 0 && (isSubscriber || isAdmin) && (
@@ -330,6 +339,29 @@ const ProductDetail = () => {
                   ? 'إضافة إلى السلة'
                   : 'Add to Cart'}
               </button>
+
+              {/* Create Order for User - Super Admin Only */}
+              {isAdmin && (
+                <button
+                  className="create-order-for-user-button"
+                  onClick={() => setShowCreateOrderModal(true)}
+                  disabled={product.stock <= 0}
+                  style={{
+                    marginTop: '10px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    cursor: product.stock <= 0 ? 'not-allowed' : 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    opacity: product.stock <= 0 ? 0.6 : 1
+                  }}
+                >
+                  {language === 'ar' ? 'إنشاء طلبية لعضو/زبون' : 'Create Order for User'}
+                </button>
+              )}
             </div>
 
             {/* Category and Region */}
@@ -339,7 +371,10 @@ const ProductDetail = () => {
               </div>
               {product.region && (
                 <div className="info-item">
-                  <strong>{language === 'ar' ? 'المنطقة:' : 'Region:'}</strong> {product.region}
+                  <strong>{language === 'ar' ? 'المنطقة:' : 'Region:'}</strong>{' '}
+                  {typeof product.region === 'string'
+                    ? product.region
+                    : (language === 'ar' ? (product.region.nameAr || product.region.name) : (product.region.nameEn || product.region.name))}
                 </div>
               )}
             </div>
@@ -372,8 +407,8 @@ const ProductDetail = () => {
                     <h3>{language === 'ar' ? '🎨 طلب مخصص' : '🎨 Custom Order'}</h3>
                     <p>
                       {language === 'ar'
-                        ? `يمكنك طلب هذا المنتج بشكل مخصص. العربون المطلوب: $${product.customOrderDeposit?.toFixed(2)}`
-                        : `This product is available for custom orders. Deposit required: $${product.customOrderDeposit?.toFixed(2)}`}
+                        ? `يمكنك طلب هذا المنتج بشكل مخصص. العربون المطلوب: ₪${product.customOrderDeposit?.toFixed(2)}`
+                        : `This product is available for custom orders. Deposit required: ₪${product.customOrderDeposit?.toFixed(2)}`}
                     </p>
                     {product.estimatedDeliveryDays && (
                       <p>
@@ -393,7 +428,7 @@ const ProductDetail = () => {
                 {isAuthenticated && (
                   <div className="submit-review">
                     <h3>{language === 'ar' ? 'أضف تقييمك' : 'Submit Your Review'}</h3>
-                    <form onSubmit={handleSubmitReview}>
+                    <form onSubmit={handleSubmitReview} autoComplete="off">
                       <div className="rating-input">
                         <label>{language === 'ar' ? 'التقييم:' : 'Rating:'}</label>
                         <div className="stars-input">{renderStars(rating, true, 'large')}</div>
@@ -459,6 +494,18 @@ const ProductDetail = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Create Order for User Modal */}
+        {showCreateOrderModal && (
+          <CreateOrderForUser
+            product={product}
+            onClose={() => setShowCreateOrderModal(false)}
+            onSuccess={() => {
+              setShowCreateOrderModal(false);
+              alert(language === 'ar' ? 'تم إنشاء الطلبية بنجاح!' : 'Order created successfully!');
+            }}
+          />
         )}
       </div>
     </div>

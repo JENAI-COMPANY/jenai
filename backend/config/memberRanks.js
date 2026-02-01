@@ -5,6 +5,21 @@
  * الخطوط البرونزية = عدد الأعضاء البرونزيين في المستوى الأول فقط
  */
 
+const User = require('../models/User');
+
+// Mapping between rank numbers and enum values in User model
+const RANK_ENUM_MAP = {
+  1: 'agent',
+  2: 'bronze',
+  3: 'silver',
+  4: 'gold',
+  5: 'ruby',
+  6: 'diamond',
+  7: 'double_diamond',
+  8: 'regional_ambassador',
+  9: 'global_ambassador'
+};
+
 const MEMBER_RANKS = {
   1: {
     name: 'وكيل',
@@ -189,7 +204,10 @@ const countBronzeLines = async (userId, User) => {
     }).select('memberRank');
 
     // عد الأعضاء الذين وصلوا رتبة برونزي أو أعلى (الرتبة 2 فما فوق)
-    const bronzeCount = directMembers.filter(member => member.memberRank >= 2).length;
+    const bronzeCount = directMembers.filter(member => {
+      const rankNumber = getRankNumber(member.memberRank);
+      return rankNumber >= 2;
+    }).length;
 
     return bronzeCount;
   } catch (error) {
@@ -241,13 +259,15 @@ const updateMemberRank = async (userId, User) => {
     // عد الخطوط البرونزية
     const bronzeLines = await countBronzeLines(userId, User);
 
-    // تحديد الرتبة الجديدة
-    const newRank = determineRank(cumulativePoints, bronzeLines);
+    // تحديد الرتبة الجديدة (كرقم)
+    const newRankNumber = determineRank(cumulativePoints, bronzeLines);
+    // تحويل الرقم إلى enum string
+    const newRankEnum = RANK_ENUM_MAP[newRankNumber];
 
     // إذا تغيرت الرتبة، قم بالتحديث
-    if (newRank !== user.memberRank) {
+    if (newRankEnum !== user.memberRank) {
       const oldRank = user.memberRank;
-      user.memberRank = newRank;
+      user.memberRank = newRankEnum;
       await user.save();
 
       return {
@@ -255,10 +275,11 @@ const updateMemberRank = async (userId, User) => {
         userId: user._id,
         username: user.username,
         oldRank,
-        newRank,
+        newRank: newRankEnum,
+        newRankNumber,
         cumulativePoints,
         bronzeLines,
-        rankName: MEMBER_RANKS[newRank].name
+        rankName: MEMBER_RANKS[newRankNumber].name
       };
     }
 
@@ -308,11 +329,39 @@ const updateAllMembersRanks = async (User) => {
 };
 
 /**
+ * دالة تحويل اسم الرتبة إلى رقم
+ * @param {String|Number} rank - اسم الرتبة أو رقمها
+ * @returns {Number} - رقم الرتبة
+ */
+const getRankNumber = (rank) => {
+  // إذا كان رقماً، إرجاعه مباشرة
+  if (typeof rank === 'number') {
+    return rank >= 1 && rank <= 9 ? rank : 1;
+  }
+
+  // تحويل النص إلى رقم
+  const rankMap = {
+    'agent': 1,
+    'bronze': 2,
+    'silver': 3,
+    'gold': 4,
+    'ruby': 5,
+    'diamond': 6,
+    'double_diamond': 7,
+    'regional_ambassador': 8,
+    'global_ambassador': 9
+  };
+
+  return rankMap[rank] || 1;
+};
+
+/**
  * دالة الحصول على معلومات الرتبة
- * @param {Number} rankNumber - رقم الرتبة
+ * @param {Number|String} rank - رقم الرتبة أو اسمها
  * @returns {Object} - معلومات الرتبة
  */
-const getRankInfo = (rankNumber) => {
+const getRankInfo = (rank) => {
+  const rankNumber = getRankNumber(rank);
   return MEMBER_RANKS[rankNumber] || MEMBER_RANKS[1];
 };
 
@@ -468,8 +517,11 @@ const calculateLeadershipCommission = async (User, memberId) => {
     };
   }
 
+  // تحويل الرتبة إلى رقم
+  const memberRankNumber = getRankNumber(member.memberRank);
+
   // العضو يجب أن يكون برونزي أو أعلى (رتبة 2 فما فوق)
-  if (member.memberRank < 2) {
+  if (memberRankNumber < 2) {
     return {
       totalCommission: 0,
       commissionInShekel: 0,
@@ -479,7 +531,7 @@ const calculateLeadershipCommission = async (User, memberId) => {
     };
   }
 
-  const rankConfig = getRankInfo(member.memberRank);
+  const rankConfig = getRankInfo(memberRankNumber);
   const leadershipRates = rankConfig.leadershipCommission;
   const POINTS_TO_SHEKEL_RATE = 0.55;
 
@@ -532,6 +584,7 @@ module.exports = {
   determineRank,
   updateMemberRank,
   updateAllMembersRanks,
+  getRankNumber,
   getRankInfo,
   getNextRankRequirements,
   getAllRanks,
