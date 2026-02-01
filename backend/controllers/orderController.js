@@ -284,6 +284,7 @@ exports.getOrderById = async (req, res) => {
 exports.getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id })
+      .populate('orderItems.product')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -314,6 +315,7 @@ exports.getAllOrders = async (req, res) => {
 
     const orders = await Order.find(query)
       .populate('user', 'name email')
+      .populate('orderItems.product')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -707,7 +709,8 @@ exports.userUpdateOrder = async (req, res) => {
       contactPhone,
       alternatePhone,
       notes,
-      customOrderDetails
+      customOrderDetails,
+      orderItems
     } = req.body;
 
     // تحديث البيانات المسموح بها فقط
@@ -728,6 +731,40 @@ exports.userUpdateOrder = async (req, res) => {
 
     if (notes !== undefined) {
       order.notes = notes;
+    }
+
+    // تحديث الكميات للطلبات العادية (ليست مخصصة)
+    if (!order.isCustomOrder && orderItems && Array.isArray(orderItems)) {
+      const Product = require('../models/Product');
+
+      // تحديث كميات المنتجات
+      const updatedItems = [];
+      let newItemsPrice = 0;
+
+      for (const item of orderItems) {
+        // البحث عن المنتج الأصلي في الطلب
+        const originalItem = order.orderItems.find(
+          oi => oi.product.toString() === item.productId.toString()
+        );
+
+        if (originalItem) {
+          // تحديث الكمية
+          updatedItems.push({
+            ...originalItem.toObject(),
+            quantity: item.quantity
+          });
+
+          // حساب السعر الجديد
+          newItemsPrice += originalItem.price * item.quantity;
+        }
+      }
+
+      // تحديث عناصر الطلب
+      order.orderItems = updatedItems;
+      order.itemsPrice = newItemsPrice;
+
+      // إعادة حساب السعر الكلي
+      order.totalPrice = newItemsPrice + order.shippingPrice + order.taxPrice - (order.discountAmount || 0);
     }
 
     // تحديث تفاصيل الطلب المخصص إذا كان طلب مخصص
@@ -794,5 +831,103 @@ exports.searchOrders = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// تعديل الطلب من قبل الإدارة
+exports.adminUpdateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+        messageAr: 'الطلب غير موجود'
+      });
+    }
+
+    // التحقق من أن الطلب قيد الانتظار فقط
+    if (order.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only update orders that are pending',
+        messageAr: 'يمكن تعديل الطلبات قيد الانتظار فقط'
+      });
+    }
+
+    const {
+      shippingAddress,
+      contactPhone,
+      alternatePhone,
+      notes,
+      orderItems
+    } = req.body;
+
+    // تحديث البيانات
+    if (shippingAddress) {
+      order.shippingAddress = {
+        ...order.shippingAddress,
+        ...shippingAddress
+      };
+    }
+
+    if (contactPhone) {
+      order.contactPhone = contactPhone;
+    }
+
+    if (alternatePhone !== undefined) {
+      order.alternatePhone = alternatePhone;
+    }
+
+    if (notes !== undefined) {
+      order.notes = notes;
+    }
+
+    // تحديث الكميات للطلبات العادية (ليست مخصصة)
+    if (!order.isCustomOrder && orderItems && Array.isArray(orderItems)) {
+      // تحديث كميات المنتجات
+      const updatedItems = [];
+      let newItemsPrice = 0;
+
+      for (const item of orderItems) {
+        // البحث عن المنتج الأصلي في الطلب
+        const originalItem = order.orderItems.find(
+          oi => oi.product.toString() === item.productId.toString()
+        );
+
+        if (originalItem) {
+          // تحديث الكمية
+          updatedItems.push({
+            ...originalItem.toObject(),
+            quantity: item.quantity
+          });
+
+          // حساب السعر الجديد
+          newItemsPrice += originalItem.price * item.quantity;
+        }
+      }
+
+      // تحديث عناصر الطلب
+      order.orderItems = updatedItems;
+      order.itemsPrice = newItemsPrice;
+
+      // إعادة حساب السعر الكلي
+      order.totalPrice = newItemsPrice + order.shippingPrice + order.taxPrice - (order.discountAmount || 0);
+    }
+
+    const updatedOrder = await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order updated successfully',
+      messageAr: 'تم تعديل الطلب بنجاح',
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
