@@ -23,6 +23,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Admin from './pages/Admin';
 import SubscriberInstructions from './pages/SubscriberInstructions';
+import MemberWelcome from './pages/MemberWelcome';
 import Profile from './pages/Profile';
 import ServicesManagement from './pages/ServicesManagement';
 import Library from './pages/Library';
@@ -70,6 +71,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/subscriber-instructions" element={<SubscriberInstructions />} />
+                <Route path="/member-welcome" element={<MemberWelcome />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route
                   path="/checkout"

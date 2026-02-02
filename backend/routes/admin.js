@@ -28,6 +28,94 @@ const {
   calculateDownlineCommission
 } = require('../config/memberRanks');
 
+// ══════════════════════════════════════════════════════════════
+// دالة توزيع العمولات حسب النظام الجديد
+// ══════════════════════════════════════════════════════════════
+const distributeCommissions = async (buyer, productPoints) => {
+  try {
+    // النسب الثابتة لعمولة الأجيال (للجميع)
+    const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
+
+    // نسب عمولة القيادة حسب الرتبة
+    const LEADERSHIP_RATES = {
+      'agent': [],
+      'bronze': [0.05], // جيل 1 فقط
+      'gold': [0.05, 0.04], // جيل 1+2
+      'silver': [0.05, 0.04, 0.03], // جيل 1+2+3
+      'ruby': [0.05, 0.04, 0.03, 0.02], // جيل 1+2+3+4
+      'diamond': [0.05, 0.04, 0.03, 0.02, 0.01], // الخمسة
+      'double_diamond': [0.05, 0.04, 0.03, 0.02, 0.01],
+      'regional_ambassador': [0.05, 0.04, 0.03, 0.02, 0.01],
+      'global_ambassador': [0.05, 0.04, 0.03, 0.02, 0.01]
+    };
+
+    // معامل التحويل من نقاط إلى شيكل
+    const POINTS_TO_CURRENCY = 0.55;
+
+    // ══════════════════════════════════════
+    // 1. الربح الشخصي للمشتري (20%)
+    // ══════════════════════════════════════
+    const personalPoints = productPoints * 0.20;
+    const personalProfit = personalPoints * POINTS_TO_CURRENCY;
+
+    buyer.points = (buyer.points || 0) + productPoints;
+    buyer.monthlyPoints = (buyer.monthlyPoints || 0) + productPoints;
+    // حذف الأعشار فقط عند الحفظ النهائي
+    buyer.totalCommission = Math.floor((buyer.totalCommission || 0) + personalProfit);
+    buyer.availableCommission = Math.floor((buyer.availableCommission || 0) + personalProfit);
+    await buyer.save();
+
+    console.log(`💰 ${buyer.name} (المشتري) - نقاط: ${productPoints}, ربح شخصي: ${personalProfit} شيكل`);
+
+    // ══════════════════════════════════════
+    // 2. توزيع على الأجيال الخمسة
+    // ══════════════════════════════════════
+    let currentMemberId = buyer.referredBy;
+    let generationLevel = 0;
+
+    while (currentMemberId && generationLevel < 5) {
+      const currentMember = await User.findById(currentMemberId);
+
+      if (!currentMember || currentMember.role !== 'member') break;
+
+      // عمولة الأجيال (ثابتة)
+      const genRate = GENERATION_RATES[generationLevel];
+      const genPoints = productPoints * genRate;
+
+      // عمولة القيادة (حسب الرتبة)
+      const leadershipRates = LEADERSHIP_RATES[currentMember.memberRank] || [];
+      const leadershipRate = leadershipRates[generationLevel] || 0;
+      const leadershipPoints = productPoints * leadershipRate;
+
+      // إجمالي النقاط والربح (بدون حذف أعشار في الحسابات الوسيطة)
+      const totalPoints = genPoints + leadershipPoints;
+      const profit = totalPoints * POINTS_TO_CURRENCY;
+
+      // تحديث العضو
+      const genFieldName = `generation${generationLevel + 1}Points`;
+      currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
+
+      if (leadershipPoints > 0) {
+        currentMember.leadershipPoints = (currentMember.leadershipPoints || 0) + leadershipPoints;
+      }
+
+      // حذف الأعشار فقط عند الحفظ النهائي
+      currentMember.totalCommission = Math.floor((currentMember.totalCommission || 0) + profit);
+      currentMember.availableCommission = Math.floor((currentMember.availableCommission || 0) + profit);
+
+      await currentMember.save();
+
+      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - نقاط أجيال: ${genPoints.toFixed(2)}, نقاط قيادة: ${leadershipPoints.toFixed(2)}, ربح: ${profit} شيكل`);
+
+      // الانتقال للجيل التالي
+      currentMemberId = currentMember.referredBy;
+      generationLevel++;
+    }
+  } catch (error) {
+    console.error('❌ خطأ في توزيع العمولات:', error);
+  }
+};
+
 // @route   GET /api/admin/users
 // @desc    Get all users (Super Admin and Regional Admin)
 // @access  Private/Admin
@@ -210,18 +298,30 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
         $addToSet: { downline: user._id }
       });
 
-      // Update the sponsorId
+      // Update the sponsorId and referredBy (for commission calculations)
       user.sponsorId = newSponsor._id;
+      user.referredBy = newSponsor._id;
       delete req.body.newSponsorCode;
     }
 
+    // Check if converting customer to member
+    const isConvertingToMember = user.role === 'customer' && req.body.role === 'member';
+
     // Update other allowed fields
-    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'profitPoints', 'isActive', 'managedCategories'];
+    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'compensationPoints', 'profitPoints', 'isActive', 'managedCategories'];
 
     console.log('🔍 req.body.region:', req.body.region);
     console.log('🔍 req.body.isActive:', req.body.isActive);
-    console.log('🔍 user.region before update:', user.region);
-    console.log('🔍 user.isActive before update:', user.isActive);
+    console.log('🔍 req.body.points:', req.body.points);
+    console.log('🔍 req.body.monthlyPoints:', req.body.monthlyPoints);
+    console.log('🔍 req.body.bonusPoints:', req.body.bonusPoints);
+    console.log('🔍 user BEFORE update:', {
+      points: user.points,
+      monthlyPoints: user.monthlyPoints,
+      bonusPoints: user.bonusPoints,
+      region: user.region,
+      isActive: user.isActive
+    });
 
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -236,10 +336,18 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
           user[field] = req.body[field] === true || req.body[field] === 'true';
           console.log('✏️ Setting isActive to:', user[field], 'Type:', typeof user[field], 'Original value:', req.body[field], 'Original type:', typeof req.body[field]);
         }
+        // bonusPoints و compensationPoints: لا نستبدل بل نتجاهل هنا (المعالجة تتم لاحقاً)
+        else if (field === 'bonusPoints' || field === 'compensationPoints') {
+          // لا نعدل القيمة هنا - سيتم معالجتها بعد الحفظ
+          console.log(`⏭️ Skipping ${field} in allowedUpdates (will be processed separately)`);
+        }
         else {
           user[field] = req.body[field];
           if (field === 'region') {
             console.log('✏️ Setting region to:', req.body[field]);
+          }
+          if (field === 'points' || field === 'monthlyPoints') {
+            console.log(`✏️ Setting ${field} to:`, req.body[field], 'Type:', typeof req.body[field]);
           }
         }
       }
@@ -248,18 +356,109 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     console.log('🔍 user.region after update:', user.region);
     console.log('🔍 user.isActive after update:', user.isActive);
 
+    // Handle customer to member conversion
+    if (isConvertingToMember) {
+      // Check if country and city are provided for subscriber code generation
+      if (!user.country || !user.city) {
+        return res.status(400).json({
+          success: false,
+          message: 'الدولة والمدينة مطلوبة لإنشاء كود الإحالة'
+        });
+      }
+
+      // Generate subscriber code for new member
+      if (!user.subscriberCode) {
+        user.subscriberCode = await User.generateSubscriberCode(user.country, user.city);
+      }
+
+      // Set initial member rank
+      user.memberRank = 1; // Start with rank 1 (agent)
+
+      // If a sponsor code was provided, link to sponsor
+      if (req.body.newSponsorCode) {
+        const sponsor = await User.findOne({ subscriberCode: req.body.newSponsorCode.toUpperCase() });
+        if (sponsor && (sponsor.role === 'member' || sponsor.role === 'super_admin' || sponsor.role === 'regional_admin')) {
+          user.sponsorId = sponsor._id;
+          // Add to sponsor's downline
+          await User.findByIdAndUpdate(sponsor._id, {
+            $addToSet: { downline: user._id }
+          });
+        }
+      }
+    }
+
     await user.save();
 
-    console.log('💾 User saved. Region value:', user.region);
-    console.log('💾 User saved. isActive value:', user.isActive);
+    console.log('💾 User saved successfully!');
+    console.log('💾 Saved values:', {
+      points: user.points,
+      monthlyPoints: user.monthlyPoints,
+      bonusPoints: user.bonusPoints,
+      compensationPoints: user.compensationPoints,
+      region: user.region,
+      isActive: user.isActive
+    });
+
+    // ══════════════════════════════════════════════════════════════
+    // معالجة نقاط المكافأة والتعويض (إضافة فوق القيمة الحالية)
+    // ══════════════════════════════════════════════════════════════
+    const addBonusPoints = parseInt(req.body.bonusPoints) || 0;
+    const addCompensationPoints = parseInt(req.body.compensationPoints) || 0;
+
+    // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين مثل شراء منتج)
+    if (addBonusPoints > 0 && user.role === 'member') {
+      console.log(`🎁 إضافة ${addBonusPoints} نقطة مكافأة للعضو ${user.name}`);
+
+      // تراكم نقاط المكافأة في الحقل
+      user.bonusPoints = (user.bonusPoints || 0) + addBonusPoints;
+      await user.save();
+
+      // توزيع النقاط على الأعضاء العلويين (مثل شراء منتج)
+      await distributeCommissions(user, addBonusPoints);
+
+      console.log(`✅ تم توزيع نقاط المكافأة. الإجمالي: ${user.bonusPoints}`);
+    }
+
+    // 2. معالجة نقاط التعويض (تُضاف فقط للتراكمي، لا توزع)
+    if (addCompensationPoints > 0) {
+      console.log(`💵 إضافة ${addCompensationPoints} نقطة تعويض للعضو ${user.name} (تراكمي فقط)`);
+
+      // تراكم نقاط التعويض في الحقل
+      user.compensationPoints = (user.compensationPoints || 0) + addCompensationPoints;
+      // إضافة النقاط إلى points التراكمي فقط
+      user.points = (user.points || 0) + addCompensationPoints;
+      await user.save();
+
+      console.log(`✅ تم إضافة نقاط التعويض. الإجمالي: ${user.compensationPoints}`);
+    }
+
+    // تحديث رتبة العضو بعد إضافة النقاط
+    if ((addBonusPoints > 0 || addCompensationPoints > 0) && user.role === 'member') {
+      try {
+        const rankUpdate = await updateMemberRank(user._id, User);
+        if (rankUpdate.updated) {
+          console.log(`🎖️ تم تحديث الرتبة: ${rankUpdate.oldRank} → ${rankUpdate.newRank} (${rankUpdate.rankName})`);
+        } else {
+          console.log(`ℹ️ الرتبة لم تتغير: ${user.memberRank}`);
+        }
+      } catch (rankError) {
+        console.error('❌ خطأ في تحديث الرتبة:', rankError);
+      }
+    }
 
     const updatedUser = await User.findById(user._id)
       .select('-password')
       .populate('sponsorId', 'name subscriberId subscriberCode')
       .populate('region', 'name nameAr nameEn code');
 
-    console.log('📤 Updated user region after populate:', updatedUser.region);
-    console.log('📤 Updated user isActive after populate:', updatedUser.isActive);
+    console.log('📤 Response will send:', {
+      points: updatedUser.points,
+      monthlyPoints: updatedUser.monthlyPoints,
+      bonusPoints: updatedUser.bonusPoints,
+      compensationPoints: updatedUser.compensationPoints,
+      region: updatedUser.region,
+      isActive: updatedUser.isActive
+    });
 
     res.json({
       success: true,
@@ -539,8 +738,8 @@ router.post('/users', protect, isAdmin, canManageMembers, async (req, res) => {
       userData.region = region;
     }
 
-    // Handle sponsor for member role
-    if (role === 'member' && sponsorCode) {
+    // Handle sponsor for member and customer roles
+    if ((role === 'member' || role === 'customer') && sponsorCode) {
       const sponsor = await User.findOne({ subscriberCode: sponsorCode });
 
       if (!sponsor) {
@@ -558,6 +757,8 @@ router.post('/users', protect, isAdmin, canManageMembers, async (req, res) => {
       }
 
       userData.sponsorId = sponsor._id;
+      userData.sponsorCode = sponsor.subscriberCode; // IMPORTANT: Set sponsorCode for team hierarchy
+      userData.referredBy = sponsor._id; // For commission distribution
     }
 
     // Create user

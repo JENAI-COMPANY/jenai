@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Order = require('../models/Order');
 
 // Get team members (5 levels deep) with their points
 exports.getMyTeam = async (req, res) => {
@@ -19,7 +20,7 @@ exports.getMyTeam = async (req, res) => {
         sponsorCode: sponsorCode,
         role: { $in: ['member', 'subscriber', 'customer'] }
       })
-        .select('name username subscriberCode points monthlyPoints createdAt country city')
+        .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive')
         .lean();
 
       let allMembers = [];
@@ -46,9 +47,36 @@ exports.getMyTeam = async (req, res) => {
     // Get all team members starting from level 1
     const teamMembers = await getTeamMembers(user.subscriberCode, 1);
 
-    // Calculate start of current month
+    // Calculate start of last month
     const now = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Check which members have ordered in the last month
+    const memberIds = teamMembers.map(m => m._id);
+    const recentOrders = await Order.aggregate([
+      {
+        $match: {
+          user: { $in: memberIds },
+          createdAt: { $gte: oneMonthAgo }
+        }
+      },
+      {
+        $group: {
+          _id: '$user',
+          orderCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Create a map of user IDs who have ordered recently
+    const activeUserIds = new Set(recentOrders.map(order => order._id.toString()));
+
+    // Add isActiveLastMonth to each member
+    teamMembers.forEach(member => {
+      member.isActiveLastMonth = activeUserIds.has(member._id.toString());
+    });
 
     // Calculate statistics
     const stats = {
@@ -96,9 +124,36 @@ exports.getDirectReferrals = async (req, res) => {
       sponsorCode: user.subscriberCode,
       role: { $in: ['member', 'subscriber', 'customer'] }
     })
-      .select('name username subscriberCode points monthlyPoints createdAt country city')
+      .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive')
       .sort({ createdAt: -1 })
       .lean();
+
+    // Calculate if members have ordered in last month
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const memberIds = directReferrals.map(m => m._id);
+    const recentOrders = await Order.aggregate([
+      {
+        $match: {
+          user: { $in: memberIds },
+          createdAt: { $gte: oneMonthAgo }
+        }
+      },
+      {
+        $group: {
+          _id: '$user',
+          orderCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const activeUserIds = new Set(recentOrders.map(order => order._id.toString()));
+
+    // Add isActiveLastMonth to each referral
+    directReferrals.forEach(member => {
+      member.isActiveLastMonth = activeUserIds.has(member._id.toString());
+    });
 
     res.json({
       success: true,

@@ -36,6 +36,7 @@ const ProductManagement = () => {
     supplier: '', // المورد المسؤول عن المنتج
     isActive: true,
     isNewArrival: false,
+    isOffer: false,
     // خصم الزباين (العملاء)
     customerDiscount: {
       enabled: false,
@@ -244,6 +245,7 @@ const ProductManagement = () => {
       formDataToSend.append('stock', formData.stock);
       formDataToSend.append('isActive', formData.isActive);
       formDataToSend.append('isNewArrival', formData.isNewArrival);
+      formDataToSend.append('isOffer', formData.isOffer);
 
       // إضافة المنطقة (فقط لـ super_admin)
       if (user && user.role === 'super_admin' && formData.region) {
@@ -323,6 +325,7 @@ const ProductManagement = () => {
       supplier: product.supplier?._id || product.supplier || '',
       isActive: product.isActive !== undefined ? product.isActive : true,
       isNewArrival: product.isNewArrival || false,
+      isOffer: product.isOffer || false,
       customerDiscount: product.customerDiscount || {
         enabled: false,
         originalPrice: '',
@@ -383,6 +386,7 @@ const ProductManagement = () => {
       supplier: '',
       isActive: true,
       isNewArrival: false,
+      isOffer: false,
       customerDiscount: {
         enabled: false,
         originalPrice: '',
@@ -929,6 +933,17 @@ const ProductManagement = () => {
                       onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })}
                     />
                     {language === 'ar' ? '🎁 وصل حديثاً' : '🎁 New Arrival'}
+                  </label>
+                </div>
+
+                <div className="pm-form-group pm-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.isOffer}
+                      onChange={(e) => setFormData({ ...formData, isOffer: e.target.checked })}
+                    />
+                    {language === 'ar' ? '🏷️ إضافة للعروض' : '🏷️ Add to Offers'}
                   </label>
                 </div>
               </div>

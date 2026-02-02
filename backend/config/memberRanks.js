@@ -168,25 +168,19 @@ const MEMBER_RANKS = {
 };
 
 /**
- * دالة حساب النقاط التراكمية للعضو
+ * دالة حساب النقاط التراكمية للعضو (لحساب الرتبة)
  * @param {Object} user - بيانات العضو
  * @returns {Number} - النقاط التراكمية
  *
- * النقاط التراكمية = النقاط الشخصية + نقاط الفريق + نقاط المكافأة
- * نقاط المكافأة (bonusPoints) تُحسب للرتبة فقط ولا تُحسب كأرباح إطلاقاً (لا للعضو ولا للأعضاء العلويين)
+ * النقاط التراكمية = النقاط الشخصية (monthlyPoints) + نقاط المكافأة (bonusPoints) + نقاط التعويض (compensationPoints)
+ * ملاحظة: نقاط الفريق (الأجيال) لا تُحسب للرتبة - فقط للربح
  */
 const calculateCumulativePoints = (user) => {
   const personalPoints = user.monthlyPoints || 0;
-  const bonusPoints = user.bonusPoints || 0; // نقاط المكافأة للرتبة فقط - بدون أرباح
-  const teamPoints = (
-    (user.generation1Points || 0) +
-    (user.generation2Points || 0) +
-    (user.generation3Points || 0) +
-    (user.generation4Points || 0) +
-    (user.generation5Points || 0)
-  );
+  const bonusPoints = user.bonusPoints || 0;
+  const compensationPoints = user.compensationPoints || 0;
 
-  return personalPoints + teamPoints + bonusPoints;
+  return personalPoints + bonusPoints + compensationPoints;
 };
 
 /**
@@ -269,6 +263,15 @@ const updateMemberRank = async (userId, User) => {
       const oldRank = user.memberRank;
       user.memberRank = newRankEnum;
       await user.save();
+
+      // تحديث رتبة الراعي (العضو الأعلى) لأن خطوطه البرونزية قد تغيرت
+      if (user.sponsorId) {
+        try {
+          await updateMemberRank(user.sponsorId, User);
+        } catch (err) {
+          console.error('خطأ في تحديث رتبة الراعي:', err);
+        }
+      }
 
       return {
         updated: true,

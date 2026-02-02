@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { getRankImage, getRankName } from '../utils/rankHelpers';
+import { getRankImage, getRankName, getRankNumber } from '../utils/rankHelpers';
 import '../styles/MyTeam.css';
 
 const MyTeam = () => {
@@ -22,6 +22,12 @@ const MyTeam = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRank, setFilterRank] = useState('all');
+  const [filterActivity, setFilterActivity] = useState('all'); // 'all', 'active', 'inactive'
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'suspended'
 
   useEffect(() => {
     fetchTeamData();
@@ -258,11 +264,47 @@ const MyTeam = () => {
   const teamMembers = viewMode === 'all' ? teamData?.team || [] : teamData?.referrals || [];
   const stats = viewMode === 'all' ? teamData?.stats : null;
 
-  // Group members by level
+  // Filter function
+  const filterMembers = (members) => {
+    return members.filter(member => {
+      // Search filter (name, username, subscriberCode)
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm ||
+        member.name?.toLowerCase().includes(searchLower) ||
+        member.username?.toLowerCase().includes(searchLower) ||
+        member.subscriberCode?.toLowerCase().includes(searchLower);
+
+      // Rank filter - convert memberRank enum string to number for comparison
+      const matchesRank = filterRank === 'all' || getRankNumber(member.memberRank) === parseInt(filterRank);
+
+      // Activity filter (has order in last month)
+      let matchesActivity = true;
+      if (filterActivity === 'active') {
+        matchesActivity = member.isActiveLastMonth === true;
+      } else if (filterActivity === 'inactive') {
+        matchesActivity = member.isActiveLastMonth === false;
+      }
+
+      // Status filter (isActive field)
+      let matchesStatus = true;
+      if (filterStatus === 'active') {
+        matchesStatus = member.isActive !== false;
+      } else if (filterStatus === 'suspended') {
+        matchesStatus = member.isActive === false;
+      }
+
+      return matchesSearch && matchesRank && matchesActivity && matchesStatus;
+    });
+  };
+
+  // Apply filters
+  const filteredTeamMembers = filterMembers(teamMembers);
+
+  // Group members by level (after filtering)
   const membersByLevel = {};
   if (viewMode === 'all') {
     for (let i = 1; i <= 5; i++) {
-      membersByLevel[i] = teamMembers.filter(m => m.level === i);
+      membersByLevel[i] = filteredTeamMembers.filter(m => m.level === i);
     }
   }
 
@@ -314,6 +356,86 @@ const MyTeam = () => {
           </button>
         )}
       </div>
+
+      {/* Filters Section */}
+      {teamMembers.length > 0 && (
+        <div className="team-filters">
+          {/* Search Bar */}
+          <div className="filter-search">
+            <input
+              type="text"
+              placeholder={language === 'ar' ? '🔍 البحث بالاسم، اليوزر أو الكود...' : '🔍 Search by name, username or code...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          {/* Filter Dropdowns */}
+          <div className="filter-row">
+            {/* Rank Filter */}
+            <div className="filter-group">
+              <label>{language === 'ar' ? 'الرتبة:' : 'Rank:'}</label>
+              <select value={filterRank} onChange={(e) => setFilterRank(e.target.value)}>
+                <option value="all">{language === 'ar' ? 'جميع الرتب' : 'All Ranks'}</option>
+                <option value="1">1 - {language === 'ar' ? 'وكيل' : 'Agent'}</option>
+                <option value="2">2 - {language === 'ar' ? 'برونزي' : 'Bronze'}</option>
+                <option value="3">3 - {language === 'ar' ? 'فضي' : 'Silver'}</option>
+                <option value="4">4 - {language === 'ar' ? 'ذهبي' : 'Gold'}</option>
+                <option value="5">5 - {language === 'ar' ? 'روبي' : 'Ruby'}</option>
+                <option value="6">6 - {language === 'ar' ? 'ماسي' : 'Diamond'}</option>
+                <option value="7">7 - {language === 'ar' ? 'ماسي مزدوج' : 'Double Diamond'}</option>
+                <option value="8">8 - {language === 'ar' ? 'سفير إقليمي' : 'Regional Ambassador'}</option>
+                <option value="9">9 - {language === 'ar' ? 'سفير عالمي' : 'Global Ambassador'}</option>
+              </select>
+            </div>
+
+            {/* Activity Filter */}
+            <div className="filter-group">
+              <label>{language === 'ar' ? 'النشاط:' : 'Activity:'}</label>
+              <select value={filterActivity} onChange={(e) => setFilterActivity(e.target.value)}>
+                <option value="all">{language === 'ar' ? 'الكل' : 'All'}</option>
+                <option value="active">{language === 'ar' ? '🟢 نشيط (له طلب آخر شهر)' : '🟢 Active (ordered last month)'}</option>
+                <option value="inactive">{language === 'ar' ? '🔴 غير نشيط' : '🔴 Inactive'}</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="filter-group">
+              <label>{language === 'ar' ? 'الحالة:' : 'Status:'}</label>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                <option value="all">{language === 'ar' ? 'الكل' : 'All'}</option>
+                <option value="active">{language === 'ar' ? '✅ فعال' : '✅ Active'}</option>
+                <option value="suspended">{language === 'ar' ? '⛔ متوقف' : '⛔ Suspended'}</option>
+              </select>
+            </div>
+
+            {/* Clear Filters Button */}
+            {(searchTerm || filterRank !== 'all' || filterActivity !== 'all' || filterStatus !== 'all') && (
+              <button
+                className="clear-filters-btn"
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterRank('all');
+                  setFilterActivity('all');
+                  setFilterStatus('all');
+                }}
+              >
+                {language === 'ar' ? '🔄 مسح الفلاتر' : '🔄 Clear Filters'}
+              </button>
+            )}
+          </div>
+
+          {/* Results Count */}
+          <div className="filter-results">
+            <span>
+              {language === 'ar'
+                ? `النتائج: ${filteredTeamMembers.length} من ${teamMembers.length}`
+                : `Results: ${filteredTeamMembers.length} of ${teamMembers.length}`}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Statistics Cards */}
       {viewMode === 'all' && stats && (
@@ -488,7 +610,7 @@ const MyTeam = () => {
                 </tr>
               </thead>
               <tbody>
-                {teamMembers.map((member, index) => (
+                {filteredTeamMembers.map((member, index) => (
                   <tr
                     key={member._id}
                     onClick={() => handleMemberClick(member)}

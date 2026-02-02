@@ -71,6 +71,23 @@ export const getRankNameFromNumber = (rankNumber) => {
   return numberToRankMap[rankNumber] || 'agent';
 };
 
+// Convert rank name to rank number
+export const getRankNumber = (memberRank) => {
+  const rankToNumberMap = {
+    'agent': 1,
+    'bronze': 2,
+    'silver': 3,
+    'gold': 4,
+    'ruby': 5,
+    'diamond': 6,
+    'double_diamond': 7,
+    'regional_ambassador': 8,
+    'global_ambassador': 9
+  };
+
+  return rankToNumberMap[memberRank] || 1;
+};
+
 // Get rank image directly from rank number
 export const getRankImageFromNumber = (rankNumber) => {
   return `${rankNumber}.png`;

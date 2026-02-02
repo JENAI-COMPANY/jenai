@@ -111,8 +111,14 @@ const Register = () => {
     }
 
     // التحقق من جميع الحقول المطلوبة
-    if (!formData.username || !formData.name || !formData.phone || !formData.country || !formData.city) {
+    if (!formData.username || !formData.name || !formData.phone) {
       setError(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill in all required fields');
+      return;
+    }
+
+    // للأعضاء: التحقق من الدولة والمدينة لإنشاء كود الإحالة
+    if (selectedRole === 'member' && (!formData.country || !formData.city)) {
+      setError(language === 'ar' ? 'الدولة والمدينة مطلوبة للأعضاء لإنشاء كود الإحالة' : 'Country and city are required for members to create referral code');
       return;
     }
 
@@ -156,7 +162,7 @@ const Register = () => {
     const result = await register(userData);
 
     if (result.success) {
-      navigate('/subscriber-instructions');
+      navigate('/member-welcome');
     } else {
       setError(result.message);
       setStep(2); // العودة للفورم في حالة الخطأ
@@ -313,12 +319,15 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>{language === 'ar' ? 'الدولة' : 'Country'} *</label>
+            <label>
+              {language === 'ar' ? 'الدولة' : 'Country'}
+              {selectedRole === 'member' ? ' *' : (language === 'ar' ? ' (اختياري)' : ' (Optional)')}
+            </label>
             <select
               name="country"
               value={formData.country}
               onChange={handleChange}
-              required
+              required={selectedRole === 'member'}
             >
               <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
               <option value="Egypt">🇪🇬 Egypt - مصر</option>
@@ -343,14 +352,17 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>{language === 'ar' ? 'المدينة' : 'City'} *</label>
+            <label>
+              {language === 'ar' ? 'المدينة' : 'City'}
+              {selectedRole === 'member' ? ' *' : (language === 'ar' ? ' (اختياري)' : ' (Optional)')}
+            </label>
             <input
               type="text"
               name="city"
               placeholder={language === 'ar' ? 'أدخل اسم المدينة' : 'Enter city name'}
               value={formData.city}
               onChange={handleChange}
-              required
+              required={selectedRole === 'member'}
             />
           </div>
 

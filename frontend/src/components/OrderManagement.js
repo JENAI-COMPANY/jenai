@@ -238,57 +238,77 @@ const OrderManagement = () => {
           }
           body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 15px;
             direction: ${isArabic ? 'rtl' : 'ltr'};
+            font-size: 11px;
           }
           .header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #10b981;
-            padding-bottom: 20px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 10px;
           }
           .header h1 {
             color: #10b981;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            font-size: 16px;
+          }
+          .header p {
+            font-size: 10px;
+            margin: 2px 0;
           }
           .section {
-            margin-bottom: 25px;
+            margin-bottom: 12px;
           }
           .section h3 {
             color: #10b981;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            border-bottom: 1.5px solid #10b981;
+            padding-bottom: 3px;
+            margin-bottom: 6px;
+            font-size: 13px;
           }
           .section p {
-            margin: 5px 0;
-            line-height: 1.6;
+            margin: 3px 0;
+            line-height: 1.4;
+            font-size: 11px;
           }
           table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 5px;
           }
           th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 5px;
             text-align: ${isArabic ? 'right' : 'left'};
+            font-size: 10px;
           }
           th {
             background-color: #10b981;
             color: white;
           }
           .total {
-            font-size: 1.3em;
-            margin-top: 15px;
+            font-size: 13px;
+            margin-top: 8px;
             font-weight: bold;
           }
           .total-amount {
             color: #10b981;
           }
           @media print {
+            @page {
+              size: A5;
+              margin: 8mm;
+            }
             body {
-              padding: 10px;
+              padding: 5px;
+              font-size: 10px;
+            }
+            .header h1 {
+              font-size: 14px;
+            }
+            .section h3 {
+              font-size: 12px;
             }
           }
         </style>

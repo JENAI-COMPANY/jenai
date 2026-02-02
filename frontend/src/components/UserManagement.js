@@ -5,7 +5,7 @@ import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import '../styles/UserManagement.css';
-import { countryCodes } from '../utils/countryCodes';
+import { countryCodes, allCountries } from '../utils/countryCodes';
 
 const UserManagement = () => {
   const { language } = useLanguage();
@@ -259,13 +259,26 @@ const UserManagement = () => {
       newSponsorCode: '',
       points: user.points || 0,
       monthlyPoints: user.monthlyPoints || 0,
-      bonusPoints: user.bonusPoints || 0,
+      bonusPoints: 0,
+      compensationPoints: 0,
       isActive: user.isActive !== false
     });
   };
 
   const handleSaveEdit = async () => {
     try {
+      // Validate that when converting customer to member, country and city are provided for referral code generation
+      const isConvertingToMember = editingUser.role === 'member' &&
+                                    users.find(u => u._id === editingUser._id)?.role === 'customer';
+
+      if (isConvertingToMember) {
+        if (!editingUser.country || !editingUser.city) {
+          setError(language === 'ar' ? 'الدولة والمدينة مطلوبة لإنشاء كود الإحالة عند التحويل لعضو' : 'Country and city are required to create referral code when converting to member');
+          setTimeout(() => setError(''), 3000);
+          return;
+        }
+      }
+
       // City and country are user-entered text fields (used for member code generation)
       // Region is an ObjectId set by super admin (determines regional admin control)
       // These three fields are independent and not linked
@@ -283,6 +296,7 @@ const UserManagement = () => {
         points: editingUser.points,
         monthlyPoints: editingUser.monthlyPoints,
         bonusPoints: editingUser.bonusPoints,
+        compensationPoints: editingUser.compensationPoints,
         isActive: editingUser.isActive
       };
 
@@ -346,11 +360,13 @@ const UserManagement = () => {
       return;
     }
 
-    // Validate region is required for member, customer, and regional_admin
-    if ((newUser.role === 'member' || newUser.role === 'customer' || newUser.role === 'regional_admin') && !newUser.region) {
-      setError(language === 'ar' ? 'المنطقة مطلوبة' : 'Region is required');
-      setTimeout(() => setError(''), 3000);
-      return;
+    // Validate country and city are required for members to create referral code
+    if (newUser.role === 'member') {
+      if (!newUser.country || !newUser.city) {
+        setError(language === 'ar' ? 'الدولة والمدينة مطلوبة لإنشاء كود الإحالة' : 'Country and city are required to create referral code');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
     }
 
     try {
@@ -758,12 +774,17 @@ const UserManagement = () => {
               <div className="um-form-row">
                 <div className="um-form-group">
                   <label>{language === 'ar' ? 'الدولة' : 'Country'}</label>
-                  <input
-                    type="text"
+                  <select
                     value={editingUser.country || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, country: e.target.value })}
-                    placeholder={language === 'ar' ? 'مثال: فلسطين' : 'Example: Palestine'}
-                  />
+                  >
+                    <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
+                    {allCountries.map((country) => (
+                      <option key={country.value} value={country.value}>
+                        {language === 'ar' ? country.label : country.value}
+                      </option>
+                    ))}
+                  </select>
                   <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                     {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
                   </small>
@@ -786,11 +807,10 @@ const UserManagement = () => {
               {currentUser?.role === 'super_admin' && (editingUser.role === 'regional_admin' || editingUser.role === 'member' || editingUser.role === 'customer') && (
                 <div className="um-form-row">
                   <div className="um-form-group">
-                    <label>{language === 'ar' ? 'المنطقة الإدارية *' : 'Administrative Region *'}</label>
+                    <label>{language === 'ar' ? 'المنطقة الإدارية (اختياري)' : 'Administrative Region (Optional)'}</label>
                     <select
                       value={editingUser.region || ''}
                       onChange={(e) => setEditingUser({ ...editingUser, region: e.target.value })}
-                      required
                     >
                       <option value="">{language === 'ar' ? 'اختر المنطقة' : 'Select Region'}</option>
                       {regions.map((region) => (
@@ -860,33 +880,37 @@ const UserManagement = () => {
                     <>
                       <div className="um-form-row">
                         <div className="um-form-group">
-                          <label style={{ color: '#9c27b0' }}>🎁 {language === 'ar' ? 'نقاط التعويض' : 'Bonus Points'}</label>
+                          <label style={{ color: '#ff9800' }}>🎁 {language === 'ar' ? 'إضافة نقاط مكافأة' : 'Add Bonus Points'}</label>
                           <input
                             type="number"
-                            value={editingUser.bonusPoints}
+                            min="0"
+                            placeholder={language === 'ar' ? 'أدخل عدد النقاط المراد إضافتها' : 'Enter points to add'}
+                            value={editingUser.bonusPoints || ''}
                             onChange={(e) => setEditingUser({ ...editingUser, bonusPoints: parseInt(e.target.value) || 0 })}
-                            style={{ borderColor: '#9c27b0' }}
+                            style={{ borderColor: '#ff9800' }}
                           />
-                          <small style={{ color: '#9c27b0', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                          <small style={{ color: '#ff9800', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                             {language === 'ar'
-                              ? '⚠️ تُحسب للرتبة فقط ولا تُحسب كأرباح إطلاقاً (لا للعضو ولا للأعضاء العلويين)'
-                              : '⚠️ Counts towards rank only, no profit calculated (not for member or upline)'}
+                              ? '💰 تُضاف للنقاط والرتبة والربح وتُوزع على الأعضاء العلويين (مثل شراء منتج)'
+                              : '💰 Added to points, rank & profit, distributes to upline (like purchasing a product)'}
                           </small>
                         </div>
                       </div>
                       <div className="um-form-row">
                         <div className="um-form-group">
-                          <label style={{ color: '#4caf50' }}>🏆 {language === 'ar' ? 'نقاط المكافآت' : 'Profit Points (Competitions)'}</label>
+                          <label style={{ color: '#9c27b0' }}>💵 {language === 'ar' ? 'إضافة نقاط تعويض' : 'Add Compensation Points'}</label>
                           <input
                             type="number"
-                            value={editingUser.profitPoints || 0}
-                            onChange={(e) => setEditingUser({ ...editingUser, profitPoints: parseInt(e.target.value) || 0 })}
-                            style={{ borderColor: '#4caf50' }}
+                            min="0"
+                            placeholder={language === 'ar' ? 'أدخل عدد النقاط المراد إضافتها' : 'Enter points to add'}
+                            value={editingUser.compensationPoints || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, compensationPoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#9c27b0' }}
                           />
-                          <small style={{ color: '#4caf50', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                          <small style={{ color: '#9c27b0', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                             {language === 'ar'
-                              ? '💰 تُحسب كأرباح شخصية للعضو (للمسابقات والجوائز)'
-                              : '💰 Calculated as personal profit for the member (for competitions & prizes)'}
+                              ? '⚠️ تُضاف للتراكمي فقط لحساب الرتبة، لا تُوزع ولا تُحسب كأرباح'
+                              : '⚠️ Added to cumulative points for rank only, no profit or distribution'}
                           </small>
                         </div>
                       </div>
@@ -1028,12 +1052,17 @@ const UserManagement = () => {
                 <div className="um-form-row">
                   <div className="um-form-group">
                     <label>{language === 'ar' ? 'الدولة' : 'Country'}</label>
-                    <input
-                      type="text"
+                    <select
                       value={newUser.country || ''}
                       onChange={(e) => setNewUser({ ...newUser, country: e.target.value })}
-                      placeholder={language === 'ar' ? 'مثال: فلسطين' : 'Example: Palestine'}
-                    />
+                    >
+                      <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
+                      {allCountries.map((country) => (
+                        <option key={country.value} value={country.value}>
+                          {language === 'ar' ? country.label : country.value}
+                        </option>
+                      ))}
+                    </select>
                     <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                       {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
                     </small>
@@ -1056,11 +1085,10 @@ const UserManagement = () => {
                 {currentUser?.role === 'super_admin' && (newUser.role === 'regional_admin' || newUser.role === 'member' || newUser.role === 'customer') && (
                   <div className="um-form-row">
                     <div className="um-form-group">
-                      <label>{language === 'ar' ? 'المنطقة الإدارية *' : 'Administrative Region *'}</label>
+                      <label>{language === 'ar' ? 'المنطقة الإدارية (اختياري)' : 'Administrative Region (Optional)'}</label>
                       <select
                         value={newUser.region || ''}
                         onChange={(e) => setNewUser({ ...newUser, region: e.target.value })}
-                        required
                       >
                         <option value="">{language === 'ar' ? 'اختر المنطقة' : 'Select Region'}</option>
                         {regions.map((region) => (

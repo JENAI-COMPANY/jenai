@@ -552,3 +552,358 @@
     flex-direction: column;
   }
 }
+
+/* View Details Button */
+.btn-view-details {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.btn-view-details:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+/* Profit Details Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.profit-details-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.profit-details-modal .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.profit-details-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.btn-close-modal {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-close-modal:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.profit-details-modal .modal-body {
+  padding: 2rem;
+}
+
+/* Member Info Section */
+.member-info-section {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.member-info-section .info-item {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.member-info-section .info-label {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.member-info-section .info-value {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.member-info-section .rank-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.9rem;
+}
+
+/* Details Sections */
+.details-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.details-section .section-title {
+  color: #1f2937;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* Calculation Rows */
+.calculation-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.calculation-row.total {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  font-weight: 700;
+  border: 2px solid #fbbf24;
+}
+
+.calculation-row.profit {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  font-weight: 700;
+  border: 2px solid #10b981;
+}
+
+.calc-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.calc-value {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.calc-value.profit-amount {
+  color: #059669;
+  font-size: 1.3rem;
+}
+
+/* Team Points Breakdown */
+.team-points-breakdown {
+  margin-bottom: 1rem;
+}
+
+.team-points-breakdown .calc-label {
+  margin-bottom: 0.75rem;
+}
+
+.generations-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.generation-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.generation-item span:first-child {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.generation-item span:last-child {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Leadership Table */
+.leadership-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.leadership-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.leadership-table th {
+  padding: 0.75rem;
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.leadership-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.leadership-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.leadership-table td {
+  padding: 0.75rem;
+  text-align: right;
+  color: #374151;
+}
+
+/* Total Summary */
+.total-summary {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0ea5e9;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: white;
+  border-radius: 8px;
+}
+
+.summary-row.grand-total {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.summary-label {
+  font-weight: 600;
+}
+
+.summary-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.summary-row.grand-total .summary-label,
+.summary-row.grand-total .summary-value {
+  color: white;
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+  .profit-details-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .profit-details-modal .modal-header {
+    padding: 1rem;
+  }
+
+  .profit-details-modal .modal-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .profit-details-modal .modal-body {
+    padding: 1rem;
+  }
+
+  .member-info-section {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .generations-list {
+    grid-template-columns: 1fr;
+  }
+
+  .leadership-table {
+    font-size: 0.85rem;
+  }
+
+  .leadership-table th,
+  .leadership-table td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .calc-value,
+  .summary-value {
+    font-size: 1rem;
+  }
+
+  .calc-value.profit-amount {
+    font-size: 1.1rem;
+  }
+}

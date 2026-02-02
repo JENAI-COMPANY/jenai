@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
@@ -7,9 +7,10 @@ import '../styles/Checkout.css';
 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useContext(CartContext);
-  const { isSubscriber, isAuthenticated } = useContext(AuthContext);
+  const { isSubscriber, isAuthenticated, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const [useDefaultAddress, setUseDefaultAddress] = useState(true);
   const [shippingAddress, setShippingAddress] = useState({
     street: '',
     city: '',
@@ -21,6 +22,20 @@ const Checkout = () => {
   // أرقام الهاتف للتواصل - لضمان عدم إرجاع الطرد
   const [contactPhone, setContactPhone] = useState('');
   const [alternatePhone, setAlternatePhone] = useState('');
+
+  // Auto-fill user data on component mount
+  useEffect(() => {
+    if (user && useDefaultAddress) {
+      setShippingAddress({
+        street: user.address || '',
+        city: user.city || '',
+        state: user.state || '',
+        zipCode: user.zipCode || '',
+        country: user.country || ''
+      });
+      setContactPhone(user.phone || '');
+    }
+  }, [user, useDefaultAddress]);
 
   const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
   const [loading, setLoading] = useState(false);
@@ -48,6 +63,12 @@ const Checkout = () => {
 
     if (!isAuthenticated) {
       navigate('/login');
+      return;
+    }
+
+    // Validate that alternate phone is different from contact phone
+    if (contactPhone && alternatePhone && contactPhone.trim() === alternatePhone.trim()) {
+      setError('رقم الهاتف البديل يجب أن يكون مختلفاً عن الرقم الأساسي / Alternate phone must be different from contact phone');
       return;
     }
 
@@ -171,6 +192,32 @@ const Checkout = () => {
 
         <div className="checkout-section">
           <h3>📍 عنوان الشحن / Shipping Address</h3>
+
+          <div className="address-toggle">
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={!useDefaultAddress}
+                onChange={(e) => {
+                  setUseDefaultAddress(!e.target.checked);
+                  if (!e.target.checked && user) {
+                    // Reset to default address
+                    setShippingAddress({
+                      street: user.address || '',
+                      city: user.city || '',
+                      state: user.state || '',
+                      zipCode: user.zipCode || '',
+                      country: user.country || ''
+                    });
+                  }
+                }}
+              />
+              <span className="toggle-text">
+                استخدام عنوان آخر / Use Different Address
+              </span>
+            </label>
+          </div>
+
           <div className="form-row">
             <input
               type="text"
@@ -179,6 +226,7 @@ const Checkout = () => {
               value={shippingAddress.street}
               onChange={handleAddressChange}
               required
+              disabled={useDefaultAddress && user && user.address}
             />
           </div>
           <div className="form-row">
@@ -189,24 +237,25 @@ const Checkout = () => {
               value={shippingAddress.city}
               onChange={handleAddressChange}
               required
+              disabled={useDefaultAddress && user && user.city}
             />
             <input
               type="text"
               name="state"
-              placeholder="State"
+              placeholder="State (Optional / اختياري)"
               value={shippingAddress.state}
               onChange={handleAddressChange}
-              required
+              disabled={useDefaultAddress}
             />
           </div>
           <div className="form-row">
             <input
               type="text"
               name="zipCode"
-              placeholder="ZIP Code"
+              placeholder="ZIP Code (Optional / اختياري)"
               value={shippingAddress.zipCode}
               onChange={handleAddressChange}
-              required
+              disabled={useDefaultAddress}
             />
             <input
               type="text"
@@ -215,6 +264,7 @@ const Checkout = () => {
               value={shippingAddress.country}
               onChange={handleAddressChange}
               required
+              disabled={useDefaultAddress && user && user.country}
             />
           </div>
         </div>

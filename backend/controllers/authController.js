@@ -27,7 +27,7 @@ exports.register = async (req, res) => {
       role: role || 'customer'
     };
 
-    // Add country and city if provided (required for subscribers)
+    // Add country and city if provided
     if (country) {
       userData.country = country;
     }
@@ -35,11 +35,11 @@ exports.register = async (req, res) => {
       userData.city = city;
     }
 
-    // Validate that all users must provide country and city
-    if (!country || !city) {
+    // Validate that members must provide country and city for referral code generation
+    if (role === 'member' && (!country || !city)) {
       return res.status(400).json({
         success: false,
-        message: 'Country and city are required for registration'
+        message: 'Country and city are required for member registration to generate referral code'
       });
     }
 
@@ -78,6 +78,7 @@ exports.register = async (req, res) => {
       }
 
       userData.sponsorId = sponsor._id;
+      userData.referredBy = sponsor._id; // ← FIXED: Set referredBy for commission distribution
 
       // Additional setup for members
       if (role === 'member') {

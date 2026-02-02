@@ -20,6 +20,8 @@ const ProfitPeriods = () => {
     notes: ''
   });
   const [calculating, setCalculating] = useState(false);
+  const [selectedMemberDetails, setSelectedMemberDetails] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     fetchProfitPeriods();
@@ -252,6 +254,65 @@ const ProfitPeriods = () => {
     doc.save(fileName);
   };
 
+  // Function to calculate leadership commission breakdown
+  const calculateLeadershipBreakdown = (memberProfit) => {
+    const breakdown = [];
+    const POINTS_TO_SHEKEL_RATE = 0.55;
+
+    // Get leadership rates based on rank
+    const leadershipRates = {
+      1: { gen1: 0, gen2: 0, gen3: 0, gen4: 0, gen5: 0 },
+      2: { gen1: 0.05, gen2: 0, gen3: 0, gen4: 0, gen5: 0 },
+      3: { gen1: 0.05, gen2: 0.04, gen3: 0.03, gen4: 0, gen5: 0 },
+      4: { gen1: 0.05, gen2: 0.04, gen3: 0, gen4: 0, gen5: 0 },
+      5: { gen1: 0.05, gen2: 0.04, gen3: 0.03, gen4: 0.02, gen5: 0 },
+      6: { gen1: 0.05, gen2: 0.04, gen3: 0.03, gen4: 0.02, gen5: 0.01 },
+      7: { gen1: 0.05, gen2: 0.04, gen3: 0.03, gen4: 0.02, gen5: 0.01 },
+      8: { gen1: 0.05, gen2: 0.04, gen3: 0.03, gen4: 0.02, gen5: 0.01 },
+      9: { gen1: 0.05, gen2: 0.04, gen3: 0.03, gen4: 0.02, gen5: 0.01 }
+    };
+
+    const rates = leadershipRates[memberProfit.memberRank] || leadershipRates[1];
+    const generationPoints = [
+      { gen: 1, points: memberProfit.points.generation1, rate: rates.gen1 },
+      { gen: 2, points: memberProfit.points.generation2, rate: rates.gen2 },
+      { gen: 3, points: memberProfit.points.generation3, rate: rates.gen3 },
+      { gen: 4, points: memberProfit.points.generation4, rate: rates.gen4 },
+      { gen: 5, points: memberProfit.points.generation5, rate: rates.gen5 }
+    ];
+
+    generationPoints.forEach(({ gen, points, rate }) => {
+      if (rate > 0) {
+        const commissionPoints = points * rate;
+        breakdown.push({
+          generation: gen,
+          generationPoints: points,
+          commissionRate: rate,
+          commissionRatePercent: `${(rate * 100).toFixed(0)}%`,
+          commissionPoints: commissionPoints,
+          commissionInShekel: commissionPoints * POINTS_TO_SHEKEL_RATE
+        });
+      }
+    });
+
+    return breakdown;
+  };
+
+  // Function to show member profit details
+  const handleShowMemberDetails = (memberProfit) => {
+    const leadershipBreakdown = calculateLeadershipBreakdown(memberProfit);
+    setSelectedMemberDetails({
+      ...memberProfit,
+      leadershipBreakdown
+    });
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedMemberDetails(null);
+  };
+
   if (loading) {
     return (
       <div className="profit-periods loading">
@@ -470,6 +531,7 @@ const ProfitPeriods = () => {
                   <th>{language === 'ar' ? 'أرباح الأداء' : 'Performance'}</th>
                   <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
                   <th>{language === 'ar' ? 'إجمالي الأرباح' : 'Total'}</th>
+                  <th>{language === 'ar' ? 'التفاصيل' : 'Details'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,6 +552,15 @@ const ProfitPeriods = () => {
                         <td className="profit-cell">{mp.profit.performanceProfit.toFixed(2)} ₪</td>
                         <td className="profit-cell">{mp.profit.leadershipProfit.toFixed(2)} ₪</td>
                         <td className="total-profit-cell">{mp.profit.totalProfit.toFixed(2)} ₪</td>
+                        <td>
+                          <button
+                            className="btn-view-details"
+                            onClick={() => handleShowMemberDetails(mp)}
+                            title={language === 'ar' ? 'عرض تفاصيل الاحتساب' : 'View Calculation Details'}
+                          >
+                            👁️
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -503,6 +574,137 @@ const ProfitPeriods = () => {
               <p>{selectedPeriod.notes}</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Member Profit Details Modal */}
+      {showDetailsModal && selectedMemberDetails && (
+        <div className="modal-overlay" onClick={handleCloseDetailsModal}>
+          <div className="profit-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                {language === 'ar' ? 'تفاصيل احتساب أرباح' : 'Profit Calculation Details for'} {selectedMemberDetails.memberName}
+              </h3>
+              <button className="btn-close-modal" onClick={handleCloseDetailsModal}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              {/* Member Info */}
+              <div className="member-info-section">
+                <div className="info-item">
+                  <span className="info-label">{language === 'ar' ? 'اسم المستخدم:' : 'Username:'}</span>
+                  <span className="info-value">@{selectedMemberDetails.username}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">{language === 'ar' ? 'الرتبة:' : 'Rank:'}</span>
+                  <span className="info-value rank-badge">
+                    {language === 'ar' ? selectedMemberDetails.rankName : selectedMemberDetails.rankNameEn}
+                  </span>
+                </div>
+              </div>
+
+              {/* Performance Profits Section */}
+              <div className="details-section">
+                <h4 className="section-title">
+                  {language === 'ar' ? '💰 أرباح الأداء (النقاط الشخصية + نقاط الفريق)' : '💰 Performance Profits (Personal + Team Points)'}
+                </h4>
+
+                <div className="calculation-row">
+                  <div className="calc-label">{language === 'ar' ? 'النقاط الشخصية' : 'Personal Points'}:</div>
+                  <div className="calc-value">{selectedMemberDetails.points.personal.toLocaleString()} {language === 'ar' ? 'نقطة' : 'points'}</div>
+                </div>
+
+                <div className="team-points-breakdown">
+                  <div className="calc-label">{language === 'ar' ? 'نقاط الفريق (5 أجيال):' : 'Team Points (5 Generations):'}</div>
+                  <div className="generations-list">
+                    <div className="generation-item">
+                      <span>{language === 'ar' ? 'الجيل 1:' : 'Gen 1:'}</span>
+                      <span>{selectedMemberDetails.points.generation1.toLocaleString()} {language === 'ar' ? 'نقطة' : 'pts'}</span>
+                    </div>
+                    <div className="generation-item">
+                      <span>{language === 'ar' ? 'الجيل 2:' : 'Gen 2:'}</span>
+                      <span>{selectedMemberDetails.points.generation2.toLocaleString()} {language === 'ar' ? 'نقطة' : 'pts'}</span>
+                    </div>
+                    <div className="generation-item">
+                      <span>{language === 'ar' ? 'الجيل 3:' : 'Gen 3:'}</span>
+                      <span>{selectedMemberDetails.points.generation3.toLocaleString()} {language === 'ar' ? 'نقطة' : 'pts'}</span>
+                    </div>
+                    <div className="generation-item">
+                      <span>{language === 'ar' ? 'الجيل 4:' : 'Gen 4:'}</span>
+                      <span>{selectedMemberDetails.points.generation4.toLocaleString()} {language === 'ar' ? 'نقطة' : 'pts'}</span>
+                    </div>
+                    <div className="generation-item">
+                      <span>{language === 'ar' ? 'الجيل 5:' : 'Gen 5:'}</span>
+                      <span>{selectedMemberDetails.points.generation5.toLocaleString()} {language === 'ar' ? 'نقطة' : 'pts'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="calculation-row total">
+                  <div className="calc-label">{language === 'ar' ? 'إجمالي النقاط:' : 'Total Points:'}</div>
+                  <div className="calc-value">{selectedMemberDetails.points.total.toLocaleString()} {language === 'ar' ? 'نقطة' : 'points'}</div>
+                </div>
+
+                <div className="calculation-row profit">
+                  <div className="calc-label">{language === 'ar' ? 'أرباح الأداء (× 0.55):' : 'Performance Profit (× 0.55):'}</div>
+                  <div className="calc-value profit-amount">{selectedMemberDetails.profit.performanceProfit.toFixed(2)} ₪</div>
+                </div>
+              </div>
+
+              {/* Leadership Commission Section */}
+              {selectedMemberDetails.leadershipBreakdown.length > 0 && (
+                <div className="details-section">
+                  <h4 className="section-title">
+                    {language === 'ar' ? '🎖️ عمولة القيادة (حسب الرتبة)' : '🎖️ Leadership Commission (Based on Rank)'}
+                  </h4>
+
+                  <table className="leadership-table">
+                    <thead>
+                      <tr>
+                        <th>{language === 'ar' ? 'الجيل' : 'Generation'}</th>
+                        <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                        <th>{language === 'ar' ? 'النسبة' : 'Rate'}</th>
+                        <th>{language === 'ar' ? 'نقاط العمولة' : 'Commission Pts'}</th>
+                        <th>{language === 'ar' ? 'بالشيكل' : 'In Shekel'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedMemberDetails.leadershipBreakdown.map((item) => (
+                        <tr key={item.generation}>
+                          <td>{language === 'ar' ? `الجيل ${item.generation}` : `Gen ${item.generation}`}</td>
+                          <td>{item.generationPoints.toLocaleString()}</td>
+                          <td>{item.commissionRatePercent}</td>
+                          <td>{item.commissionPoints.toLocaleString()}</td>
+                          <td>{item.commissionInShekel.toFixed(2)} ₪</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div className="calculation-row total">
+                    <div className="calc-label">{language === 'ar' ? 'إجمالي عمولة القيادة:' : 'Total Leadership Commission:'}</div>
+                    <div className="calc-value profit-amount">{selectedMemberDetails.profit.leadershipProfit.toFixed(2)} ₪</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Total Profit Summary */}
+              <div className="details-section total-summary">
+                <div className="summary-row">
+                  <div className="summary-label">{language === 'ar' ? 'أرباح الأداء:' : 'Performance Profits:'}</div>
+                  <div className="summary-value">{selectedMemberDetails.profit.performanceProfit.toFixed(2)} ₪</div>
+                </div>
+                <div className="summary-row">
+                  <div className="summary-label">{language === 'ar' ? 'عمولة القيادة:' : 'Leadership Commission:'}</div>
+                  <div className="summary-value">{selectedMemberDetails.profit.leadershipProfit.toFixed(2)} ₪</div>
+                </div>
+                <div className="summary-row grand-total">
+                  <div className="summary-label">{language === 'ar' ? 'إجمالي الأرباح:' : 'Total Profits:'}</div>
+                  <div className="summary-value">{selectedMemberDetails.profit.totalProfit.toFixed(2)} ₪</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

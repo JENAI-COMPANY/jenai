@@ -108,6 +108,23 @@ exports.createOrder = async (req, res) => {
 
         // توزيع العمولات حسب النظام الجديد
         const buyer = await User.findById(req.user._id);
+
+        // إعطاء 10 نقاط هدية لأول عملية شراء خلال شهر من التسجيل
+        if (!buyer.firstOrderBonus.received && buyer.createdAt) {
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+          if (new Date(buyer.createdAt) >= oneMonthAgo) {
+            const bonusPoints = buyer.firstOrderBonus.points || 10;
+            buyer.points = (buyer.points || 0) + bonusPoints;
+            buyer.monthlyPoints = (buyer.monthlyPoints || 0) + bonusPoints;
+            buyer.firstOrderBonus.received = true;
+            await buyer.save();
+
+            console.log(`🎁 ${buyer.name} حصل على ${bonusPoints} نقاط هدية لأول عملية شراء!`);
+          }
+        }
+
         await distributeCommissions(buyer, totalPoints);
       }
     }
@@ -115,6 +132,41 @@ exports.createOrder = async (req, res) => {
     // Calculate commissions if user is a subscriber
     if (req.user.role === 'subscriber' && req.user.sponsorId) {
       await calculateCommissions(order, req.user);
+    }
+
+    // Handle price difference profit for customers referred by members
+    if (req.user.role === 'customer') {
+      // Check if customer has a referring member
+      const referrer = req.user.sponsorId || req.user.referredBy;
+
+      if (referrer) {
+        const referrerUser = await User.findById(referrer);
+
+        // Only give price difference if referrer is a member
+        if (referrerUser && referrerUser.role === 'member') {
+          let totalPriceDifference = 0;
+
+          // Calculate price difference for each product
+          for (const item of orderItems) {
+            if (item.product) {
+              const product = await Product.findById(item.product);
+              if (product && product.customerPrice && product.subscriberPrice) {
+                const priceDiff = product.customerPrice - product.subscriberPrice;
+                totalPriceDifference += priceDiff * item.quantity;
+              }
+            }
+          }
+
+          // Add price difference directly to member's profits (in currency, not points)
+          if (totalPriceDifference > 0) {
+            referrerUser.totalCommission = Math.floor((referrerUser.totalCommission || 0) + totalPriceDifference);
+            referrerUser.availableCommission = Math.floor((referrerUser.availableCommission || 0) + totalPriceDifference);
+            await referrerUser.save();
+
+            console.log(`💰 فرق السعر: العضو ${referrerUser.name} حصل على ${totalPriceDifference} شيكل من شراء العميل ${req.user.name}`);
+          }
+        }
+      }
     }
 
     res.status(201).json({
@@ -330,17 +382,33 @@ exports.getAllOrders = async (req, res) => {
 // Update order status (Admin only)
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id).populate('user');
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    const oldStatus = order.status;
     order.status = req.body.status || order.status;
 
     if (req.body.status === 'delivered') {
       order.isDelivered = true;
       order.deliveredAt = Date.now();
+    }
+
+    // إذا تم تغيير الحالة إلى "received" وكانت الحالة القديمة ليست "received"
+    // نقوم بتوزيع النقاط على الأجيال
+    if (req.body.status === 'received' && oldStatus !== 'received' && order.totalPoints) {
+      const buyer = order.user;
+
+      // توزيع النقاط على الشخص المشتري
+      buyer.monthlyPoints = (buyer.monthlyPoints || 0) + order.totalPoints;
+      await buyer.save();
+
+      console.log(`✅ Added ${order.totalPoints} points to ${buyer.name}`);
+
+      // توزيع العمولات على الأجيال
+      await distributeCommissions(buyer, order.totalPoints);
     }
 
     const updatedOrder = await order.save();
