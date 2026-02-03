@@ -696,30 +696,33 @@ const Profile = () => {
                 {/* Points View Toggle */}
                 <div className="points-toggle-container">
                   <button
-                    className={`points-toggle-btn ${pointsView === 'monthly' ? 'active' : ''}`}
-                    onClick={() => setPointsView('monthly')}
-                  >
-                    {language === 'ar' ? '📅 شهري' : '📅 Monthly'}
-                  </button>
-                  <button
                     className={`points-toggle-btn ${pointsView === 'cumulative' ? 'active' : ''}`}
                     onClick={() => setPointsView('cumulative')}
                   >
                     {language === 'ar' ? '📈 تراكمي' : '📈 Cumulative'}
+                  </button>
+                  <button
+                    className={`points-toggle-btn ${pointsView === 'monthly' ? 'active' : ''}`}
+                    onClick={() => setPointsView('monthly')}
+                  >
+                    {language === 'ar' ? '📊 نقاطي' : '📊 My Points'}
                   </button>
                 </div>
 
                 <div className="points-section">
                   <h3>{language === 'ar' ? 'النقاط' : 'Points'}</h3>
                   <div className="points-grid">
-                    <div className="point-card">
-                      <div className="point-label">
-                        {language === 'ar' ? 'النقاط الشهرية' : 'Monthly Points'}
+                    {/* Show personal performance points only in "نقاطي" view */}
+                    {pointsView === 'monthly' && (
+                      <div className="point-card">
+                        <div className="point-label">
+                          {language === 'ar' ? 'نقاط الأداء الشخصي' : 'Personal Performance Points'}
+                        </div>
+                        <div className="point-value">
+                          {user.monthlyPoints || 0}
+                        </div>
                       </div>
-                      <div className="point-value">
-                        {pointsView === 'monthly' ? (user.monthlyPoints || 0) : (user.points || 0)}
-                      </div>
-                    </div>
+                    )}
                     <div className="point-card">
                       <div className="point-label">
                         {language === 'ar' ? 'إجمالي النقاط' : 'Total Points'}

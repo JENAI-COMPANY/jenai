@@ -294,11 +294,25 @@ const UserManagement = () => {
         city: editingUser.city,
         role: editingUser.role,
         points: editingUser.points,
-        monthlyPoints: editingUser.monthlyPoints,
-        bonusPoints: editingUser.bonusPoints,
-        compensationPoints: editingUser.compensationPoints,
         isActive: editingUser.isActive
       };
+
+      // Only include monthlyPoints if not adding bonus/compensation points
+      // This prevents conflicts in backend processing
+      const hasPointsAdditions = (editingUser.bonusPoints && editingUser.bonusPoints > 0) ||
+                                  (editingUser.compensationPoints && editingUser.compensationPoints > 0);
+
+      if (!hasPointsAdditions) {
+        updateData.monthlyPoints = editingUser.monthlyPoints;
+      }
+
+      // Include bonus/compensation points if they're being added
+      if (editingUser.bonusPoints && editingUser.bonusPoints > 0) {
+        updateData.bonusPoints = editingUser.bonusPoints;
+      }
+      if (editingUser.compensationPoints && editingUser.compensationPoints > 0) {
+        updateData.compensationPoints = editingUser.compensationPoints;
+      }
 
       console.log('🔍 Frontend: editingUser.isActive =', editingUser.isActive, 'Type:', typeof editingUser.isActive);
       console.log('🔍 Frontend: updateData.isActive =', updateData.isActive, 'Type:', typeof updateData.isActive);
@@ -335,15 +349,13 @@ const UserManagement = () => {
       console.log('📥 Response from server:', response.data);
       console.log('📥 Updated user region:', response.data.data?.region);
 
-      // Close modal and fetch users
-      setEditingUser(null);
+      // Fetch users first to ensure fresh data
+      await fetchUsers();
 
-      // Wait a bit then fetch to ensure state updates
-      setTimeout(async () => {
-        await fetchUsers();
-        setMessage(language === 'ar' ? 'تم تحديث المستخدم بنجاح!' : 'User updated successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      }, 100);
+      // Then close modal and show message
+      setEditingUser(null);
+      setMessage(language === 'ar' ? 'تم تحديث المستخدم بنجاح!' : 'User updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update user');
       setTimeout(() => setError(''), 3000);
@@ -859,7 +871,7 @@ const UserManagement = () => {
 
                   <div className="um-form-row">
                     <div className="um-form-group">
-                      <label>{language === 'ar' ? 'النقاط' : 'Points'}</label>
+                      <label>{language === 'ar' ? 'النقاط التراكمية' : 'Cumulative Points'}</label>
                       <input
                         type="number"
                         value={editingUser.points}
@@ -867,7 +879,7 @@ const UserManagement = () => {
                       />
                     </div>
                     <div className="um-form-group">
-                      <label>{language === 'ar' ? 'النقاط الشهرية' : 'Monthly Points'}</label>
+                      <label>{language === 'ar' ? 'نقاط الأداء الشخصي' : 'Personal Performance Points'}</label>
                       <input
                         type="number"
                         value={editingUser.monthlyPoints}

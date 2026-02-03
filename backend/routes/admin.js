@@ -359,6 +359,10 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
         } else if (field === 'bonusPoints' || field === 'compensationPoints' || field === 'monthlyPoints') {
           // لا نعدل القيمة هنا - سيتم معالجتها بعد الحفظ
         } else {
+          // Log points updates for debugging
+          if (field === 'points') {
+            console.log(`🔍 تحديث النقاط التراكمية: من ${user[field]} إلى ${req.body[field]}`);
+          }
           user[field] = req.body[field];
         }
       }
@@ -424,7 +428,7 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       }
     }
 
-    // 2. معالجة نقاط التعويض (لا توزع، فقط تُحسب في الرتبة)
+    // 2. معالجة نقاط التعويض (لا توزع، تُضاف للنقاط التراكمية فقط)
     // ملاحظة: الفرونت إند يُرسل القيمة المُراد إضافتها، وليس القيمة النهائية
     if (hasCompensationUpdate) {
       const compensationPointsToAdd = parseInt(req.body.compensationPoints) || 0;
@@ -435,11 +439,15 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
         // إضافة إلى compensationPoints المخزنة
         user.compensationPoints = (user.compensationPoints || 0) + compensationPointsToAdd;
+
+        // إضافة إلى النقاط التراكمية (points) فقط، بدون النقاط الشهرية
+        user.points = (user.points || 0) + compensationPointsToAdd;
+
         await user.save();
 
-        // ملاحظة: compensationPoints لا تُضاف إلى user.points أو monthlyPoints
-        // user.points تحتوي فقط على نقاط المشتريات والعمولات
-        // compensationPoints حقل منفصل يُحسب في calculateCumulativePoints للرتبة فقط
+        // ملاحظة: نقاط التعويض تُضاف للنقاط التراكمية فقط
+        // لا تُضاف لنقاط الأداء الشخصي (monthlyPoints)
+        // لا توزع على الأعضاء العلويين
       }
     }
 
