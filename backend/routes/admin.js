@@ -407,34 +407,40 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     const hasMonthlyPointsUpdate = req.body.monthlyPoints !== undefined;
 
     // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين)
+    // ملاحظة: الفرونت إند يُرسل القيمة المُراد إضافتها، وليس القيمة النهائية
     if (hasBonusUpdate && user.role === 'member') {
-      const newBonusPoints = parseInt(req.body.bonusPoints) || 0;
-      const oldBonusPoints = user.bonusPoints || 0;
-      const bonusDifference = newBonusPoints - oldBonusPoints;
+      const bonusPointsToAdd = parseInt(req.body.bonusPoints) || 0;
 
-      // تحديث قيمة bonusPoints مباشرة
-      user.bonusPoints = newBonusPoints;
-      await user.save();
+      // إذا كانت القيمة موجبة، نضيفها ونوزعها
+      if (bonusPointsToAdd > 0) {
+        console.log(`📊 إضافة ${bonusPointsToAdd} نقطة مكافأة لـ ${user.name}`);
 
-      // إذا كانت الإضافة موجبة، نوزع الفرق على الأعضاء العلويين
-      if (bonusDifference > 0) {
-        await distributeCommissions(user, bonusDifference);
+        // إضافة إلى bonusPoints المخزنة
+        user.bonusPoints = (user.bonusPoints || 0) + bonusPointsToAdd;
+        await user.save();
+
+        // توزيع على الأعضاء العلويين (تُضاف لـ points و monthlyPoints)
+        await distributeCommissions(user, bonusPointsToAdd);
       }
-      // إذا كان الفرق سالب (تم تقليل النقاط)، لا نفعل شيء للأعضاء العلويين
-      // لأن النقاط الموزعة عليهم سابقاً لا يمكن سحبها
     }
 
     // 2. معالجة نقاط التعويض (لا توزع، فقط تُحسب في الرتبة)
+    // ملاحظة: الفرونت إند يُرسل القيمة المُراد إضافتها، وليس القيمة النهائية
     if (hasCompensationUpdate) {
-      const newCompensationPoints = parseInt(req.body.compensationPoints) || 0;
+      const compensationPointsToAdd = parseInt(req.body.compensationPoints) || 0;
 
-      // تحديث قيمة compensationPoints مباشرة
-      user.compensationPoints = newCompensationPoints;
-      await user.save();
+      // إذا كانت القيمة موجبة، نضيفها
+      if (compensationPointsToAdd > 0) {
+        console.log(`📊 إضافة ${compensationPointsToAdd} نقطة تعويض لـ ${user.name}`);
 
-      // ملاحظة: compensationPoints لا تُضاف إلى user.points
-      // user.points تحتوي فقط على نقاط المشتريات والعمولات
-      // compensationPoints حقل منفصل يُحسب في calculateCumulativePoints للرتبة فقط
+        // إضافة إلى compensationPoints المخزنة
+        user.compensationPoints = (user.compensationPoints || 0) + compensationPointsToAdd;
+        await user.save();
+
+        // ملاحظة: compensationPoints لا تُضاف إلى user.points أو monthlyPoints
+        // user.points تحتوي فقط على نقاط المشتريات والعمولات
+        // compensationPoints حقل منفصل يُحسب في calculateCumulativePoints للرتبة فقط
+      }
     }
 
     // 3. معالجة النقاط الشهرية (توزيع نقاط الأجيال فقط، بدون عمولات)
