@@ -56,13 +56,13 @@ const distributeCommissions = async (buyer, productPoints) => {
     // 1. الربح الشخصي للمشتري (20%)
     // ══════════════════════════════════════
     const personalPoints = productPoints * 0.20;
-    const personalProfit = personalPoints * POINTS_TO_CURRENCY;
+    // حذف الأعشار من كل عملية حساب فردية
+    const personalProfit = Math.floor(personalPoints * POINTS_TO_CURRENCY);
 
     buyer.points = (buyer.points || 0) + productPoints;
     buyer.monthlyPoints = (buyer.monthlyPoints || 0) + productPoints;
-    // حذف الأعشار فقط عند الحفظ النهائي
-    buyer.totalCommission = Math.floor((buyer.totalCommission || 0) + personalProfit);
-    buyer.availableCommission = Math.floor((buyer.availableCommission || 0) + personalProfit);
+    buyer.totalCommission = (buyer.totalCommission || 0) + personalProfit;
+    buyer.availableCommission = (buyer.availableCommission || 0) + personalProfit;
     await buyer.save();
 
     console.log(`💰 ${buyer.name} (المشتري) - نقاط: ${productPoints}, ربح شخصي: ${personalProfit} شيكل`);
@@ -87,9 +87,10 @@ const distributeCommissions = async (buyer, productPoints) => {
       const leadershipRate = leadershipRates[generationLevel] || 0;
       const leadershipPoints = productPoints * leadershipRate;
 
-      // إجمالي النقاط والربح (بدون حذف أعشار في الحسابات الوسيطة)
-      const totalPoints = genPoints + leadershipPoints;
-      const profit = totalPoints * POINTS_TO_CURRENCY;
+      // حذف الأعشار من كل عملية حساب فردية
+      const genProfit = Math.floor(genPoints * POINTS_TO_CURRENCY);
+      const leadershipProfit = Math.floor(leadershipPoints * POINTS_TO_CURRENCY);
+      const profit = genProfit + leadershipProfit;
 
       // تحديث العضو
       const genFieldName = `generation${generationLevel + 1}Points`;
@@ -99,13 +100,12 @@ const distributeCommissions = async (buyer, productPoints) => {
         currentMember.leadershipPoints = (currentMember.leadershipPoints || 0) + leadershipPoints;
       }
 
-      // حذف الأعشار فقط عند الحفظ النهائي
-      currentMember.totalCommission = Math.floor((currentMember.totalCommission || 0) + profit);
-      currentMember.availableCommission = Math.floor((currentMember.availableCommission || 0) + profit);
+      currentMember.totalCommission = (currentMember.totalCommission || 0) + profit;
+      currentMember.availableCommission = (currentMember.availableCommission || 0) + profit;
 
       await currentMember.save();
 
-      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - نقاط أجيال: ${genPoints.toFixed(2)}, نقاط قيادة: ${leadershipPoints.toFixed(2)}, ربح: ${profit} شيكل`);
+      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - عمولة أجيال: ${genProfit} شيكل, عمولة قيادة: ${leadershipProfit} شيكل, إجمالي: ${profit} شيكل`);
 
       // الانتقال للجيل التالي
       currentMemberId = currentMember.referredBy;
@@ -310,51 +310,19 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     // Update other allowed fields
     const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'compensationPoints', 'profitPoints', 'isActive', 'managedCategories'];
 
-    console.log('🔍 req.body.region:', req.body.region);
-    console.log('🔍 req.body.isActive:', req.body.isActive);
-    console.log('🔍 req.body.points:', req.body.points);
-    console.log('🔍 req.body.monthlyPoints:', req.body.monthlyPoints);
-    console.log('🔍 req.body.bonusPoints:', req.body.bonusPoints);
-    console.log('🔍 user BEFORE update:', {
-      points: user.points,
-      monthlyPoints: user.monthlyPoints,
-      bonusPoints: user.bonusPoints,
-      region: user.region,
-      isActive: user.isActive
-    });
-
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
-        // Handle empty string for region (convert to null to unassign)
         if (field === 'region' && req.body[field] === '') {
           user[field] = null;
-          console.log('✏️ Clearing region (setting to null)');
-        }
-        // Handle isActive - ensure it's a boolean
-        else if (field === 'isActive') {
-          // Convert to boolean explicitly
+        } else if (field === 'isActive') {
           user[field] = req.body[field] === true || req.body[field] === 'true';
-          console.log('✏️ Setting isActive to:', user[field], 'Type:', typeof user[field], 'Original value:', req.body[field], 'Original type:', typeof req.body[field]);
-        }
-        // bonusPoints و compensationPoints: لا نستبدل بل نتجاهل هنا (المعالجة تتم لاحقاً)
-        else if (field === 'bonusPoints' || field === 'compensationPoints') {
+        } else if (field === 'bonusPoints' || field === 'compensationPoints') {
           // لا نعدل القيمة هنا - سيتم معالجتها بعد الحفظ
-          console.log(`⏭️ Skipping ${field} in allowedUpdates (will be processed separately)`);
-        }
-        else {
+        } else {
           user[field] = req.body[field];
-          if (field === 'region') {
-            console.log('✏️ Setting region to:', req.body[field]);
-          }
-          if (field === 'points' || field === 'monthlyPoints') {
-            console.log(`✏️ Setting ${field} to:`, req.body[field], 'Type:', typeof req.body[field]);
-          }
         }
       }
     });
-
-    console.log('🔍 user.region after update:', user.region);
-    console.log('🔍 user.isActive after update:', user.isActive);
 
     // Handle customer to member conversion
     if (isConvertingToMember) {
@@ -389,16 +357,6 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
     await user.save();
 
-    console.log('💾 User saved successfully!');
-    console.log('💾 Saved values:', {
-      points: user.points,
-      monthlyPoints: user.monthlyPoints,
-      bonusPoints: user.bonusPoints,
-      compensationPoints: user.compensationPoints,
-      region: user.region,
-      isActive: user.isActive
-    });
-
     // ══════════════════════════════════════════════════════════════
     // معالجة نقاط المكافأة والتعويض (إضافة فوق القيمة الحالية)
     // ══════════════════════════════════════════════════════════════
@@ -407,42 +365,29 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
     // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين مثل شراء منتج)
     if (addBonusPoints > 0 && user.role === 'member') {
-      console.log(`🎁 إضافة ${addBonusPoints} نقطة مكافأة للعضو ${user.name}`);
-
       // تراكم نقاط المكافأة في الحقل
       user.bonusPoints = (user.bonusPoints || 0) + addBonusPoints;
       await user.save();
 
       // توزيع النقاط على الأعضاء العلويين (مثل شراء منتج)
       await distributeCommissions(user, addBonusPoints);
-
-      console.log(`✅ تم توزيع نقاط المكافأة. الإجمالي: ${user.bonusPoints}`);
     }
 
     // 2. معالجة نقاط التعويض (تُضاف فقط للتراكمي، لا توزع)
     if (addCompensationPoints > 0) {
-      console.log(`💵 إضافة ${addCompensationPoints} نقطة تعويض للعضو ${user.name} (تراكمي فقط)`);
-
       // تراكم نقاط التعويض في الحقل
       user.compensationPoints = (user.compensationPoints || 0) + addCompensationPoints;
       // إضافة النقاط إلى points التراكمي فقط
       user.points = (user.points || 0) + addCompensationPoints;
       await user.save();
-
-      console.log(`✅ تم إضافة نقاط التعويض. الإجمالي: ${user.compensationPoints}`);
     }
 
     // تحديث رتبة العضو بعد إضافة النقاط
     if ((addBonusPoints > 0 || addCompensationPoints > 0) && user.role === 'member') {
       try {
-        const rankUpdate = await updateMemberRank(user._id, User);
-        if (rankUpdate.updated) {
-          console.log(`🎖️ تم تحديث الرتبة: ${rankUpdate.oldRank} → ${rankUpdate.newRank} (${rankUpdate.rankName})`);
-        } else {
-          console.log(`ℹ️ الرتبة لم تتغير: ${user.memberRank}`);
-        }
+        await updateMemberRank(user._id, User);
       } catch (rankError) {
-        console.error('❌ خطأ في تحديث الرتبة:', rankError);
+        console.error('خطأ في تحديث الرتبة:', rankError);
       }
     }
 
@@ -450,15 +395,6 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       .select('-password')
       .populate('sponsorId', 'name subscriberId subscriberCode')
       .populate('region', 'name nameAr nameEn code');
-
-    console.log('📤 Response will send:', {
-      points: updatedUser.points,
-      monthlyPoints: updatedUser.monthlyPoints,
-      bonusPoints: updatedUser.bonusPoints,
-      compensationPoints: updatedUser.compensationPoints,
-      region: updatedUser.region,
-      isActive: updatedUser.isActive
-    });
 
     res.json({
       success: true,
@@ -1268,9 +1204,35 @@ router.post('/profits/calculate', protect, isSuperAdmin, async (req, res) => {
       }
     });
 
+    // ══════════════════════════════════════════════════════════════
+    // تصفير النقاط الشهرية بعد احتساب الأرباح
+    // النقاط التراكمية (points) لا تُمس
+    // ══════════════════════════════════════════════════════════════
+    const allMembers = await User.find({ role: 'member' });
+    let resetCount = 0;
+    for (const member of allMembers) {
+      if (member.monthlyPoints > 0 || member.generation1Points > 0 || member.generation2Points > 0 ||
+          member.generation3Points > 0 || member.generation4Points > 0 || member.generation5Points > 0 ||
+          member.leadershipPoints > 0) {
+        member.monthlyPoints = 0;
+        member.generation1Points = 0;
+        member.generation2Points = 0;
+        member.generation3Points = 0;
+        member.generation4Points = 0;
+        member.generation5Points = 0;
+        member.leadershipPoints = 0;
+        member.totalCommission = 0;
+        member.availableCommission = 0;
+        member.lastPointsReset = new Date();
+        await member.save();
+        resetCount++;
+      }
+    }
+    console.log(`🔄 تم تصفير النقاط الشهرية لـ ${resetCount} عضو`);
+
     res.json({
       success: true,
-      message: 'تم احتساب الأرباح بنجاح',
+      message: `تم احتساب الأرباح بنجاح وتصفير النقاط الشهرية لـ ${resetCount} عضو`,
       data: profitPeriod
     });
   } catch (error) {
