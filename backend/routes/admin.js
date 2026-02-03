@@ -356,7 +356,7 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
           user[field] = null;
         } else if (field === 'isActive') {
           user[field] = req.body[field] === true || req.body[field] === 'true';
-        } else if (field === 'bonusPoints' || field === 'compensationPoints') {
+        } else if (field === 'bonusPoints' || field === 'compensationPoints' || field === 'monthlyPoints') {
           // لا نعدل القيمة هنا - سيتم معالجتها بعد الحفظ
         } else {
           user[field] = req.body[field];
@@ -439,9 +439,21 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
     // 3. معالجة النقاط الشهرية (توزيع نقاط الأجيال فقط، بدون عمولات)
     if (hasMonthlyPointsUpdate && user.role === 'member') {
+      console.log('🔍 تحديث النقاط الشهرية:', {
+        hasMonthlyPointsUpdate,
+        userRole: user.role,
+        userName: user.name
+      });
+
       const newMonthlyPoints = parseInt(req.body.monthlyPoints) || 0;
       const oldMonthlyPoints = user.monthlyPoints || 0;
       const monthlyPointsDifference = newMonthlyPoints - oldMonthlyPoints;
+
+      console.log('🔍 التفاصيل:', {
+        newMonthlyPoints,
+        oldMonthlyPoints,
+        monthlyPointsDifference
+      });
 
       // تحديث قيمة monthlyPoints مباشرة
       user.monthlyPoints = newMonthlyPoints;
@@ -450,7 +462,10 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       // إذا كانت الإضافة موجبة، نوزع نقاط الأجيال فقط على الأعضاء العلويين
       // (بدون إضافة عمولات فورية - العمولات تُحسب عند احتساب الأرباح)
       if (monthlyPointsDifference > 0) {
+        console.log('✅ سيتم التوزيع على الأعضاء العلويين');
         await distributeGenerationPointsOnly(user, monthlyPointsDifference);
+      } else {
+        console.log('⚠️ لن يتم التوزيع - الفرق ليس موجباً:', monthlyPointsDifference);
       }
     }
 
@@ -2330,6 +2345,9 @@ router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) =>
         await user.save();
 
         console.log(`✅ Added ${totalPoints} points to member ${user.name}`);
+
+        // توزيع نقاط الأجيال على الأعضاء العلويين
+        await distributeGenerationPointsOnly(user, totalPoints);
 
         // Update member rank based on new points
         try {
