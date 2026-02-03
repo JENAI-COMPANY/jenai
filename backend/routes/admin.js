@@ -116,6 +116,46 @@ const distributeCommissions = async (buyer, productPoints) => {
   }
 };
 
+// ══════════════════════════════════════════════════════════════
+// دالة توزيع نقاط الأجيال فقط (بدون عمولات)
+// تُستخدم عند تعديل النقاط الشهرية عبر لوحة الأدمن
+// ══════════════════════════════════════════════════════════════
+const distributeGenerationPointsOnly = async (member, points) => {
+  try {
+    // النسب الثابتة لعمولة الأجيال
+    const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
+
+    console.log(`📊 توزيع ${points} نقطة من ${member.name} على الأعضاء العلويين (نقاط الأجيال فقط)`);
+
+    let currentMemberId = member.referredBy;
+    let generationLevel = 0;
+
+    while (currentMemberId && generationLevel < 5) {
+      const currentMember = await User.findById(currentMemberId);
+
+      if (!currentMember || currentMember.role !== 'member') break;
+
+      // حساب نقاط الجيل
+      const genRate = GENERATION_RATES[generationLevel];
+      const genPoints = points * genRate;
+
+      // تحديث نقاط الجيل فقط (بدون عمولات)
+      const genFieldName = `generation${generationLevel + 1}Points`;
+      currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
+
+      await currentMember.save();
+
+      console.log(`  └─ ${currentMember.name} (جيل ${generationLevel + 1}): +${genPoints.toFixed(2)} نقطة`);
+
+      // الانتقال للجيل التالي
+      currentMemberId = currentMember.referredBy;
+      generationLevel++;
+    }
+  } catch (error) {
+    console.error('❌ خطأ في توزيع نقاط الأجيال:', error);
+  }
+};
+
 // @route   GET /api/admin/users
 // @desc    Get all users (Super Admin and Regional Admin)
 // @access  Private/Admin
@@ -397,7 +437,7 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       // compensationPoints حقل منفصل يُحسب في calculateCumulativePoints للرتبة فقط
     }
 
-    // 3. معالجة النقاط الشهرية (تُوزع على الأعضاء العلويين)
+    // 3. معالجة النقاط الشهرية (توزيع نقاط الأجيال فقط، بدون عمولات)
     if (hasMonthlyPointsUpdate && user.role === 'member') {
       const newMonthlyPoints = parseInt(req.body.monthlyPoints) || 0;
       const oldMonthlyPoints = user.monthlyPoints || 0;
@@ -407,10 +447,10 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       user.monthlyPoints = newMonthlyPoints;
       await user.save();
 
-      // إذا كانت الإضافة موجبة، نوزع الفرق على الأعضاء العلويين
+      // إذا كانت الإضافة موجبة، نوزع نقاط الأجيال فقط على الأعضاء العلويين
+      // (بدون إضافة عمولات فورية - العمولات تُحسب عند احتساب الأرباح)
       if (monthlyPointsDifference > 0) {
-        console.log(`📊 توزيع ${monthlyPointsDifference} نقطة شهرية من ${user.name} على الأعضاء العلويين`);
-        await distributeCommissions(user, monthlyPointsDifference);
+        await distributeGenerationPointsOnly(user, monthlyPointsDifference);
       }
     }
 
