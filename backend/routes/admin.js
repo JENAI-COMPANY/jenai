@@ -382,8 +382,8 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       await user.save();
     }
 
-    // تحديث رتبة العضو بعد إضافة النقاط
-    if ((addBonusPoints > 0 || addCompensationPoints > 0) && user.role === 'member') {
+    // تحديث رتبة العضو بعد أي تعديل على بياناته (ترقية أو تخفيض)
+    if (user.role === 'member') {
       try {
         await updateMemberRank(user._id, User);
       } catch (rankError) {
