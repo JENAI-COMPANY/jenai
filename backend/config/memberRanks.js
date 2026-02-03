@@ -176,11 +176,13 @@ const MEMBER_RANKS = {
  * ملاحظة: نقاط الفريق (الأجيال) لا تُحسب للرتبة - فقط للربح
  */
 const calculateCumulativePoints = (user) => {
-  const personalPoints = user.monthlyPoints || 0;
+  // user.points: النقاط التراكمية من المشتريات والعمولات (تتضمن compensationPoints)
+  const personalPoints = user.points || 0;
+  // user.bonusPoints: نقاط المكافأة التي يضيفها السوبر ادمن
   const bonusPoints = user.bonusPoints || 0;
-  const compensationPoints = user.compensationPoints || 0;
+  // لا نضيف compensationPoints لأنها مضافة أصلاً في user.points
 
-  return personalPoints + bonusPoints + compensationPoints;
+  return personalPoints + bonusPoints;
 };
 
 /**
@@ -503,7 +505,7 @@ const calculateDownlineCommission = async (User, memberId) => {
 
 /**
  * دالة حساب عمولة القيادة (للأعضاء من رتبة برونزي وما فوق)
- * المعادلة: عدد نقاط الجيل × نسبة العمولة × 0.55
+ * المعادلة: النقاط الشهرية للأعضاء في الشبكة × نسبة العمولة × 0.55
  * @param {Object} User - نموذج المستخدم
  * @param {String} memberId - معرف العضو
  * @returns {Object} - تفاصيل عمولة القيادة
@@ -538,37 +540,49 @@ const calculateLeadershipCommission = async (User, memberId) => {
   const leadershipRates = rankConfig.leadershipCommission;
   const POINTS_TO_SHEKEL_RATE = 0.55;
 
+  // الحصول على هيكل الشبكة
+  const downlineStructure = await getDownlineStructure(User, memberId);
+
   const breakdown = [];
   let totalCommissionPoints = 0;
 
-  // حساب عمولة القيادة من كل جيل حسب رتبة العضو
-  const generations = [
-    { key: 'generation1', points: member.generation1Points || 0, rate: leadershipRates.generation1 },
-    { key: 'generation2', points: member.generation2Points || 0, rate: leadershipRates.generation2 },
-    { key: 'generation3', points: member.generation3Points || 0, rate: leadershipRates.generation3 },
-    { key: 'generation4', points: member.generation4Points || 0, rate: leadershipRates.generation4 },
-    { key: 'generation5', points: member.generation5Points || 0, rate: leadershipRates.generation5 }
+  // حساب عمولة القيادة من كل مستوى حسب رتبة العضو
+  const levels = [
+    { key: 'level1', rate: leadershipRates.generation1 },
+    { key: 'level2', rate: leadershipRates.generation2 },
+    { key: 'level3', rate: leadershipRates.generation3 },
+    { key: 'level4', rate: leadershipRates.generation4 },
+    { key: 'level5', rate: leadershipRates.generation5 }
   ];
 
-  for (let i = 0; i < generations.length; i++) {
-    const gen = generations[i];
+  for (let i = 0; i < levels.length; i++) {
+    const level = levels[i];
+    const levelMembers = downlineStructure[level.key];
 
-    if (gen.rate > 0 && gen.points > 0) {
-      const commissionPoints = gen.points * gen.rate;
-      totalCommissionPoints += commissionPoints;
+    if (level.rate > 0 && levelMembers && levelMembers.length > 0) {
+      // جمع النقاط الشهرية لجميع أعضاء هذا المستوى
+      let levelTotalPoints = 0;
+      for (const downlineMember of levelMembers) {
+        levelTotalPoints += downlineMember.monthlyPoints || 0;
+      }
 
-      breakdown.push({
-        generation: i + 1,
-        generationPoints: gen.points,
-        commissionRate: gen.rate,
-        commissionRatePercent: (gen.rate * 100).toFixed(0) + '%',
-        commissionPoints: commissionPoints,
-        commissionInShekel: commissionPoints * POINTS_TO_SHEKEL_RATE
-      });
+      if (levelTotalPoints > 0) {
+        const commissionPoints = levelTotalPoints * level.rate;
+        totalCommissionPoints += commissionPoints;
+
+        breakdown.push({
+          generation: i + 1,
+          generationPoints: levelTotalPoints,
+          commissionRate: level.rate,
+          commissionRatePercent: (level.rate * 100).toFixed(0) + '%',
+          commissionPoints: commissionPoints,
+          commissionInShekel: Math.floor(commissionPoints * POINTS_TO_SHEKEL_RATE)
+        });
+      }
     }
   }
 
-  const commissionInShekel = totalCommissionPoints * POINTS_TO_SHEKEL_RATE;
+  const commissionInShekel = Math.floor(totalCommissionPoints * POINTS_TO_SHEKEL_RATE);
 
   return {
     totalCommissionPoints,

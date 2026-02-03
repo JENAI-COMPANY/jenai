@@ -33,19 +33,27 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // حساب أرباح كل عضو
     for (const member of members) {
-      const memberData = {
-        personalPoints: member.monthlyPoints || 0,
-        generationsPoints: [
-          member.generation1Points || 0,
-          member.generation2Points || 0,
-          member.generation3Points || 0,
-          member.generation4Points || 0,
-          member.generation5Points || 0
-        ]
-      };
+      // النقاط الشخصية (خام)
+      const personalPoints = member.monthlyPoints || 0;
 
-      // حساب أرباح الأداء
-      const profitDetails = calculateTotalPoints(memberData);
+      // نقاط الأجيال (بعد تطبيق النسب - مخزنة في قاعدة البيانات)
+      const gen1Points = member.generation1Points || 0;
+      const gen2Points = member.generation2Points || 0;
+      const gen3Points = member.generation3Points || 0;
+      const gen4Points = member.generation4Points || 0;
+      const gen5Points = member.generation5Points || 0;
+
+      // حساب أرباح الأداء الشخصي: نقاط × 20% × 0.55
+      const personalCommissionPoints = personalPoints * 0.20;
+      const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55);
+
+      // حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
+      const teamCommissionPoints = gen1Points + gen2Points + gen3Points + gen4Points + gen5Points;
+      const teamProfitInShekel = Math.floor(teamCommissionPoints * 0.55);
+
+      // إجمالي أرباح الأداء
+      const performanceProfitInShekel = personalProfitInShekel + teamProfitInShekel;
+      const totalCommissionPoints = personalCommissionPoints + teamCommissionPoints;
 
       // حساب عمولة القيادة
       const leadershipCommission = await calculateLeadershipCommission(User, member._id);
@@ -53,7 +61,7 @@ exports.calculatePeriodProfits = async (req, res) => {
       const rankInfo = getRankInfo(memberRankNumber);
 
       // إجمالي الأرباح للعضو
-      const memberTotalProfit = profitDetails.profitInShekel + leadershipCommission.commissionInShekel;
+      const memberTotalProfit = performanceProfitInShekel + leadershipCommission.commissionInShekel;
 
       membersProfits.push({
         memberId: member._id,
@@ -63,18 +71,20 @@ exports.calculatePeriodProfits = async (req, res) => {
         rankName: rankInfo.name,
         rankNameEn: rankInfo.nameEn,
         points: {
-          personal: memberData.personalPoints,
-          generation1: memberData.generationsPoints[0],
-          generation2: memberData.generationsPoints[1],
-          generation3: memberData.generationsPoints[2],
-          generation4: memberData.generationsPoints[3],
-          generation5: memberData.generationsPoints[4],
-          total: memberData.personalPoints + memberData.generationsPoints.reduce((sum, p) => sum + p, 0)
+          personal: personalPoints,
+          generation1: gen1Points,
+          generation2: gen2Points,
+          generation3: gen3Points,
+          generation4: gen4Points,
+          generation5: gen5Points,
+          total: personalPoints + teamCommissionPoints
         },
         commissions: {
           performance: {
-            totalPoints: profitDetails.totalCommissionPoints,
-            totalInShekel: profitDetails.profitInShekel
+            personal: personalProfitInShekel,
+            team: teamProfitInShekel,
+            totalPoints: totalCommissionPoints,
+            totalInShekel: performanceProfitInShekel
           },
           leadership: {
             totalCommissionPoints: leadershipCommission.totalCommissionPoints || 0,
@@ -83,14 +93,16 @@ exports.calculatePeriodProfits = async (req, res) => {
           }
         },
         profit: {
-          performanceProfit: profitDetails.profitInShekel,
+          personalProfit: personalProfitInShekel,
+          teamProfit: teamProfitInShekel,
+          performanceProfit: performanceProfitInShekel,
           leadershipProfit: leadershipCommission.commissionInShekel || 0,
           totalProfit: memberTotalProfit,
           conversionRate: 0.55
         }
       });
 
-      totalPerformanceProfits += profitDetails.profitInShekel;
+      totalPerformanceProfits += performanceProfitInShekel;
       totalLeadershipProfits += (leadershipCommission.commissionInShekel || 0);
       totalProfits += memberTotalProfit;
     }
@@ -120,9 +132,31 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     await profitPeriod.save();
 
+    // طرح النقاط المحتسبة من كل عضو
+    for (const member of members) {
+      const personalPoints = member.monthlyPoints || 0;
+      const gen1Points = member.generation1Points || 0;
+      const gen2Points = member.generation2Points || 0;
+      const gen3Points = member.generation3Points || 0;
+      const gen4Points = member.generation4Points || 0;
+      const gen5Points = member.generation5Points || 0;
+
+      // طرح النقاط التي تم احتسابها
+      member.monthlyPoints = Math.max(0, member.monthlyPoints - personalPoints);
+      member.generation1Points = Math.max(0, member.generation1Points - gen1Points);
+      member.generation2Points = Math.max(0, member.generation2Points - gen2Points);
+      member.generation3Points = Math.max(0, member.generation3Points - gen3Points);
+      member.generation4Points = Math.max(0, member.generation4Points - gen4Points);
+      member.generation5Points = Math.max(0, member.generation5Points - gen5Points);
+
+      await member.save();
+    }
+
+    console.log(`✅ تم طرح النقاط المحتسبة من ${members.length} عضو`);
+
     res.status(201).json({
       success: true,
-      message: `تم احتساب الأرباح للدورة ${periodName} بنجاح`,
+      message: `تم احتساب الأرباح للدورة ${periodName} بنجاح وطرح النقاط المحتسبة`,
       data: {
         periodId: profitPeriod._id,
         periodName: profitPeriod.periodName,

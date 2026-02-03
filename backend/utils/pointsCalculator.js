@@ -61,7 +61,7 @@ const calculateGenerationCommission = (generationPoints, generationLevel) => {
  * @returns {Number} المبلغ بالشيكل
  */
 const calculateProfitInShekel = (totalPoints) => {
-  return totalPoints * POINTS_TO_SHEKEL_RATE;
+  return Math.floor(totalPoints * POINTS_TO_SHEKEL_RATE);
 };
 
 /**

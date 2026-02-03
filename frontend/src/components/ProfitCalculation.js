@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
@@ -17,6 +17,7 @@ const ProfitCalculation = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const resultsRef = useRef(null);
 
   useEffect(() => {
     fetchProfitPeriods();
@@ -65,7 +66,6 @@ const ProfitCalculation = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setProfitData(response.data.data);
       setMessage(language === 'ar' ? 'تم احتساب الأرباح بنجاح!' : 'Profits calculated successfully!');
       fetchProfitPeriods();
       // Clear form
@@ -73,6 +73,22 @@ const ProfitCalculation = () => {
       setEndDate('');
       setPeriodName('');
       setTimeout(() => setMessage(''), 3000);
+
+      // Fetch full period data to display the results table
+      const periodId = response.data.data.periodId;
+      if (periodId) {
+        const fullPeriod = await axios.get(
+          `/api/profit-periods/${periodId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSelectedPeriod(fullPeriod.data.data);
+        setProfitData(null);
+        setTimeout(() => {
+          if (resultsRef.current) {
+            resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
     } catch (err) {
       setError(err.response?.data?.message || (language === 'ar' ? 'فشل في احتساب الأرباح' : 'Failed to calculate profits'));
       setTimeout(() => setError(''), 5000);
@@ -88,7 +104,7 @@ const ProfitCalculation = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
+      await axios.patch(
         `/api/profit-periods/${periodId}/status`,
         { status: 'paid' },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -115,9 +131,16 @@ const ProfitCalculation = () => {
       );
       setSelectedPeriod(response.data.data);
       setProfitData(null);
+      // Auto-scroll to results after state update
+      setTimeout(() => {
+        if (resultsRef.current) {
+          resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     } catch (err) {
+      console.error('Error viewing period:', err);
       setError(err.response?.data?.message || (language === 'ar' ? 'فشل في تحميل البيانات' : 'Failed to load data'));
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
     }
@@ -142,30 +165,58 @@ const ProfitCalculation = () => {
 
     // Prepare table data
     const tableColumn = [
-      'Rank',
-      'Name',
-      'Username',
-      'Code',
-      'Orders',
-      'Sales',
-      'Points',
-      'Commission',
-      'Profit'
+      '#',
+      language === 'ar' ? 'الاسم' : 'Name',
+      language === 'ar' ? 'المستخدم' : 'Username',
+      language === 'ar' ? 'الرتبة' : 'Rank',
+      language === 'ar' ? 'نقاط شخصية' : 'Personal Pts',
+      language === 'ar' ? 'نقاط فريق' : 'Team Pts',
+      language === 'ar' ? 'عمولة شخصية' : 'Personal Comm',
+      language === 'ar' ? 'عمولة فريق' : 'Team Comm',
+      language === 'ar' ? 'قيادة' : 'Leadership',
+      language === 'ar' ? 'إجمالي' : 'Total'
     ];
 
     const tableRows = periodData.membersProfits
-      .sort((a, b) => (b.profitAmount || 0) - (a.profitAmount || 0))
-      .map((member, index) => [
-        index + 1,
-        member.memberName || member.name,
-        member.username,
-        member.subscriberCode,
-        member.totalOrders || 0,
-        `₪${(member.totalSales || 0).toFixed(2)}`,
-        member.totalPoints || 0,
-        `₪${(member.totalCommission || 0).toFixed(2)}`,
-        `₪${(member.profitAmount || 0).toFixed(2)}`
-      ]);
+      .sort((a, b) => (b.profit?.totalProfit || b.profitAmount || 0) - (a.profit?.totalProfit || a.profitAmount || 0))
+      .map((member, index) => {
+        // 1. النقاط الشخصية
+        const personalPts = member.points?.personal || member.totalPoints || 0;
+
+        // 2. نقاط الفريق (مجموع نقاط الأجيال الخام)
+        const gen1Pts = member.points?.generation1 || 0;
+        const gen2Pts = member.points?.generation2 || 0;
+        const gen3Pts = member.points?.generation3 || 0;
+        const gen4Pts = member.points?.generation4 || 0;
+        const gen5Pts = member.points?.generation5 || 0;
+        const teamPts = gen1Pts + gen2Pts + gen3Pts + gen4Pts + gen5Pts;
+
+        // 3. حساب أرباح الأداء الشخصي: (نقاط × 20% × 0.55)
+        const personalComm = Math.floor(personalPts * 0.20 * 0.55);
+
+        // 4. حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
+        // ملاحظة: gen1Pts...gen5Pts تحتوي على نقاط بعد تطبيق النسبة (11%, 8%, ...)
+        const teamComm = Math.floor(teamPts * 0.55);
+
+        // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
+        const leadProfit = Math.floor(member.profit?.leadershipProfit || 0);
+
+        // 6. إجمالي الربح
+        const totalProfit = personalComm + teamComm + leadProfit;
+
+        return [
+          index + 1,
+          member.memberName || member.name,
+          member.username,
+          language === 'ar' ? (member.rankName || '-') : (member.rankNameEn || '-'),
+          personalPts.toLocaleString(),
+          teamPts.toLocaleString(),
+          `₪${personalComm}`,
+          `₪${teamComm}`,
+          `₪${leadProfit}`,
+          `₪${totalProfit}`
+        ];
+      });
 
     // Generate table
     autoTable(doc, {
@@ -266,8 +317,12 @@ const ProfitCalculation = () => {
                   </div>
                 </div>
                 <div className="period-actions">
-                  <button onClick={() => handleViewPeriod(period._id)} className="view-btn">
-                    👁️ {language === 'ar' ? 'عرض' : 'View'}
+                  <button
+                    onClick={() => handleViewPeriod(period._id)}
+                    className={`view-btn ${selectedPeriod?._id === period._id ? 'active' : ''}`}
+                    disabled={loading}
+                  >
+                    👁️ {loading && selectedPeriod?._id === period._id ? (language === 'ar' ? 'جاري التحميل...' : 'Loading...') : (language === 'ar' ? 'عرض' : 'View')}
                   </button>
                   {period.status !== 'paid' && (
                     <button onClick={() => handleClosePeriod(period._id)} className="close-btn">
@@ -281,9 +336,16 @@ const ProfitCalculation = () => {
         </div>
       )}
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="profit-loading" style={{ textAlign: 'center', padding: '20px' }}>
+          <p>{language === 'ar' ? 'جاري تحميل البيانات...' : 'Loading data...'}</p>
+        </div>
+      )}
+
       {/* Results Table */}
       {displayData && (
-        <div className="profit-results">
+        <div className="profit-results" ref={resultsRef}>
           <div className="results-header">
             <div>
               <h3>{language === 'ar' ? 'نتائج الاحتساب' : 'Calculation Results'}</h3>
@@ -339,32 +401,60 @@ const ProfitCalculation = () => {
                   <th>{language === 'ar' ? 'الترتيب' : 'Rank'}</th>
                   <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
                   <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
-                  <th>{language === 'ar' ? 'كود الإحالة' : 'Code'}</th>
-                  <th>{language === 'ar' ? 'عدد الطلبات' : 'Orders'}</th>
-                  <th>{language === 'ar' ? 'المبيعات' : 'Sales'}</th>
-                  <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
-                  <th>{language === 'ar' ? 'العمولة' : 'Commission'}</th>
-                  <th>{language === 'ar' ? 'الربح' : 'Profit'}</th>
+                  <th>{language === 'ar' ? 'الرتبة' : 'Member Rank'}</th>
+                  <th>{language === 'ar' ? 'النقاط الشخصية' : 'Personal Pts'}</th>
+                  <th>{language === 'ar' ? 'نقاط الفريق' : 'Team Pts'}</th>
+                  <th>{language === 'ar' ? 'عمولة شخصية' : 'Personal Comm'}</th>
+                  <th>{language === 'ar' ? 'عمولة الفريق' : 'Team Comm'}</th>
+                  <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
+                  <th>{language === 'ar' ? 'إجمالي الربح' : 'Total Profit'}</th>
                 </tr>
               </thead>
               <tbody>
-                {displayData.membersProfits
-                  .sort((a, b) => (b.profitAmount || 0) - (a.profitAmount || 0))
-                  .map((member, index) => (
-                    <tr key={member._id || index}>
-                      <td>
-                        <span className={`rank-number rank-${index + 1}`}>{index + 1}</span>
-                      </td>
-                      <td className="member-name">{member.memberName || member.name}</td>
-                      <td className="member-username">@{member.username}</td>
-                      <td className="member-code">{member.subscriberCode}</td>
-                      <td className="text-center">{member.totalOrders || 0}</td>
-                      <td className="text-right">₪{(member.totalSales || 0).toFixed(2)}</td>
-                      <td className="text-center points-cell">{member.totalPoints || 0}</td>
-                      <td className="text-right commission-cell">₪{(member.totalCommission || 0).toFixed(2)}</td>
-                      <td className="text-right profit-cell">₪{(member.profitAmount || 0).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                {(displayData.membersProfits || [])
+                  .sort((a, b) => (b.profit?.totalProfit || b.profitAmount || 0) - (a.profit?.totalProfit || a.profitAmount || 0))
+                  .map((member, index) => {
+                    // 1. النقاط الشخصية
+                    const personalPts = member.points?.personal || member.totalPoints || 0;
+
+                    // 2. نقاط الفريق (مجموع نقاط الأجيال الخام)
+                    const gen1Pts = member.points?.generation1 || 0;
+                    const gen2Pts = member.points?.generation2 || 0;
+                    const gen3Pts = member.points?.generation3 || 0;
+                    const gen4Pts = member.points?.generation4 || 0;
+                    const gen5Pts = member.points?.generation5 || 0;
+                    const teamPts = gen1Pts + gen2Pts + gen3Pts + gen4Pts + gen5Pts;
+
+                    // 3. حساب أرباح الأداء الشخصي: (نقاط × 20% × 0.55)
+                    const personalComm = Math.floor(personalPts * 0.20 * 0.55);
+
+                    // 4. حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
+                    // ملاحظة: gen1Pts...gen5Pts تحتوي على نقاط بعد تطبيق النسبة (11%, 8%, ...)
+                    const teamComm = Math.floor(teamPts * 0.55);
+
+                    // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
+                    const leadProfit = Math.floor(member.profit?.leadershipProfit || 0);
+
+                    // 6. إجمالي الربح
+                    const totalProfit = personalComm + teamComm + leadProfit;
+
+                    return (
+                      <tr key={member._id || index}>
+                        <td>
+                          <span className={`rank-number rank-${index + 1}`}>{index + 1}</span>
+                        </td>
+                        <td className="member-name">{member.memberName || member.name}</td>
+                        <td className="member-username">@{member.username}</td>
+                        <td>{language === 'ar' ? (member.rankName || '-') : (member.rankNameEn || '-')}</td>
+                        <td className="text-center points-cell">{personalPts.toLocaleString()}</td>
+                        <td className="text-center points-cell">{teamPts.toLocaleString()}</td>
+                        <td className="text-right commission-cell">₪{personalComm}</td>
+                        <td className="text-right commission-cell">₪{teamComm}</td>
+                        <td className="text-right commission-cell">₪{leadProfit}</td>
+                        <td className="text-right profit-cell">₪{totalProfit}</td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>

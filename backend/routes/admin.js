@@ -358,28 +358,42 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     await user.save();
 
     // ══════════════════════════════════════════════════════════════
-    // معالجة نقاط المكافأة والتعويض (إضافة فوق القيمة الحالية)
+    // معالجة نقاط المكافأة والتعويض (إعادة ضبط مباشر للقيمة المُرسلة)
     // ══════════════════════════════════════════════════════════════
-    const addBonusPoints = parseInt(req.body.bonusPoints) || 0;
-    const addCompensationPoints = parseInt(req.body.compensationPoints) || 0;
 
-    // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين مثل شراء منتج)
-    if (addBonusPoints > 0 && user.role === 'member') {
-      // تراكم نقاط المكافأة في الحقل
-      user.bonusPoints = (user.bonusPoints || 0) + addBonusPoints;
+    // التحقق من وجود تعديل على النقاط
+    const hasBonusUpdate = req.body.bonusPoints !== undefined;
+    const hasCompensationUpdate = req.body.compensationPoints !== undefined;
+
+    // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين)
+    if (hasBonusUpdate && user.role === 'member') {
+      const newBonusPoints = parseInt(req.body.bonusPoints) || 0;
+      const oldBonusPoints = user.bonusPoints || 0;
+      const bonusDifference = newBonusPoints - oldBonusPoints;
+
+      // تحديث قيمة bonusPoints مباشرة
+      user.bonusPoints = newBonusPoints;
       await user.save();
 
-      // توزيع النقاط على الأعضاء العلويين (مثل شراء منتج)
-      await distributeCommissions(user, addBonusPoints);
+      // إذا كانت الإضافة موجبة، نوزع الفرق على الأعضاء العلويين
+      if (bonusDifference > 0) {
+        await distributeCommissions(user, bonusDifference);
+      }
+      // إذا كان الفرق سالب (تم تقليل النقاط)، لا نفعل شيء للأعضاء العلويين
+      // لأن النقاط الموزعة عليهم سابقاً لا يمكن سحبها
     }
 
-    // 2. معالجة نقاط التعويض (تُضاف فقط للتراكمي، لا توزع)
-    if (addCompensationPoints > 0) {
-      // تراكم نقاط التعويض في الحقل
-      user.compensationPoints = (user.compensationPoints || 0) + addCompensationPoints;
-      // إضافة النقاط إلى points التراكمي فقط
-      user.points = (user.points || 0) + addCompensationPoints;
+    // 2. معالجة نقاط التعويض (لا توزع، فقط تُحسب في الرتبة)
+    if (hasCompensationUpdate) {
+      const newCompensationPoints = parseInt(req.body.compensationPoints) || 0;
+
+      // تحديث قيمة compensationPoints مباشرة
+      user.compensationPoints = newCompensationPoints;
       await user.save();
+
+      // ملاحظة: compensationPoints لا تُضاف إلى user.points
+      // user.points تحتوي فقط على نقاط المشتريات والعمولات
+      // compensationPoints حقل منفصل يُحسب في calculateCumulativePoints للرتبة فقط
     }
 
     // تحديث رتبة العضو بعد أي تعديل على بياناته (ترقية أو تخفيض)
