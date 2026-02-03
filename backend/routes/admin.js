@@ -358,12 +358,13 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     await user.save();
 
     // ══════════════════════════════════════════════════════════════
-    // معالجة نقاط المكافأة والتعويض (إعادة ضبط مباشر للقيمة المُرسلة)
+    // معالجة نقاط المكافأة والتعويض والنقاط الشهرية (إعادة ضبط مباشر للقيمة المُرسلة)
     // ══════════════════════════════════════════════════════════════
 
     // التحقق من وجود تعديل على النقاط
     const hasBonusUpdate = req.body.bonusPoints !== undefined;
     const hasCompensationUpdate = req.body.compensationPoints !== undefined;
+    const hasMonthlyPointsUpdate = req.body.monthlyPoints !== undefined;
 
     // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين)
     if (hasBonusUpdate && user.role === 'member') {
@@ -394,6 +395,23 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       // ملاحظة: compensationPoints لا تُضاف إلى user.points
       // user.points تحتوي فقط على نقاط المشتريات والعمولات
       // compensationPoints حقل منفصل يُحسب في calculateCumulativePoints للرتبة فقط
+    }
+
+    // 3. معالجة النقاط الشهرية (تُوزع على الأعضاء العلويين)
+    if (hasMonthlyPointsUpdate && user.role === 'member') {
+      const newMonthlyPoints = parseInt(req.body.monthlyPoints) || 0;
+      const oldMonthlyPoints = user.monthlyPoints || 0;
+      const monthlyPointsDifference = newMonthlyPoints - oldMonthlyPoints;
+
+      // تحديث قيمة monthlyPoints مباشرة
+      user.monthlyPoints = newMonthlyPoints;
+      await user.save();
+
+      // إذا كانت الإضافة موجبة، نوزع الفرق على الأعضاء العلويين
+      if (monthlyPointsDifference > 0) {
+        console.log(`📊 توزيع ${monthlyPointsDifference} نقطة شهرية من ${user.name} على الأعضاء العلويين`);
+        await distributeCommissions(user, monthlyPointsDifference);
+      }
     }
 
     // تحديث رتبة العضو بعد أي تعديل على بياناته (ترقية أو تخفيض)
