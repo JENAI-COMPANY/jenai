@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
-import { getRankImageFromNumber, getRankNameFromNumber } from '../utils/rankHelpers';
+import { getRankImageFromNumber, getRankNameFromNumber, getRankNumber, getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/MemberRanks.css';
 
 const MemberRanks = () => {
@@ -127,7 +127,7 @@ const MemberRanks = () => {
       <div className="mr-ranks-grid">
         {ranks && Object.keys(ranks).map(rankNum => {
           const rank = ranks[rankNum];
-          const membersInRank = members.filter(m => m.memberRank === parseInt(rankNum));
+          const membersInRank = members.filter(m => getRankNumber(m.memberRank) === parseInt(rankNum));
 
           return (
             <div key={rankNum} className={`mr-rank-card ${getRankBadgeClass(parseInt(rankNum))}`}>
@@ -187,7 +187,7 @@ const MemberRanks = () => {
                   <td>
                     <span className={`mr-rank-badge ${getRankBadgeClass(member.memberRank)}`}>
                       <img
-                        src={`/${getRankImageFromNumber(member.memberRank)}`}
+                        src={`/${getRankImage(member.memberRank)}`}
                         alt={getRankName(member.memberRank)}
                         style={{ width: '25px', height: '25px', objectFit: 'contain', marginLeft: '5px', verticalAlign: 'middle' }}
                       />
@@ -227,7 +227,7 @@ const MemberRanks = () => {
                   <label>{language === 'ar' ? 'الدرجة:' : 'Rank:'}</label>
                   <span className={`mr-rank-badge ${getRankBadgeClass(downlineData.member.memberRank)}`}>
                     <img
-                      src={`/${getRankImageFromNumber(downlineData.member.memberRank)}`}
+                      src={`/${getRankImage(downlineData.member.memberRank)}`}
                       alt={getRankName(downlineData.member.memberRank)}
                       style={{ width: '30px', height: '30px', objectFit: 'contain', marginLeft: '8px', verticalAlign: 'middle' }}
                     />
@@ -264,7 +264,7 @@ const MemberRanks = () => {
                               <div className="mr-member-stats">
                                 <span className={`mr-rank-badge ${getRankBadgeClass(member.memberRank)}`}>
                                   <img
-                                    src={`/${getRankImageFromNumber(member.memberRank)}`}
+                                    src={`/${getRankImage(member.memberRank)}`}
                                     alt={`Rank ${member.memberRank}`}
                                     style={{ width: '25px', height: '25px', objectFit: 'contain' }}
                                   />
