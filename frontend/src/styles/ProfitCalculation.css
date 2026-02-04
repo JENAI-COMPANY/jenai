@@ -593,3 +593,52 @@
     box-sizing: border-box;
   }
 }
+
+/* Periods Header with Toggle Button */
+.periods-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.periods-header h3 {
+  margin: 0;
+}
+
+.toggle-periods-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-periods-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.toggle-periods-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .periods-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .toggle-periods-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
