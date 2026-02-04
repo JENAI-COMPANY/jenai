@@ -47,8 +47,13 @@ const MemberProfitSchema = new mongoose.Schema({
     }
   },
   profit: {
+    personalProfit: { type: Number, default: 0 },
+    teamProfit: { type: Number, default: 0 },
     performanceProfit: { type: Number, default: 0 },
     leadershipProfit: { type: Number, default: 0 },
+    customerPurchaseCommission: { type: Number, default: 0 },
+    totalProfitBeforeDeduction: { type: Number, default: 0 },
+    websiteDevelopmentCommission: { type: Number, default: 0 },
     totalProfit: { type: Number, default: 0 },
     conversionRate: { type: Number, default: 0.55 }
   }

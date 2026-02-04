@@ -96,8 +96,13 @@ const distributeCommissions = async (buyer, productPoints) => {
       const genFieldName = `generation${generationLevel + 1}Points`;
       currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
 
+      // تحديث النقاط التراكمية (points) - كاملة بدون نسبة
+      currentMember.points = (currentMember.points || 0) + productPoints; // النقاط الكاملة بدون نسبة
+
       if (leadershipPoints > 0) {
         currentMember.leadershipPoints = (currentMember.leadershipPoints || 0) + leadershipPoints;
+        // نقاط القيادة أيضاً تُضاف كاملة
+        currentMember.points = (currentMember.points || 0) + leadershipPoints;
       }
 
       currentMember.totalCommission = (currentMember.totalCommission || 0) + profit;
@@ -105,7 +110,7 @@ const distributeCommissions = async (buyer, productPoints) => {
 
       await currentMember.save();
 
-      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - عمولة أجيال: ${genProfit} شيكل, عمولة قيادة: ${leadershipProfit} شيكل, إجمالي: ${profit} شيكل`);
+      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - عمولة أجيال: ${genProfit} شيكل (${genPoints.toFixed(2)} نقطة), عمولة قيادة: ${leadershipProfit} شيكل, نقاط تراكمية: +${productPoints.toFixed(2)} كامل`);
 
       // الانتقال للجيل التالي
       currentMemberId = currentMember.referredBy;
@@ -126,31 +131,55 @@ const distributeGenerationPointsOnly = async (member, points) => {
     const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
 
     console.log(`📊 توزيع ${points} نقطة من ${member.name} على الأعضاء العلويين (نقاط الأجيال فقط)`);
+    console.log(`🔍 referredBy: ${member.referredBy}, sponsorId: ${member.sponsorId}`);
 
-    let currentMemberId = member.referredBy;
+    // استخدام referredBy أولاً، وإذا لم يكن موجوداً استخدم sponsorId
+    let currentMemberId = member.referredBy || member.sponsorId;
     let generationLevel = 0;
+
+    if (!currentMemberId) {
+      console.log('⚠️ لا يوجد راعي لهذا العضو - لن يتم التوزيع');
+      return;
+    }
 
     while (currentMemberId && generationLevel < 5) {
       const currentMember = await User.findById(currentMemberId);
 
-      if (!currentMember || currentMember.role !== 'member') break;
+      if (!currentMember) {
+        console.log(`⚠️ لم يتم العثور على العضو: ${currentMemberId}`);
+        break;
+      }
 
-      // حساب نقاط الجيل
+      if (currentMember.role !== 'member') {
+        console.log(`⚠️ العضو ${currentMember.name} ليس member (role: ${currentMember.role})`);
+        break;
+      }
+
+      // حساب نقاط الجيل (بالنسبة - للأرباح)
       const genRate = GENERATION_RATES[generationLevel];
       const genPoints = points * genRate;
 
-      // تحديث نقاط الجيل فقط (بدون عمولات)
+      // تحديث نقاط الجيل (للأرباح)
       const genFieldName = `generation${generationLevel + 1}Points`;
-      currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
+      const oldGenValue = currentMember[genFieldName] || 0;
+      currentMember[genFieldName] = oldGenValue + genPoints;
+
+      // تحديث النقاط التراكمية (points) - كاملة بدون نسبة
+      const oldPointsValue = currentMember.points || 0;
+      currentMember.points = oldPointsValue + points; // النقاط الكاملة بدون نسبة
 
       await currentMember.save();
 
-      console.log(`  └─ ${currentMember.name} (جيل ${generationLevel + 1}): +${genPoints.toFixed(2)} نقطة`);
+      console.log(`  └─ ${currentMember.name} (جيل ${generationLevel + 1}):`);
+      console.log(`     - generation${generationLevel + 1}Points (للأرباح): من ${oldGenValue.toFixed(2)} إلى ${currentMember[genFieldName].toFixed(2)} (+${genPoints.toFixed(2)})`);
+      console.log(`     - points (تراكمي): من ${oldPointsValue.toFixed(2)} إلى ${currentMember.points.toFixed(2)} (+${points.toFixed(2)} كامل)`);
 
       // الانتقال للجيل التالي
-      currentMemberId = currentMember.referredBy;
+      currentMemberId = currentMember.referredBy || currentMember.sponsorId;
       generationLevel++;
     }
+
+    console.log(`✅ تم توزيع النقاط على ${generationLevel} جيل`);
   } catch (error) {
     console.error('❌ خطأ في توزيع نقاط الأجيال:', error);
   }
@@ -473,13 +502,17 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       user.monthlyPoints = newMonthlyPoints;
       await user.save();
 
-      // إذا كانت الإضافة موجبة، نوزع نقاط الأجيال فقط على الأعضاء العلويين
-      // (بدون إضافة عمولات فورية - العمولات تُحسب عند احتساب الأرباح)
-      if (monthlyPointsDifference > 0) {
-        console.log('✅ سيتم التوزيع على الأعضاء العلويين');
-        await distributeGenerationPointsOnly(user, monthlyPointsDifference);
+      // توزيع أو طرح النقاط من الأعضاء العلويين حسب الفرق
+      if (monthlyPointsDifference !== 0) {
+        if (monthlyPointsDifference > 0) {
+          console.log('✅ زيادة - سيتم إضافة النقاط للأعضاء العلويين');
+          await distributeGenerationPointsOnly(user, monthlyPointsDifference);
+        } else {
+          console.log('⚠️ نقصان - سيتم طرح النقاط من الأعضاء العلويين');
+          await distributeGenerationPointsOnly(user, monthlyPointsDifference); // الفرق سالب سيتم طرحه
+        }
       } else {
-        console.log('⚠️ لن يتم التوزيع - الفرق ليس موجباً:', monthlyPointsDifference);
+        console.log('⚠️ لا يوجد تغيير في النقاط');
       }
     }
 

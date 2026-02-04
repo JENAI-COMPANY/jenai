@@ -374,6 +374,7 @@ const OrderManagement = () => {
             <strong>${isArabic ? 'الإجمالي:' : 'Total:'}</strong>
             <span class="total-amount">$${order.totalPrice?.toFixed(2)}</span>
           </p>
+          ${order.totalPoints ? `<p style="color: #10b981; font-weight: bold; margin-top: 8px;"><strong>${isArabic ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> ${order.totalPoints}</p>` : ''}
         </div>
 
         ${order.isCustomOrder && order.customOrderDetails ? `
@@ -692,6 +693,11 @@ const OrderManagement = () => {
                   <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -${selectedOrder.discountAmount?.toFixed(2)}</p>
                 )}
                 <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ${selectedOrder.totalPrice?.toFixed(2)}</p>
+                {selectedOrder.totalPoints && (
+                  <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
+                    <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {selectedOrder.totalPoints}
+                  </p>
+                )}
               </div>
 
               {/* قسم الطلب المخصص */}

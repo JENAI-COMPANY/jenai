@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const ProfitPeriod = require('../models/ProfitPeriod');
+const Order = require('../models/Order');
+const Product = require('../models/Product');
 const { calculateTotalPoints } = require('../utils/pointsCalculator');
 const { calculateLeadershipCommission, getRankInfo, getRankNumber } = require('../config/memberRanks');
 
@@ -60,8 +62,56 @@ exports.calculatePeriodProfits = async (req, res) => {
       const memberRankNumber = getRankNumber(member.memberRank);
       const rankInfo = getRankInfo(memberRankNumber);
 
-      // إجمالي الأرباح للعضو
-      const memberTotalProfit = performanceProfitInShekel + leadershipCommission.commissionInShekel;
+      // حساب عمولة شراء الزبون (فرق السعر بين زبون وعضو)
+      let customerPurchaseCommission = 0;
+
+      // جلب طلبات الزبائن الذين تم إحالتهم من هذا العضو
+      const customerOrders = await Order.find({
+        referredBy: member._id,
+        isDelivered: true,
+        deliveredAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        }
+      }).populate('user', 'role').populate('orderItems.product');
+
+      // Debug: طباعة عدد الطلبات
+      if (customerOrders.length > 0) {
+        console.log(`📦 العضو ${member.name} لديه ${customerOrders.length} طلب من زبائن في الفترة`);
+      }
+
+      // حساب فرق السعر لكل طلب
+      for (const order of customerOrders) {
+        // التحقق من أن المشتري زبون وليس عضو
+        if (order.user && order.user.role === 'customer') {
+          console.log(`   📋 طلب من زبون ${order.user.name || 'غير محدد'} - عدد المنتجات: ${order.orderItems.length}`);
+          for (const item of order.orderItems) {
+            if (item.product) {
+              // فرق السعر = (سعر الزبون - سعر العضو) × الكمية
+              const priceDifference = (item.product.customerPrice - item.product.subscriberPrice) * item.quantity;
+              console.log(`      💵 ${item.product.name}: فرق السعر = (${item.product.customerPrice} - ${item.product.subscriberPrice}) × ${item.quantity} = ${priceDifference.toFixed(2)} شيكل`);
+              customerPurchaseCommission += priceDifference;
+            }
+          }
+        }
+      }
+
+      // Debug: طباعة إجمالي عمولة الزبون للعضو
+      if (customerPurchaseCommission > 0) {
+        console.log(`   ✅ إجمالي عمولة شراء الزبون للعضو ${member.name}: ${customerPurchaseCommission.toFixed(2)} شيكل`);
+      }
+
+      // إجمالي الأرباح للعضو قبل الخصم (أرباح الأداء + القيادة + عمولة شراء الزبون)
+      const memberTotalProfit = performanceProfitInShekel + leadershipCommission.commissionInShekel + customerPurchaseCommission;
+
+      // حساب عمولة تطوير الموقع (5% من الإجمالي) - بدون تقريب
+      const websiteDevelopmentCommission = memberTotalProfit * 0.05;
+
+      // الناتج النهائي: نخصم العمولة ثم نقرب للأسفل
+      const finalProfit = Math.floor(memberTotalProfit - websiteDevelopmentCommission);
+
+      // Debug: طباعة القيم للتحقق
+      console.log(`💰 ${member.name}: أداء=${performanceProfitInShekel}, قيادة=${leadershipCommission.commissionInShekel}, عمولة زبون=${customerPurchaseCommission.toFixed(2)}, قبل الخصم=${memberTotalProfit.toFixed(2)}, عمولة 5%=${websiteDevelopmentCommission.toFixed(2)}, النهائي=${finalProfit}`);
 
       membersProfits.push({
         memberId: member._id,
@@ -97,14 +147,17 @@ exports.calculatePeriodProfits = async (req, res) => {
           teamProfit: teamProfitInShekel,
           performanceProfit: performanceProfitInShekel,
           leadershipProfit: leadershipCommission.commissionInShekel || 0,
-          totalProfit: memberTotalProfit,
+          customerPurchaseCommission: customerPurchaseCommission,
+          totalProfitBeforeDeduction: memberTotalProfit,
+          websiteDevelopmentCommission: websiteDevelopmentCommission,
+          totalProfit: finalProfit,
           conversionRate: 0.55
         }
       });
 
       totalPerformanceProfits += performanceProfitInShekel;
       totalLeadershipProfits += (leadershipCommission.commissionInShekel || 0);
-      totalProfits += memberTotalProfit;
+      totalProfits += finalProfit;
     }
 
     // حساب المتوسط
@@ -132,7 +185,7 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     await profitPeriod.save();
 
-    // طرح النقاط المحتسبة من كل عضو
+    // تصفير نقاط الأداء الشخصي ونقاط الأجيال بعد احتساب الأرباح
     for (const member of members) {
       const personalPoints = member.monthlyPoints || 0;
       const gen1Points = member.generation1Points || 0;
@@ -141,18 +194,18 @@ exports.calculatePeriodProfits = async (req, res) => {
       const gen4Points = member.generation4Points || 0;
       const gen5Points = member.generation5Points || 0;
 
-      // طرح النقاط التي تم احتسابها
-      member.monthlyPoints = Math.max(0, member.monthlyPoints - personalPoints);
-      member.generation1Points = Math.max(0, member.generation1Points - gen1Points);
-      member.generation2Points = Math.max(0, member.generation2Points - gen2Points);
-      member.generation3Points = Math.max(0, member.generation3Points - gen3Points);
-      member.generation4Points = Math.max(0, member.generation4Points - gen4Points);
-      member.generation5Points = Math.max(0, member.generation5Points - gen5Points);
+      // تصفير جميع النقاط المحتسبة (شخصية + أجيال)
+      member.monthlyPoints = 0;
+      member.generation1Points = 0;
+      member.generation2Points = 0;
+      member.generation3Points = 0;
+      member.generation4Points = 0;
+      member.generation5Points = 0;
 
       await member.save();
     }
 
-    console.log(`✅ تم طرح النقاط المحتسبة من ${members.length} عضو`);
+    console.log(`✅ تم تصفير نقاط الأداء الشخصي ونقاط الأجيال من ${members.length} عضو`);
 
     res.status(201).json({
       success: true,
@@ -378,6 +431,8 @@ exports.getMyProfitPeriods = async (req, res) => {
         status: period.status,
         calculatedAt: period.calculatedAt,
         profit: memberProfit ? {
+          personalProfit: memberProfit.profit.personalProfit,
+          teamProfit: memberProfit.profit.teamProfit,
           performanceProfit: memberProfit.profit.performanceProfit,
           leadershipProfit: memberProfit.profit.leadershipProfit,
           totalProfit: memberProfit.profit.totalProfit,

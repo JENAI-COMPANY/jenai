@@ -17,6 +17,7 @@ const ProfitCalculation = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showPreviousPeriods, setShowPreviousPeriods] = useState(true);
   const resultsRef = useRef(null);
 
   useEffect(() => {
@@ -174,7 +175,10 @@ const ProfitCalculation = () => {
       language === 'ar' ? 'عمولة شخصية' : 'Personal Comm',
       language === 'ar' ? 'عمولة فريق' : 'Team Comm',
       language === 'ar' ? 'قيادة' : 'Leadership',
-      language === 'ar' ? 'إجمالي' : 'Total'
+      language === 'ar' ? 'عمولة زبون' : 'Cust. Comm',
+      language === 'ar' ? 'قبل الخصم' : 'Before Ded.',
+      language === 'ar' ? 'عمولة 5%' : '5% Comm.',
+      language === 'ar' ? 'النهائي' : 'Final'
     ];
 
     const tableRows = periodData.membersProfits
@@ -195,14 +199,22 @@ const ProfitCalculation = () => {
         const personalComm = Math.floor(personalPts * 0.20 * 0.55);
 
         // 4. حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
-        // ملاحظة: gen1Pts...gen5Pts تحتوي على نقاط بعد تطبيق النسبة (11%, 8%, ...)
         const teamComm = Math.floor(teamPts * 0.55);
 
         // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
         const leadProfit = Math.floor(member.profit?.leadershipProfit || 0);
 
-        // 6. إجمالي الربح
-        const totalProfit = personalComm + teamComm + leadProfit;
+        // 6. عمولة شراء الزبون (تأتي محسوبة من الباك اند)
+        const customerCommission = member.profit?.customerPurchaseCommission || 0;
+
+        // 7. قبل الخصم
+        const totalBeforeDeduction = member.profit?.totalProfitBeforeDeduction || (personalComm + teamComm + leadProfit + customerCommission);
+
+        // 8. عمولة تطوير الموقع 5%
+        const websiteCommission = member.profit?.websiteDevelopmentCommission || 0;
+
+        // 9. الناتج النهائي بعد الخصم
+        const finalProfit = member.profit?.totalProfit || 0;
 
         return [
           index + 1,
@@ -214,7 +226,10 @@ const ProfitCalculation = () => {
           `₪${personalComm}`,
           `₪${teamComm}`,
           `₪${leadProfit}`,
-          `₪${totalProfit}`
+          `₪${customerCommission.toFixed(2)}`,
+          `₪${totalBeforeDeduction.toFixed(2)}`,
+          `-₪${websiteCommission.toFixed(2)}`,
+          `₪${finalProfit}`
         ];
       });
 
@@ -297,8 +312,20 @@ const ProfitCalculation = () => {
       {/* Previous Periods */}
       {profitPeriods.length > 0 && (
         <div className="profit-periods-section">
-          <h3>{language === 'ar' ? 'الفترات السابقة' : 'Previous Periods'}</h3>
-          <div className="periods-list">
+          <div className="periods-header">
+            <h3>{language === 'ar' ? 'الفترات السابقة' : 'Previous Periods'}</h3>
+            <button
+              className="toggle-periods-btn"
+              onClick={() => setShowPreviousPeriods(!showPreviousPeriods)}
+            >
+              {showPreviousPeriods ? (
+                <>👁️‍🗨️ {language === 'ar' ? 'إخفاء' : 'Hide'}</>
+              ) : (
+                <>👁️ {language === 'ar' ? 'إظهار' : 'Show'}</>
+              )}
+            </button>
+          </div>
+          {showPreviousPeriods && <div className="periods-list">
             {profitPeriods.map((period) => (
               <div key={period._id} className="period-card">
                 <div className="period-info">
@@ -332,7 +359,7 @@ const ProfitCalculation = () => {
                 </div>
               </div>
             ))}
-          </div>
+          </div>}
         </div>
       )}
 
@@ -407,7 +434,10 @@ const ProfitCalculation = () => {
                   <th>{language === 'ar' ? 'عمولة شخصية' : 'Personal Comm'}</th>
                   <th>{language === 'ar' ? 'عمولة الفريق' : 'Team Comm'}</th>
                   <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
-                  <th>{language === 'ar' ? 'إجمالي الربح' : 'Total Profit'}</th>
+                  <th>{language === 'ar' ? 'عمولة شراء زبون' : 'Customer Comm'}</th>
+                  <th>{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</th>
+                  <th>{language === 'ar' ? 'عمولة الموقع 5%' : 'Site Commission 5%'}</th>
+                  <th>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -429,14 +459,33 @@ const ProfitCalculation = () => {
                     const personalComm = Math.floor(personalPts * 0.20 * 0.55);
 
                     // 4. حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
-                    // ملاحظة: gen1Pts...gen5Pts تحتوي على نقاط بعد تطبيق النسبة (11%, 8%, ...)
                     const teamComm = Math.floor(teamPts * 0.55);
 
                     // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
                     const leadProfit = Math.floor(member.profit?.leadershipProfit || 0);
 
-                    // 6. إجمالي الربح
-                    const totalProfit = personalComm + teamComm + leadProfit;
+                    // 6. عمولة شراء الزبون (تأتي محسوبة من الباك اند)
+                    const customerCommission = member.profit?.customerPurchaseCommission || 0;
+
+                    // 7. قبل الخصم
+                    const totalBeforeDeduction = member.profit?.totalProfitBeforeDeduction || (personalComm + teamComm + leadProfit + customerCommission);
+
+                    // 8. عمولة تطوير الموقع 5%
+                    const websiteCommission = member.profit?.websiteDevelopmentCommission || 0;
+
+                    // 9. الناتج النهائي بعد الخصم
+                    const finalProfit = member.profit?.totalProfit || 0;
+
+                    // Debug: طباعة البيانات للتحقق
+                    if (index === 0) {
+                      console.log('🔍 بيانات العضو الأول:', {
+                        memberName: member.memberName,
+                        profitObject: member.profit,
+                        totalBeforeDeduction,
+                        websiteCommission,
+                        finalProfit
+                      });
+                    }
 
                     return (
                       <tr key={member._id || index}>
@@ -451,7 +500,10 @@ const ProfitCalculation = () => {
                         <td className="text-right commission-cell">₪{personalComm}</td>
                         <td className="text-right commission-cell">₪{teamComm}</td>
                         <td className="text-right commission-cell">₪{leadProfit}</td>
-                        <td className="text-right profit-cell">₪{totalProfit}</td>
+                        <td className="text-right commission-cell" style={{color: '#27ae60'}}>₪{customerCommission.toFixed(2)}</td>
+                        <td className="text-right commission-cell">₪{totalBeforeDeduction.toFixed(2)}</td>
+                        <td className="text-right deduction-cell" style={{color: '#e74c3c'}}>-₪{websiteCommission.toFixed(2)}</td>
+                        <td className="text-right profit-cell" style={{fontWeight: 'bold'}}>₪{finalProfit}</td>
                       </tr>
                     );
                   })}

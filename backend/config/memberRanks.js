@@ -172,17 +172,15 @@ const MEMBER_RANKS = {
  * @param {Object} user - بيانات العضو
  * @returns {Number} - النقاط التراكمية
  *
- * النقاط التراكمية = النقاط الشخصية (monthlyPoints) + نقاط المكافأة (bonusPoints) + نقاط التعويض (compensationPoints)
- * ملاحظة: نقاط الفريق (الأجيال) لا تُحسب للرتبة - فقط للربح
+ * النقاط التراكمية = user.points (تشمل نقاطه الشخصية + نقاط فريقه الكاملة)
+ * ملاحظة: user.points الآن يحتوي على جميع النقاط الكاملة بدون نسبة
  */
 const calculateCumulativePoints = (user) => {
-  // user.points: النقاط التراكمية من المشتريات والعمولات (تتضمن compensationPoints)
-  const personalPoints = user.points || 0;
-  // user.bonusPoints: نقاط المكافأة التي يضيفها السوبر ادمن
-  const bonusPoints = user.bonusPoints || 0;
-  // لا نضيف compensationPoints لأنها مضافة أصلاً في user.points
+  // user.points: النقاط التراكمية (تشمل نقاطه الشخصية + نقاط فريقه كاملة)
+  // لا نحتاج لحساب معقد لأن النقاط مخزنة بالفعل بشكل كامل
+  const cumulativePoints = user.points || 0;
 
-  return personalPoints + bonusPoints;
+  return Math.floor(cumulativePoints);
 };
 
 /**

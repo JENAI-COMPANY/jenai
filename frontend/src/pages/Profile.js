@@ -103,6 +103,17 @@ const Profile = () => {
     }
   };
 
+  // Calculate cumulative points for each generation level
+  const getGenerationCumulativePoints = (level) => {
+    if (!teamData || !teamData.team) return 0;
+
+    // Sum up the cumulative points (user.points) of all members in this generation level
+    const membersInLevel = teamData.team.filter(member => member.level === level);
+    const totalPoints = membersInLevel.reduce((sum, member) => sum + (member.points || 0), 0);
+
+    return totalPoints;
+  };
+
   // Update form data when user data changes
   useEffect(() => {
     if (user) {
@@ -730,11 +741,11 @@ const Profile = () => {
                       <div className="point-value">
                         {pointsView === 'monthly'
                           ? (user.monthlyPoints || 0) +
-                            (user.generation1Points || 0) +
-                            (user.generation2Points || 0) +
-                            (user.generation3Points || 0) +
-                            (user.generation4Points || 0) +
-                            (user.generation5Points || 0)
+                            (user.generation1Points ? Math.floor(user.generation1Points / 0.11) : 0) +
+                            (user.generation2Points ? Math.floor(user.generation2Points / 0.08) : 0) +
+                            (user.generation3Points ? Math.floor(user.generation3Points / 0.06) : 0) +
+                            (user.generation4Points ? Math.floor(user.generation4Points / 0.03) : 0) +
+                            (user.generation5Points ? Math.floor(user.generation5Points / 0.02) : 0)
                           : (user.points || 0)}
                       </div>
                     </div>
@@ -742,31 +753,51 @@ const Profile = () => {
                       <div className="point-label">
                         {language === 'ar' ? 'نقاط الجيل الأول' : 'Generation 1 Points'}
                       </div>
-                      <div className="point-value">{user.generation1Points || 0}</div>
+                      <div className="point-value">
+                        {pointsView === 'monthly'
+                          ? (user.generation1Points ? Math.floor(user.generation1Points / 0.11) : 0)
+                          : getGenerationCumulativePoints(1)}
+                      </div>
                     </div>
                     <div className="point-card">
                       <div className="point-label">
                         {language === 'ar' ? 'نقاط الجيل الثاني' : 'Generation 2 Points'}
                       </div>
-                      <div className="point-value">{user.generation2Points || 0}</div>
+                      <div className="point-value">
+                        {pointsView === 'monthly'
+                          ? (user.generation2Points ? Math.floor(user.generation2Points / 0.08) : 0)
+                          : getGenerationCumulativePoints(2)}
+                      </div>
                     </div>
                     <div className="point-card">
                       <div className="point-label">
                         {language === 'ar' ? 'نقاط الجيل الثالث' : 'Generation 3 Points'}
                       </div>
-                      <div className="point-value">{user.generation3Points || 0}</div>
+                      <div className="point-value">
+                        {pointsView === 'monthly'
+                          ? (user.generation3Points ? Math.floor(user.generation3Points / 0.06) : 0)
+                          : getGenerationCumulativePoints(3)}
+                      </div>
                     </div>
                     <div className="point-card">
                       <div className="point-label">
                         {language === 'ar' ? 'نقاط الجيل الرابع' : 'Generation 4 Points'}
                       </div>
-                      <div className="point-value">{user.generation4Points || 0}</div>
+                      <div className="point-value">
+                        {pointsView === 'monthly'
+                          ? (user.generation4Points ? Math.floor(user.generation4Points / 0.03) : 0)
+                          : getGenerationCumulativePoints(4)}
+                      </div>
                     </div>
                     <div className="point-card">
                       <div className="point-label">
                         {language === 'ar' ? 'نقاط الجيل الخامس' : 'Generation 5 Points'}
                       </div>
-                      <div className="point-value">{user.generation5Points || 0}</div>
+                      <div className="point-value">
+                        {pointsView === 'monthly'
+                          ? (user.generation5Points ? Math.floor(user.generation5Points / 0.02) : 0)
+                          : getGenerationCumulativePoints(5)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -807,34 +838,71 @@ const Profile = () => {
                             <th>{language === 'ar' ? 'اسم الدورة' : 'Period Name'}</th>
                             <th>{language === 'ar' ? 'رقم الدورة' : 'Period Number'}</th>
                             <th>{language === 'ar' ? 'أرباح الأداء' : 'Performance Profit'}</th>
+                            <th>{language === 'ar' ? 'أرباح الأجيال' : 'Generations Profit'}</th>
                             <th>{language === 'ar' ? 'أرباح القيادة' : 'Leadership Profit'}</th>
-                            <th>{language === 'ar' ? 'إجمالي الأرباح' : 'Total Profit'}</th>
+                            <th>{language === 'ar' ? 'عمولة شراء زبون' : 'Customer Comm'}</th>
+                            <th>{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</th>
+                            <th>{language === 'ar' ? 'عمولة الموقع 5%' : 'Site Commission 5%'}</th>
+                            <th>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</th>
                             <th>{language === 'ar' ? 'تاريخ الاحتساب' : 'Calculated Date'}</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {profitPeriods.map((period, index) => (
-                            <tr key={period.periodId}>
-                              <td>{index + 1}</td>
-                              <td className="period-name">{period.periodName}</td>
-                              <td className="period-number">{period.periodNumber}</td>
-                              <td className="profit-value">
-                                ₪{period.profit?.performanceProfit?.toFixed(2) || '0.00'}
-                              </td>
-                              <td className="profit-value">
-                                ₪{period.profit?.leadershipProfit?.toFixed(2) || '0.00'}
-                              </td>
-                              <td className="profit-value total-profit">
-                                ₪{period.profit?.totalProfit?.toFixed(2) || '0.00'}
-                              </td>
-                              <td className="calculated-date">
-                                {new Date(period.calculatedAt).toLocaleDateString(
-                                  language === 'ar' ? 'ar-EG' : 'en-US',
-                                  { year: 'numeric', month: 'short', day: 'numeric' }
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          {profitPeriods.map((period, index) => {
+                            // حساب العمولات من النقاط مباشرة (نفس منطق صفحة الإدارة)
+                            const personalPts = period.profit?.points?.personal || 0;
+                            const gen1Pts = period.profit?.points?.generation1 || 0;
+                            const gen2Pts = period.profit?.points?.generation2 || 0;
+                            const gen3Pts = period.profit?.points?.generation3 || 0;
+                            const gen4Pts = period.profit?.points?.generation4 || 0;
+                            const gen5Pts = period.profit?.points?.generation5 || 0;
+                            const teamPts = gen1Pts + gen2Pts + gen3Pts + gen4Pts + gen5Pts;
+
+                            const personalComm = Math.floor(personalPts * 0.20 * 0.55);
+                            const teamComm = Math.floor(teamPts * 0.55);
+                            const leadProfit = Math.floor(period.profit?.leadershipProfit || 0);
+                            const customerCommission = period.profit?.customerPurchaseCommission || 0;
+
+                            // البيانات من الباك اند (تتضمن الخصم)
+                            const totalBeforeDeduction = period.profit?.totalProfitBeforeDeduction || (personalComm + teamComm + leadProfit + customerCommission);
+                            const websiteCommission = period.profit?.websiteDevelopmentCommission || 0;
+                            const finalProfit = period.profit?.totalProfit || 0;
+
+                            return (
+                              <tr key={period.periodId}>
+                                <td>{index + 1}</td>
+                                <td className="period-name">{period.periodName}</td>
+                                <td className="period-number">{period.periodNumber}</td>
+                                <td className="profit-value">
+                                  ₪{personalComm}
+                                </td>
+                                <td className="profit-value">
+                                  ₪{teamComm}
+                                </td>
+                                <td className="profit-value">
+                                  ₪{leadProfit}
+                                </td>
+                                <td className="profit-value" style={{color: '#27ae60'}}>
+                                  ₪{customerCommission.toFixed(2)}
+                                </td>
+                                <td className="profit-value">
+                                  ₪{totalBeforeDeduction.toFixed(2)}
+                                </td>
+                                <td className="profit-value" style={{color: '#e74c3c'}}>
+                                  -₪{websiteCommission.toFixed(2)}
+                                </td>
+                                <td className="profit-value total-profit" style={{fontWeight: 'bold'}}>
+                                  ₪{finalProfit}
+                                </td>
+                                <td className="calculated-date">
+                                  {new Date(period.calculatedAt).toLocaleDateString(
+                                    language === 'ar' ? 'ar-EG' : 'en-US',
+                                    { year: 'numeric', month: 'short', day: 'numeric' }
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
