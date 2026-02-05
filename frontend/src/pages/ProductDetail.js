@@ -162,27 +162,47 @@ const ProductDetail = () => {
           {/* Image Gallery */}
           <div className="product-images">
             <div className="main-image">
-              {product.images && product.images[selectedImage] ? (
-                <img src={product.images[selectedImage]} alt={product.name} />
-              ) : (
-                <div className="no-image">
-                  {language === 'ar' ? 'لا توجد صورة' : 'No Image'}
-                </div>
-              )}
-            </div>
-            {product.images && product.images.length > 1 && (
-              <div className="image-thumbnails">
-                {product.images.map((image, index) => (
-                  <div
-                    key={index}
-                    className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
-                    onClick={() => setSelectedImage(index)}
-                  >
-                    <img src={image} alt={`${product.name} ${index + 1}`} />
+              {(() => {
+                // دعم النظام الجديد (media) والقديم (images)
+                const mediaList = product.media && product.media.length > 0
+                  ? product.media.filter(m => m.type === 'image')
+                  : (product.images || []);
+
+                const currentImage = mediaList[selectedImage];
+                const imageUrl = typeof currentImage === 'string' ? currentImage : currentImage?.url;
+
+                return imageUrl ? (
+                  <img src={imageUrl} alt={product.name} />
+                ) : (
+                  <div className="no-image">
+                    {language === 'ar' ? 'لا توجد صورة' : 'No Image'}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })()}
+            </div>
+            {(() => {
+              // دعم النظام الجديد (media) والقديم (images)
+              const mediaList = product.media && product.media.length > 0
+                ? product.media.filter(m => m.type === 'image')
+                : (product.images || []);
+
+              return mediaList.length > 1 && (
+                <div className="image-thumbnails">
+                  {mediaList.map((item, index) => {
+                    const imageUrl = typeof item === 'string' ? item : item?.url;
+                    return (
+                      <div
+                        key={index}
+                        className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                        onClick={() => setSelectedImage(index)}
+                      >
+                        <img src={imageUrl} alt={`${product.name} ${index + 1}`} />
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Product Info */}

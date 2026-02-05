@@ -202,17 +202,27 @@ const ProductManagement = () => {
 
   const handleMediaChange = (e) => {
     const files = Array.from(e.target.files);
+
+    if (files.length === 0) return;
+
+    // إضافة الملفات أولاً
     setMediaFiles(prevFiles => [...prevFiles, ...files]);
 
-    // Create previews
+    // Create previews with file reference
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setMediaPreviews(prev => [...prev, {
-          file: file,
-          url: reader.result,
-          type: file.type.startsWith('video') ? 'video' : 'image'
-        }]);
+        if (reader.result) {
+          setMediaPreviews(prev => [...prev, {
+            file: file,
+            url: reader.result,
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            isNew: true // علامة للصور الجديدة
+          }]);
+        }
+      };
+      reader.onerror = () => {
+        console.error('خطأ في قراءة الملف:', file.name);
       };
       reader.readAsDataURL(file);
     });
@@ -229,8 +239,17 @@ const ProductManagement = () => {
       }));
     }
 
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    // حذف الصورة من القائمة
     setMediaPreviews(prev => prev.filter((_, i) => i !== index));
+
+    // إذا كانت صورة جديدة، نحذفها من mediaFiles أيضاً
+    if (mediaToRemove && mediaToRemove.isNew) {
+      // البحث عن الملف المطابق وحذفه
+      setMediaFiles(prev => {
+        const fileToRemove = mediaToRemove.file;
+        return prev.filter(f => f !== fileToRemove);
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -356,6 +375,7 @@ const ProductManagement = () => {
     });
 
     // Load existing media as previews
+    setMediaFiles([]); // نظف الملفات الجديدة
     if (product.media && product.media.length > 0) {
       const existingPreviews = product.media.map(item => ({
         url: item.url,
@@ -363,6 +383,8 @@ const ProductManagement = () => {
         existing: true
       }));
       setMediaPreviews(existingPreviews);
+    } else {
+      setMediaPreviews([]);
     }
 
     setShowAddForm(true);
