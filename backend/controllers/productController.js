@@ -20,8 +20,8 @@ const processDiscountData = (productData) => {
 
     productData.customerDiscount.discountPercentage = calculateDiscountPercentage(originalPrice, discountedPrice);
 
-    // تحديث سعر الزباين ليكون السعر بعد الخصم
-    productData.customerPrice = discountedPrice;
+    // لا نغير customerPrice - نحتفظ بالسعر الأصلي
+    // السعر المخفض موجود في customerDiscount.discountedPrice
     hasAnyDiscount = true;
   } else {
     productData.customerDiscount = {
@@ -42,8 +42,8 @@ const processDiscountData = (productData) => {
 
     productData.subscriberDiscount.discountPercentage = calculateDiscountPercentage(originalPrice, discountedPrice);
 
-    // تحديث سعر الأعضاء ليكون السعر بعد الخصم
-    productData.subscriberPrice = discountedPrice;
+    // لا نغير subscriberPrice - نحتفظ بالسعر الأصلي
+    // السعر المخفض موجود في subscriberDiscount.discountedPrice
     hasAnyDiscount = true;
   } else {
     productData.subscriberDiscount = {
@@ -68,12 +68,26 @@ const processDiscountData = (productData) => {
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
-    const { category, search, page = 1, limit = 12, regionId, regionCode } = req.query;
+    const { category, search, page = 1, limit = 12, regionId, regionCode, isNewArrival, isOffer } = req.query;
+
+    console.log('📋 Query parameters received:', { category, search, regionId, regionCode, isNewArrival, isOffer });
 
     const query = { isActive: true };
 
     if (category) {
       query.category = category;
+    }
+
+    // فلترة حسب "وصل حديثاً"
+    if (isNewArrival === 'true' || isNewArrival === true) {
+      query.isNewArrival = true;
+      console.log('✅ Filtering by isNewArrival');
+    }
+
+    // فلترة حسب "العروض"
+    if (isOffer === 'true' || isOffer === true) {
+      query.isOffer = true;
+      console.log('✅ Filtering by isOffer');
     }
 
     // فلترة تلقائية لمدير المنطقة - يرى فقط منتجات منطقته

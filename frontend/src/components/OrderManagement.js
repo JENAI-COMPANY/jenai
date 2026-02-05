@@ -350,6 +350,7 @@ const OrderManagement = () => {
                 <th>${isArabic ? 'المنتج' : 'Product'}</th>
                 <th style="text-align: center;">${isArabic ? 'الكمية' : 'Quantity'}</th>
                 <th>${isArabic ? 'السعر' : 'Price'}</th>
+                <th style="text-align: center;">${isArabic ? 'النقاط' : 'Points'}</th>
               </tr>
             </thead>
             <tbody>
@@ -358,6 +359,7 @@ const OrderManagement = () => {
                   <td>${item.name}</td>
                   <td style="text-align: center;">${item.quantity}</td>
                   <td>$${item.price?.toFixed(2)}</td>
+                  <td style="text-align: center;">${item.points || 0} ${isArabic ? 'نقطة' : 'pts'}</td>
                 </tr>
               `).join('') || ''}
             </tbody>
@@ -670,6 +672,7 @@ const OrderManagement = () => {
                       <th>{language === 'ar' ? 'المنتج' : 'Product'}</th>
                       <th>{language === 'ar' ? 'الكمية' : 'Qty'}</th>
                       <th>{language === 'ar' ? 'السعر' : 'Price'}</th>
+                      <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -678,6 +681,7 @@ const OrderManagement = () => {
                         <td>{item.name}</td>
                         <td>{item.quantity}</td>
                         <td>${item.price?.toFixed(2)}</td>
+                        <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
                       </tr>
                     ))}
                   </tbody>

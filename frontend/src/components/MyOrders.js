@@ -271,6 +271,7 @@ const MyOrders = () => {
       isArabic ? 'Product' : 'المنتج',
       isArabic ? 'Qty' : 'الكمية',
       isArabic ? 'Price' : 'السعر',
+      isArabic ? 'Points' : 'النقاط',
       isArabic ? 'Total' : 'المجموع'
     ];
 
@@ -278,6 +279,7 @@ const MyOrders = () => {
       item.name,
       item.quantity.toString(),
       `$${item.price?.toFixed(2)}`,
+      `${item.points || 0} ${isArabic ? 'pts' : 'نقطة'}`,
       `$${(item.quantity * item.price)?.toFixed(2)}`
     ]) || [];
 
@@ -502,6 +504,7 @@ const MyOrders = () => {
                       <th>{language === 'ar' ? 'المنتج' : 'Product'}</th>
                       <th>{language === 'ar' ? 'الكمية' : 'Qty'}</th>
                       <th>{language === 'ar' ? 'السعر' : 'Price'}</th>
+                      <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -510,6 +513,7 @@ const MyOrders = () => {
                         <td>{item.name}</td>
                         <td>{item.quantity}</td>
                         <td>${item.price?.toFixed(2)}</td>
+                        <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
                       </tr>
                     ))}
                   </tbody>

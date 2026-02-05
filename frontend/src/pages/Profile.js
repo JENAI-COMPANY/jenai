@@ -50,6 +50,10 @@ const Profile = () => {
   const [pointsView, setPointsView] = useState('monthly'); // 'monthly' or 'cumulative'
   const [loadingTeam, setLoadingTeam] = useState(false);
 
+  // State for expected profit (profits not yet calculated by admin)
+  const [expectedProfit, setExpectedProfit] = useState(null);
+  const [loadingExpectedProfit, setLoadingExpectedProfit] = useState(false);
+
   // Fetch fresh user data when component mounts
   useEffect(() => {
     if (fetchUser) {
@@ -63,6 +67,7 @@ const Profile = () => {
     if (activeTab === 'earnings' && user?.role === 'member') {
       fetchProfitPeriods();
       fetchTeamData();
+      fetchExpectedProfit();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user?.role]);
@@ -100,6 +105,24 @@ const Profile = () => {
       console.error('Error fetching team data:', err);
     } finally {
       setLoadingTeam(false);
+    }
+  };
+
+  const fetchExpectedProfit = async () => {
+    try {
+      setLoadingExpectedProfit(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/member/expected-profit', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setExpectedProfit(response.data.expectedProfit);
+      }
+    } catch (err) {
+      console.error('Error fetching expected profit:', err);
+    } finally {
+      setLoadingExpectedProfit(false);
     }
   };
 
@@ -686,7 +709,7 @@ const Profile = () => {
             <div className="tab-panel">
               <div className="earnings-section">
                 <h2>{language === 'ar' ? 'أرباحي' : 'My Earnings'}</h2>
-                <div className="earnings-cards single-card">
+                <div className="earnings-cards two-cards">
                   <div className="earning-card total">
                     <div className="earning-icon">💰</div>
                     <div className="earning-info">
@@ -699,6 +722,23 @@ const Profile = () => {
                           ? profitPeriods.reduce((sum, p) => sum + (p.profit?.totalProfit || 0), 0).toFixed(2)
                           : '0.00'
                         }
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="earning-card expected">
+                    <div className="earning-icon">📊</div>
+                    <div className="earning-info">
+                      <div className="earning-label">{language === 'ar' ? 'الأرباح المتوقعة' : 'Expected Earnings'}</div>
+                      <div className="earning-subtitle">
+                        {language === 'ar' ? 'أرباح غير محتسبة بعد من الأدمن' : 'Not yet calculated by admin'}
+                      </div>
+                      <div className="earning-value">
+                        {loadingExpectedProfit ? (
+                          <span style={{ fontSize: '14px' }}>{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</span>
+                        ) : (
+                          <>₪{expectedProfit?.finalExpectedProfit?.toFixed(2) || '0.00'}</>
+                        )}
                       </div>
                     </div>
                   </div>

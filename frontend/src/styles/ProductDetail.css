@@ -270,6 +270,22 @@
   font-weight: 600;
 }
 
+/* Non-member price for members */
+.non-member-price-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.non-member-price-label {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .subscriber-hint {
   font-size: 14px;
   margin-top: 5px;

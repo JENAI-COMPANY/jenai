@@ -64,10 +64,12 @@ const Products = () => {
       // Get search term from state
       if (searchTerm) params.search = searchTerm;
 
-      // Check for filter parameter (e.g., filter=new)
+      // Check for filter parameter (e.g., filter=new or filter=offers)
       const filterParam = searchParams.get('filter');
       if (filterParam === 'new') {
         params.isNewArrival = true;
+      } else if (filterParam === 'offers') {
+        params.isOffer = true;
       }
 
       const data = await getProducts(params);

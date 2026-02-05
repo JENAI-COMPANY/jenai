@@ -676,6 +676,20 @@
   margin-right: auto;
 }
 
+/* Two cards layout for total and expected earnings */
+.earnings-cards.two-cards {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .earnings-cards.two-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 .stat-card,
 .earning-card {
   background: white;
@@ -722,6 +736,11 @@
 
 .earning-card.total {
   border-right: 4px solid #10b981;
+  padding: 2rem;
+}
+
+.earning-card.expected {
+  border-right: 4px solid #f59e0b;
   padding: 2rem;
 }
 

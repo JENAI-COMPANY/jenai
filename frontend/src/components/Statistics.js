@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { getAdminStats } from '../services/api';
+import { MembersByRankChart, MembersByRegionChart, GrowthChart, RevenueGrowthChart } from './StatisticsCharts';
 import '../styles/Statistics.css';
 
 const Statistics = () => {
@@ -290,6 +291,47 @@ const Statistics = () => {
           </div>
         </div>
       </div>
+
+      {/* Charts Section */}
+      {stats.membersByRank && stats.membersByRank.length > 0 && (
+        <div className="stats-section">
+          <h3 className="section-title">
+            {language === 'ar' ? 'التوزيعات والنمو' : 'Distributions & Growth'}
+          </h3>
+
+          <div className="charts-grid">
+            {/* Members by Rank Chart */}
+            <div className="chart-container">
+              <MembersByRankChart data={stats.membersByRank} />
+            </div>
+
+            {/* Members by Region Chart */}
+            {stats.membersByRegion && stats.membersByRegion.length > 0 && (
+              <div className="chart-container">
+                <MembersByRegionChart data={stats.membersByRegion} />
+              </div>
+            )}
+          </div>
+
+          {/* Growth Charts */}
+          {stats.growth && stats.growth.members && stats.growth.members.length > 0 && (
+            <div className="charts-grid-wide">
+              <div className="chart-container-wide">
+                <GrowthChart
+                  memberGrowth={stats.growth.members}
+                  orderGrowth={stats.growth.orders || []}
+                />
+              </div>
+
+              {stats.growth.orders && stats.growth.orders.length > 0 && (
+                <div className="chart-container-wide">
+                  <RevenueGrowthChart orderGrowth={stats.growth.orders} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

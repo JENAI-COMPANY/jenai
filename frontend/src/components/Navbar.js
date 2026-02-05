@@ -120,6 +120,13 @@ const Navbar = () => {
                     {language === 'ar' ? 'وصل حديثاً' : 'New Arrivals'}
                   </Link>
                   <Link
+                    to="/products-page?filter=offers"
+                    className="dropdown-item"
+                    onClick={closeMobileMenu}
+                  >
+                    {language === 'ar' ? 'قسم العروض' : 'Offers Section'}
+                  </Link>
+                  <Link
                     to="/products-page"
                     className="dropdown-item"
                     onClick={closeMobileMenu}
