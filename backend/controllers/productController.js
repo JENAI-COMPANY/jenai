@@ -384,30 +384,64 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // Handle uploaded files
-    if (req.files && req.files.length > 0) {
-      // Get existing product to preserve old media if needed
-      const existingProduct = await Product.findById(req.params.id);
+    // Get existing product first
+    const existingProduct = await Product.findById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
 
+    // معالجة حذف الصور
+    let updatedMedia = existingProduct.media || [];
+
+    // إذا كان هناك صور محددة للحذف
+    if (req.body.mediaToDelete) {
+      try {
+        const mediaToDelete = typeof req.body.mediaToDelete === 'string'
+          ? JSON.parse(req.body.mediaToDelete)
+          : req.body.mediaToDelete;
+
+        if (Array.isArray(mediaToDelete) && mediaToDelete.length > 0) {
+          // حذف الصور المحددة من القائمة
+          updatedMedia = updatedMedia.filter(media => !mediaToDelete.includes(media.url));
+
+          // حذف الملفات الفعلية من السيرفر
+          const fs = require('fs').promises;
+          const path = require('path');
+          for (const url of mediaToDelete) {
+            try {
+              const filePath = path.join(__dirname, '..', url);
+              await fs.unlink(filePath);
+              console.log(`✅ تم حذف الملف: ${filePath}`);
+            } catch (err) {
+              console.error(`❌ فشل حذف الملف: ${url}`, err.message);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error processing mediaToDelete:', err);
+      }
+    }
+
+    // Handle uploaded files (الصور الجديدة)
+    if (req.files && req.files.length > 0) {
       const newMedia = req.files.map(file => ({
         url: `/uploads/products/${file.filename}`,
         type: file.mimetype.startsWith('video') ? 'video' : 'image',
         filename: file.filename
       }));
 
-      // Append new media to existing media
-      if (existingProduct && existingProduct.media) {
-        productData.media = [...existingProduct.media, ...newMedia];
-      } else {
-        productData.media = newMedia;
-      }
+      // إضافة الصور الجديدة للصور الموجودة
+      updatedMedia = [...updatedMedia, ...newMedia];
+    }
 
-      // Set first image as main image for backward compatibility
-      if (productData.media.length > 0) {
-        const firstImage = productData.media.find(m => m.type === 'image');
-        if (firstImage) {
-          productData.images = [firstImage.url];
-        }
+    // تحديث الصور في البيانات
+    productData.media = updatedMedia;
+
+    // Set first image as main image for backward compatibility
+    if (updatedMedia.length > 0) {
+      const firstImage = updatedMedia.find(m => m.type === 'image');
+      if (firstImage) {
+        productData.images = [firstImage.url];
       }
     }
 
@@ -419,10 +453,6 @@ exports.updateProduct = async (req, res) => {
         runValidators: true
       }
     );
-
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
 
     res.status(200).json({
       success: true,

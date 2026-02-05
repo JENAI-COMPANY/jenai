@@ -48,7 +48,8 @@ const ProductManagement = () => {
       enabled: false,
       originalPrice: '',
       discountedPrice: ''
-    }
+    },
+    mediaToDelete: [] // قائمة URLs الصور المحذوفة
   });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
@@ -218,6 +219,16 @@ const ProductManagement = () => {
   };
 
   const removeMedia = (index) => {
+    const mediaToRemove = mediaPreviews[index];
+
+    // إذا كانت صورة موجودة مسبقاً، نضيفها لقائمة الصور المحذوفة
+    if (mediaToRemove && mediaToRemove.existing) {
+      setFormData(prev => ({
+        ...prev,
+        mediaToDelete: [...(prev.mediaToDelete || []), mediaToRemove.url]
+      }));
+    }
+
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
     setMediaPreviews(prev => prev.filter((_, i) => i !== index));
   };
@@ -270,6 +281,11 @@ const ProductManagement = () => {
       mediaFiles.forEach((file) => {
         formDataToSend.append('media', file);
       });
+
+      // إرسال قائمة الصور المحذوفة عند التعديل
+      if (editingProduct && formData.mediaToDelete && formData.mediaToDelete.length > 0) {
+        formDataToSend.append('mediaToDelete', JSON.stringify(formData.mediaToDelete));
+      }
 
       if (editingProduct) {
         // Update existing product
@@ -335,7 +351,8 @@ const ProductManagement = () => {
         enabled: false,
         originalPrice: '',
         discountedPrice: ''
-      }
+      },
+      mediaToDelete: [] // قائمة فارغة عند بدء التعديل
     });
 
     // Load existing media as previews
@@ -396,7 +413,8 @@ const ProductManagement = () => {
         enabled: false,
         originalPrice: '',
         discountedPrice: ''
-      }
+      },
+      mediaToDelete: []
     });
     setMediaFiles([]);
     setMediaPreviews([]);
