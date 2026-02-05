@@ -174,6 +174,16 @@ const distributeGenerationPointsOnly = async (member, points) => {
       console.log(`     - generation${generationLevel + 1}Points (للأرباح): من ${oldGenValue.toFixed(2)} إلى ${currentMember[genFieldName].toFixed(2)} (+${genPoints.toFixed(2)})`);
       console.log(`     - points (تراكمي): من ${oldPointsValue.toFixed(2)} إلى ${currentMember.points.toFixed(2)} (+${points.toFixed(2)} كامل)`);
 
+      // تحديث الرتبة تلقائياً بعد تغيير النقاط
+      try {
+        const rankUpdate = await updateMemberRank(currentMember._id, User);
+        if (rankUpdate.updated) {
+          console.log(`     🎖️ الرتبة: ${rankUpdate.oldRank} → ${rankUpdate.newRank}`);
+        }
+      } catch (rankError) {
+        console.error(`     ⚠️ خطأ في تحديث الرتبة: ${rankError.message}`);
+      }
+
       // الانتقال للجيل التالي
       currentMemberId = currentMember.referredBy || currentMember.sponsorId;
       generationLevel++;
@@ -444,16 +454,28 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     if (hasBonusUpdate && user.role === 'member') {
       const bonusPointsToAdd = parseInt(req.body.bonusPoints) || 0;
 
-      // إذا كانت القيمة موجبة، نضيفها ونوزعها
+      // إذا كانت القيمة موجبة، نضيفها لنقاط الأداء الشخصي
       if (bonusPointsToAdd > 0) {
         console.log(`📊 إضافة ${bonusPointsToAdd} نقطة مكافأة لـ ${user.name}`);
 
-        // إضافة إلى bonusPoints المخزنة
+        // إضافة إلى bonusPoints المخزنة (للسجل فقط)
         user.bonusPoints = (user.bonusPoints || 0) + bonusPointsToAdd;
+
+        // إضافة إلى monthlyPoints (نقاط الأداء الشخصي)
+        const oldMonthlyPoints = user.monthlyPoints || 0;
+        user.monthlyPoints = oldMonthlyPoints + bonusPointsToAdd;
+        console.log(`📊 إضافة نقاط المكافأة لنقاط الأداء الشخصي: من ${oldMonthlyPoints} إلى ${user.monthlyPoints}`);
+
+        // إضافة إلى النقاط التراكمية للعضو نفسه
+        const oldUserPoints = user.points || 0;
+        user.points = oldUserPoints + bonusPointsToAdd;
+        console.log(`📊 تحديث النقاط التراكمية: من ${oldUserPoints} إلى ${user.points}`);
+
         await user.save();
 
-        // توزيع على الأعضاء العلويين (تُضاف لـ points و monthlyPoints)
-        await distributeCommissions(user, bonusPointsToAdd);
+        // توزيع النقاط على الأعضاء العلويين
+        console.log('✅ توزيع نقاط المكافأة على الأعضاء العلويين');
+        await distributeGenerationPointsOnly(user, bonusPointsToAdd);
       }
     }
 
@@ -500,6 +522,14 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
       // تحديث قيمة monthlyPoints مباشرة
       user.monthlyPoints = newMonthlyPoints;
+
+      // تحديث النقاط التراكمية للعضو نفسه
+      if (monthlyPointsDifference !== 0) {
+        const oldUserPoints = user.points || 0;
+        user.points = oldUserPoints + monthlyPointsDifference;
+        console.log(`📊 تحديث نقاط العضو: points من ${oldUserPoints} إلى ${user.points} (فرق: ${monthlyPointsDifference})`);
+      }
+
       await user.save();
 
       // توزيع أو طرح النقاط من الأعضاء العلويين حسب الفرق
@@ -1013,6 +1043,80 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
       .sort('-points')
       .limit(10);
 
+    // Members by rank
+    const membersByRank = await User.aggregate([
+      { $match: { ...userQuery, role: 'member' } },
+      { $group: { _id: '$memberRank', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Members by region
+    const membersByRegion = await User.aggregate([
+      { $match: { ...userQuery, role: 'member' } },
+      {
+        $lookup: {
+          from: 'regions',
+          localField: 'region',
+          foreignField: '_id',
+          as: 'regionData'
+        }
+      },
+      { $unwind: { path: '$regionData', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: '$region',
+          regionName: { $first: '$regionData.nameAr' },
+          regionNameEn: { $first: '$regionData.nameEn' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Growth trends - last 12 months
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const memberGrowth = await User.aggregate([
+      {
+        $match: {
+          ...userQuery,
+          role: 'member',
+          createdAt: { $gte: twelveMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
+
+    const orderGrowth = await Order.aggregate([
+      {
+        $match: {
+          ...orderQuery,
+          createdAt: { $gte: twelveMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 },
+          revenue: { $sum: '$totalAmount' }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
+
     res.json({
       success: true,
       data: {
@@ -1055,7 +1159,13 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
           users: recentUsers,
           orders: recentOrders
         },
-        topMembers
+        topMembers,
+        membersByRank,
+        membersByRegion,
+        growth: {
+          members: memberGrowth,
+          orders: orderGrowth
+        }
       }
     });
   } catch (error) {
@@ -2317,13 +2427,20 @@ router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) =>
         });
       }
 
-      // Calculate price based on user role
-      let itemPrice;
-      if (user.role === 'member') {
-        itemPrice = product.subscriberPrice || product.price || 0;
-      } else {
-        itemPrice = product.customerPrice || product.price || 0;
+      // حساب السعر الفعلي للزبون (بعد الخصم إن وجد)
+      let actualCustomerPrice = product.customerPrice || product.price || 0;
+      if (product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice) {
+        actualCustomerPrice = product.customerDiscount.discountedPrice;
       }
+
+      // حساب السعر الفعلي للعضو (بعد الخصم إن وجد)
+      let actualMemberPrice = product.subscriberPrice || product.price || 0;
+      if (product.subscriberDiscount?.enabled && product.subscriberDiscount?.discountedPrice) {
+        actualMemberPrice = product.subscriberDiscount.discountedPrice;
+      }
+
+      // Calculate price based on user role
+      let itemPrice = user.role === 'member' ? actualMemberPrice : actualCustomerPrice;
 
       const itemTotal = itemPrice * item.quantity;
       totalAmount += itemTotal;
@@ -2334,6 +2451,8 @@ router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) =>
         productNameAr: product.nameAr,
         quantity: item.quantity,
         price: itemPrice,
+        customerPriceAtPurchase: actualCustomerPrice,
+        memberPriceAtPurchase: actualMemberPrice,
         points: product.points || 0
       });
     }
@@ -2412,6 +2531,61 @@ router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) =>
           console.log(`💰 Estimated downline commission: ${commission.toFixed(2)} ₪`);
         } catch (error) {
           console.error('Error calculating downline commission:', error);
+        }
+      }
+    }
+
+    // Handle price difference profit AND points for customers referred by members
+    if (paymentMethod === 'pay_at_company' && user.role === 'customer') {
+      // Check if customer has a referring member
+      const referrer = user.sponsorId || user.referredBy;
+
+      if (referrer) {
+        const referrerUser = await User.findById(referrer);
+
+        // Only give price difference and points if referrer is a member
+        if (referrerUser && referrerUser.role === 'member') {
+          let totalPriceDifference = 0;
+          let totalPoints = 0;
+
+          // Calculate price difference AND points for each product
+          for (const item of orderItems) {
+            // استخدام الأسعار المحفوظة في الطلب
+            if (item.customerPriceAtPurchase && item.memberPriceAtPurchase) {
+              const priceDiff = item.customerPriceAtPurchase - item.memberPriceAtPurchase;
+              totalPriceDifference += priceDiff * item.quantity;
+            }
+
+            // حساب النقاط
+            if (item.points) {
+              totalPoints += item.points * item.quantity;
+            }
+          }
+
+          // إضافة فرق السعر مباشرة لأرباح العضو (بالعملة، ليس نقاط)
+          if (totalPriceDifference > 0) {
+            referrerUser.totalCommission = Math.floor((referrerUser.totalCommission || 0) + totalPriceDifference);
+            referrerUser.availableCommission = Math.floor((referrerUser.availableCommission || 0) + totalPriceDifference);
+
+            console.log(`💰 فرق السعر: العضو ${referrerUser.name} حصل على ${totalPriceDifference} شيكل من شراء العميل ${user.name}`);
+          }
+
+          // إضافة النقاط للعضو وتوزيع العمولات على شجرته
+          if (totalPoints > 0) {
+            // حفظ النقاط في الطلب
+            await Order.findByIdAndUpdate(order._id, {
+              totalPoints: totalPoints,
+              referredBy: referrerUser._id // حفظ معلومات العضو المُحيل
+            });
+
+            // توزيع العمولات على شجرة العضو المُحيل
+            await distributeCommissions(referrerUser, totalPoints);
+
+            console.log(`📊 النقاط: العضو ${referrerUser.name} حصل على ${totalPoints} نقطة من شراء العميل ${user.name}`);
+          }
+
+          // حفظ التغييرات على العضو المُحيل
+          await referrerUser.save();
         }
       }
     }

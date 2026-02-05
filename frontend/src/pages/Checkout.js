@@ -76,13 +76,29 @@ const Checkout = () => {
     setError('');
 
     try {
-      const orderItems = cartItems.map((item) => ({
-        product: item._id,
-        name: item.name,
-        quantity: item.quantity,
-        price: isSubscriber ? (item.subscriberPrice || 0) : (item.customerPrice || 0),
-        points: item.points || 0
-      }));
+      const orderItems = cartItems.map((item) => {
+        // حساب السعر الفعلي للزبون (بعد الخصم إن وجد)
+        let actualCustomerPrice = item.customerPrice || 0;
+        if (item.customerDiscount?.enabled && item.customerDiscount?.discountedPrice) {
+          actualCustomerPrice = item.customerDiscount.discountedPrice;
+        }
+
+        // حساب السعر الفعلي للعضو (بعد الخصم إن وجد)
+        let actualMemberPrice = item.subscriberPrice || 0;
+        if (item.subscriberDiscount?.enabled && item.subscriberDiscount?.discountedPrice) {
+          actualMemberPrice = item.subscriberDiscount.discountedPrice;
+        }
+
+        return {
+          product: item._id,
+          name: item.name,
+          quantity: item.quantity,
+          price: isSubscriber ? actualMemberPrice : actualCustomerPrice,
+          customerPriceAtPurchase: actualCustomerPrice,
+          memberPriceAtPurchase: actualMemberPrice,
+          points: item.points || 0
+        };
+      });
 
       // التحقق من صحة الأسعار
       const validItemsPrice = !isNaN(itemsPrice) && isFinite(itemsPrice) ? itemsPrice : 0;

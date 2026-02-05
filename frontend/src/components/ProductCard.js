@@ -150,17 +150,54 @@ const ProductCard = ({ product }) => {
             {(isMember || isAdmin) ? (
               <>
                 {/* سعر الأعضاء */}
-                <span className="price">₪{product.subscriberPrice?.toFixed(2)}</span>
-                {hasSubscriberDiscount && (
-                  <span className="original-price">₪{product.subscriberDiscount.originalPrice?.toFixed(2)}</span>
+                {hasSubscriberDiscount ? (
+                  <>
+                    {/* إذا كان هناك خصم للأعضاء: يظهر السعر المخفض + السعر الأصلي مشطوب */}
+                    <div className="member-pricing">
+                      <span className="price">₪{product.subscriberDiscount.discountedPrice?.toFixed(2)}</span>
+                      <span className="original-price">₪{product.subscriberDiscount.originalPrice?.toFixed(2)}</span>
+                      {/* إظهار سعر الزبون للمقارنة */}
+                      {product.customerPrice && product.customerPrice !== product.subscriberDiscount.discountedPrice && (
+                        <div className="non-member-price-info">
+                          <span className="price-label">
+                            {language === 'ar' ? 'سعر الزبون الغير عضو' : 'Non-member price'}
+                          </span>
+                          <span className="original-price">₪{product.customerPrice?.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* إذا لم يكن هناك خصم: السعر العادي + سعر الزبون مشطوب للمقارنة */}
+                    <div className="member-pricing">
+                      <span className="price">₪{product.subscriberPrice?.toFixed(2)}</span>
+                      {product.customerPrice && product.customerPrice !== product.subscriberPrice && (
+                        <div className="non-member-price-info">
+                          <span className="price-label">
+                            {language === 'ar' ? 'سعر الزبون الغير عضو' : 'Non-member price'}
+                          </span>
+                          <span className="original-price">₪{product.customerPrice?.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </>
             ) : (
               <>
-                {/* سعر العملاء العاديين */}
-                <span className="price">₪{product.customerPrice?.toFixed(2)}</span>
-                {hasCustomerDiscount && (
-                  <span className="original-price">₪{product.customerDiscount.originalPrice?.toFixed(2)}</span>
+                {/* سعر الزبائن */}
+                {hasCustomerDiscount ? (
+                  <>
+                    {/* إذا كان هناك خصم للزبائن: يظهر السعر المخفض + السعر الأصلي مشطوب */}
+                    <span className="price">₪{product.customerDiscount.discountedPrice?.toFixed(2)}</span>
+                    <span className="original-price">₪{product.customerDiscount.originalPrice?.toFixed(2)}</span>
+                  </>
+                ) : (
+                  <>
+                    {/* إذا لم يكن هناك خصم: السعر العادي */}
+                    <span className="price">₪{product.customerPrice?.toFixed(2)}</span>
+                  </>
                 )}
               </>
             )}

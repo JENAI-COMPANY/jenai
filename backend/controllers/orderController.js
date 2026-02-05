@@ -94,8 +94,11 @@ exports.createOrder = async (req, res) => {
       // حساب النقاط باستخدام النظام الجديد
       // استخدام النقاط المحددة في المنتج مباشرة
       for (const item of orderItems) {
-        if (item.product && item.points) {
-          totalPoints += item.points * item.quantity;
+        if (item.product) {
+          const product = await Product.findById(item.product);
+          if (product && product.points) {
+            totalPoints += product.points * item.quantity;
+          }
         }
       }
 
@@ -134,7 +137,7 @@ exports.createOrder = async (req, res) => {
       await calculateCommissions(order, req.user);
     }
 
-    // Handle price difference profit for customers referred by members
+    // Handle price difference profit AND points for customers referred by members
     if (req.user.role === 'customer') {
       // Check if customer has a referring member
       const referrer = req.user.sponsorId || req.user.referredBy;
@@ -142,29 +145,49 @@ exports.createOrder = async (req, res) => {
       if (referrer) {
         const referrerUser = await User.findById(referrer);
 
-        // Only give price difference if referrer is a member
+        // Only give price difference and points if referrer is a member
         if (referrerUser && referrerUser.role === 'member') {
           let totalPriceDifference = 0;
+          let totalPoints = 0;
 
-          // Calculate price difference for each product
+          // Calculate price difference AND points for each product
           for (const item of orderItems) {
-            if (item.product) {
-              const product = await Product.findById(item.product);
-              if (product && product.customerPrice && product.subscriberPrice) {
-                const priceDiff = product.customerPrice - product.subscriberPrice;
-                totalPriceDifference += priceDiff * item.quantity;
-              }
+            // استخدام الأسعار المحفوظة في الطلب (من Frontend)
+            if (item.customerPriceAtPurchase && item.memberPriceAtPurchase) {
+              const priceDiff = item.customerPriceAtPurchase - item.memberPriceAtPurchase;
+              totalPriceDifference += priceDiff * item.quantity;
+            }
+
+            // حساب النقاط
+            if (item.points) {
+              totalPoints += item.points * item.quantity;
             }
           }
 
-          // Add price difference directly to member's profits (in currency, not points)
+          // إضافة فرق السعر مباشرة لأرباح العضو (بالعملة، ليس نقاط)
           if (totalPriceDifference > 0) {
             referrerUser.totalCommission = Math.floor((referrerUser.totalCommission || 0) + totalPriceDifference);
             referrerUser.availableCommission = Math.floor((referrerUser.availableCommission || 0) + totalPriceDifference);
-            await referrerUser.save();
 
             console.log(`💰 فرق السعر: العضو ${referrerUser.name} حصل على ${totalPriceDifference} شيكل من شراء العميل ${req.user.name}`);
           }
+
+          // إضافة النقاط للعضو وتوزيع العمولات على شجرته
+          if (totalPoints > 0) {
+            // حفظ النقاط في الطلب
+            await Order.findByIdAndUpdate(order._id, {
+              totalPoints: totalPoints,
+              referredBy: referrerUser._id // حفظ معلومات العضو المُحيل
+            });
+
+            // توزيع العمولات على شجرة العضو المُحيل
+            await distributeCommissions(referrerUser, totalPoints);
+
+            console.log(`📊 النقاط: العضو ${referrerUser.name} حصل على ${totalPoints} نقطة من شراء العميل ${req.user.name}`);
+          }
+
+          // حفظ التغييرات على العضو المُحيل
+          await referrerUser.save();
         }
       }
     }

@@ -16,6 +16,15 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  // حفظ الأسعار الفعلية وقت الطلب لحساب العمولات بشكل دقيق
+  customerPriceAtPurchase: {
+    type: Number,
+    default: 0
+  },
+  memberPriceAtPurchase: {
+    type: Number,
+    default: 0
+  },
   points: {
     type: Number,
     default: 0
@@ -178,6 +187,11 @@ const orderSchema = new mongoose.Schema({
   referredBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  // تتبع ما إذا تم احتساب عمولة شراء الزبون في فترة ربحية
+  isCustomerCommissionCalculated: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

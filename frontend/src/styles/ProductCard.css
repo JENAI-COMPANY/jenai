@@ -595,3 +595,31 @@
   font-weight: 600;
   letter-spacing: 0.3px;
 }
+
+/* Member Pricing Styles */
+.member-pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.non-member-price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.non-member-price-info .price-label {
+  font-size: 0.7rem;
+  color: #95a5a6;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.non-member-price-info .original-price {
+  font-size: 0.9rem;
+  color: #95a5a6;
+  text-decoration: line-through;
+  font-weight: 500;
+}

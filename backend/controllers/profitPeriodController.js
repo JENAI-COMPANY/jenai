@@ -65,15 +65,28 @@ exports.calculatePeriodProfits = async (req, res) => {
       // حساب عمولة شراء الزبون (فرق السعر بين زبون وعضو)
       let customerPurchaseCommission = 0;
 
+      // Debug: طباعة معلومات الاستعلام
+      console.log(`\n🔍 البحث عن طلبات الزبائن للعضو ${member.name} (${member._id})`);
+      console.log(`   📅 من تاريخ: ${startDate}`);
+      console.log(`   📅 إلى تاريخ: ${endDate}`);
+
       // جلب طلبات الزبائن الذين تم إحالتهم من هذا العضو
+      // تعديل endDate ليكون نهاية اليوم (23:59:59.999) بدلاً من بدايته (00:00:00)
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+
       const customerOrders = await Order.find({
         referredBy: member._id,
         isDelivered: true,
         deliveredAt: {
           $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        }
+          $lte: endDateObj
+        },
+        // استثناء الطلبيات التي تم احتساب عمولتها بالفعل
+        isCustomerCommissionCalculated: { $ne: true }
       }).populate('user', 'role').populate('orderItems.product');
+
+      console.log(`   📦 عدد الطلبات المُستَرجَعة: ${customerOrders.length}`);
 
       // Debug: طباعة عدد الطلبات
       if (customerOrders.length > 0) {
@@ -86,12 +99,34 @@ exports.calculatePeriodProfits = async (req, res) => {
         if (order.user && order.user.role === 'customer') {
           console.log(`   📋 طلب من زبون ${order.user.name || 'غير محدد'} - عدد المنتجات: ${order.orderItems.length}`);
           for (const item of order.orderItems) {
-            if (item.product) {
-              // فرق السعر = (سعر الزبون - سعر العضو) × الكمية
-              const priceDifference = (item.product.customerPrice - item.product.subscriberPrice) * item.quantity;
-              console.log(`      💵 ${item.product.name}: فرق السعر = (${item.product.customerPrice} - ${item.product.subscriberPrice}) × ${item.quantity} = ${priceDifference.toFixed(2)} شيكل`);
-              customerPurchaseCommission += priceDifference;
+            // استخدام الأسعار المحفوظة في الطلب بدلاً من قراءتها من المنتج
+            // هذا يضمن أن الحساب يعتمد على الأسعار وقت الشراء وليس الأسعار الحالية
+            let actualCustomerPrice, actualSubscriberPrice;
+
+            if (item.customerPriceAtPurchase && item.memberPriceAtPurchase) {
+              // استخدام الأسعار المحفوظة (للطلبات الجديدة)
+              actualCustomerPrice = item.customerPriceAtPurchase;
+              actualSubscriberPrice = item.memberPriceAtPurchase;
+            } else if (item.product) {
+              // Fallback للطلبات القديمة التي لا تحتوي على الأسعار المحفوظة
+              actualCustomerPrice = item.product.customerPrice;
+              if (item.product.customerDiscount?.enabled && item.product.customerDiscount?.discountedPrice) {
+                actualCustomerPrice = item.product.customerDiscount.discountedPrice;
+              }
+
+              actualSubscriberPrice = item.product.subscriberPrice;
+              if (item.product.subscriberDiscount?.enabled && item.product.subscriberDiscount?.discountedPrice) {
+                actualSubscriberPrice = item.product.subscriberDiscount.discountedPrice;
+              }
+            } else {
+              continue; // تخطي هذا العنصر إذا لم تكن هناك بيانات كافية
             }
+
+            // فرق السعر = (سعر الزبون وقت الشراء - سعر العضو وقت الشراء) × الكمية
+            const priceDifference = (actualCustomerPrice - actualSubscriberPrice) * item.quantity;
+            const productName = item.name || item.product?.name || 'منتج';
+            console.log(`      💵 ${productName}: فرق السعر = (${actualCustomerPrice} - ${actualSubscriberPrice}) × ${item.quantity} = ${priceDifference.toFixed(2)} شيكل`);
+            customerPurchaseCommission += priceDifference;
           }
         }
       }
@@ -99,6 +134,16 @@ exports.calculatePeriodProfits = async (req, res) => {
       // Debug: طباعة إجمالي عمولة الزبون للعضو
       if (customerPurchaseCommission > 0) {
         console.log(`   ✅ إجمالي عمولة شراء الزبون للعضو ${member.name}: ${customerPurchaseCommission.toFixed(2)} شيكل`);
+      }
+
+      // تحديث الطلبيات لتهميشها (تم احتساب عمولتها)
+      if (customerOrders.length > 0) {
+        const orderIds = customerOrders.map(order => order._id);
+        await Order.updateMany(
+          { _id: { $in: orderIds } },
+          { $set: { isCustomerCommissionCalculated: true } }
+        );
+        console.log(`   ✅ تم تهميش ${customerOrders.length} طلبية`);
       }
 
       // إجمالي الأرباح للعضو قبل الخصم (أرباح الأداء + القيادة + عمولة شراء الزبون)

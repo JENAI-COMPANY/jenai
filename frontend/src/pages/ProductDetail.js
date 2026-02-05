@@ -230,42 +230,61 @@ const ProductDetail = () => {
 
             {/* Price */}
             <div className="price-section">
-              {isSubscriber ? (
+              {(isSubscriber || isAdmin) ? (
                 <div className="subscriber-pricing">
-                  <div className="current-price">₪{(product.subscriberPrice || 0).toFixed(2)}</div>
-                  {hasDiscount && product.subscriberDiscount?.originalPrice && (
+                  {product.subscriberDiscount?.enabled && product.subscriberDiscount?.discountedPrice ? (
                     <>
+                      {/* إذا كان هناك خصم للأعضاء */}
+                      <div className="current-price">₪{product.subscriberDiscount.discountedPrice.toFixed(2)}</div>
                       <div className="original-price">₪{product.subscriberDiscount.originalPrice.toFixed(2)}</div>
                       <div className="discount-badge">
-                        {language === 'ar' ? `توفير ${discountPercentage}%` : `Save ${discountPercentage}%`}
+                        {language === 'ar' ? `توفير ${product.subscriberDiscount.discountPercentage}%` : `Save ${product.subscriberDiscount.discountPercentage}%`}
                       </div>
+                      {/* إظهار سعر الزبون للمقارنة */}
+                      {product.customerPrice && product.customerPrice !== product.subscriberDiscount.discountedPrice && (
+                        <div className="non-member-price-container">
+                          <div className="non-member-price-label">
+                            {language === 'ar' ? 'سعر الزبون الغير عضو' : 'Non-member price'}
+                          </div>
+                          <div className="original-price">₪{product.customerPrice.toFixed(2)}</div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* إذا لم يكن هناك خصم: السعر العادي + سعر الزبون للمقارنة */}
+                      <div className="current-price">₪{(product.subscriberPrice || 0).toFixed(2)}</div>
+                      {product.customerPrice && product.customerPrice !== product.subscriberPrice && (
+                        <div className="non-member-price-container">
+                          <div className="non-member-price-label">
+                            {language === 'ar' ? 'سعر الزبون الغير عضو' : 'Non-member price'}
+                          </div>
+                          <div className="original-price">₪{product.customerPrice.toFixed(2)}</div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
               ) : (
                 <div className="customer-pricing">
-                  <div className="current-price">₪{(product.customerPrice || 0).toFixed(2)}</div>
-                  {product.customerDiscount?.enabled && product.customerDiscount?.originalPrice && (
+                  {product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice ? (
                     <>
+                      {/* إذا كان هناك خصم للزبائن */}
+                      <div className="current-price">₪{product.customerDiscount.discountedPrice.toFixed(2)}</div>
                       <div className="original-price">₪{product.customerDiscount.originalPrice.toFixed(2)}</div>
                       <div className="discount-badge">
                         {language === 'ar' ? `توفير ${product.customerDiscount.discountPercentage}%` : `Save ${product.customerDiscount.discountPercentage}%`}
                       </div>
                     </>
+                  ) : (
+                    <>
+                      {/* إذا لم يكن هناك خصم: السعر العادي */}
+                      <div className="current-price">₪{(product.customerPrice || 0).toFixed(2)}</div>
+                    </>
                   )}
                 </div>
               )}
             </div>
-
-            {/* Bulk Pricing */}
-            {product.bulkPrice && product.bulkMinQuantity && (
-              <div className="bulk-pricing-info">
-                <span className="bulk-icon">📦</span>
-                {language === 'ar'
-                  ? `سعر الجملة: ₪${product.bulkPrice.toFixed(2)} عند شراء ${product.bulkMinQuantity} قطعة أو أكثر`
-                  : `Bulk price: ₪${product.bulkPrice.toFixed(2)} when buying ${product.bulkMinQuantity}+ items`}
-              </div>
-            )}
 
             {/* Stock */}
             <div className="stock-info">

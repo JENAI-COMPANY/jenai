@@ -121,8 +121,33 @@ const CreateOrderForUser = ({ product, onClose, onSuccess }) => {
     }
   };
 
-  // Calculate price based on user role
+  // Calculate price based on user role and discounts
   const getProductPrice = () => {
+    if (!selectedUser) {
+      // إذا كان هناك خصم للزبائن
+      if (product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice) {
+        return product.customerDiscount.discountedPrice;
+      }
+      return product.customerPrice || product.price || 0;
+    }
+
+    if (selectedUser.role === 'member') {
+      // إذا كان هناك خصم للأعضاء
+      if (product.subscriberDiscount?.enabled && product.subscriberDiscount?.discountedPrice) {
+        return product.subscriberDiscount.discountedPrice;
+      }
+      return product.subscriberPrice || product.price || 0;
+    } else {
+      // إذا كان هناك خصم للزبائن
+      if (product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice) {
+        return product.customerDiscount.discountedPrice;
+      }
+      return product.customerPrice || product.price || 0;
+    }
+  };
+
+  // Get original price (before discount) for display
+  const getOriginalPrice = () => {
     if (!selectedUser) {
       return product.customerPrice || product.price || 0;
     }
@@ -131,6 +156,19 @@ const CreateOrderForUser = ({ product, onClose, onSuccess }) => {
       return product.subscriberPrice || product.price || 0;
     } else {
       return product.customerPrice || product.price || 0;
+    }
+  };
+
+  // Check if there's an active discount
+  const hasDiscount = () => {
+    if (!selectedUser) {
+      return product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice;
+    }
+
+    if (selectedUser.role === 'member') {
+      return product.subscriberDiscount?.enabled && product.subscriberDiscount?.discountedPrice;
+    } else {
+      return product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice;
     }
   };
 
@@ -150,9 +188,33 @@ const CreateOrderForUser = ({ product, onClose, onSuccess }) => {
             <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} />
             <div className="product-details">
               <h3>{product.name}</h3>
-              <p className="price">{getProductPrice().toFixed(2)} ₪</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <p className="price" style={{ margin: 0 }}>{getProductPrice().toFixed(2)} ₪</p>
+                {hasDiscount() && (
+                  <>
+                    <p style={{
+                      margin: 0,
+                      fontSize: '14px',
+                      color: '#95a5a6',
+                      textDecoration: 'line-through'
+                    }}>
+                      {getOriginalPrice().toFixed(2)} ₪
+                    </p>
+                    <span style={{
+                      background: 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)',
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: '700'
+                    }}>
+                      {language === 'ar' ? 'خصم' : 'Discount'}
+                    </span>
+                  </>
+                )}
+              </div>
               {selectedUser && (
-                <p style={{ fontSize: '12px', color: '#666' }}>
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                   {language === 'ar'
                     ? `سعر ${selectedUser.role === 'member' ? 'العضو' : 'الزبون'}`
                     : `${selectedUser.role === 'member' ? 'Member' : 'Customer'} Price`}
