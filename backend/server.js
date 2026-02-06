@@ -59,6 +59,7 @@ app.use('/api/referrals', require('./routes/referralRoutes'));
 app.use('/api/member', require('./routes/memberRoutes'));
 app.use('/api/permissions', require('./routes/permissionsRoutes'));
 app.use('/api/team', require('./routes/teamRoutes'));
+app.use('/api/favorites', require('./routes/favoriteRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

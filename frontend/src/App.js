@@ -35,6 +35,7 @@ import TermsConditions from './pages/TermsConditions';
 import FAQ from './pages/FAQ';
 import ProfitsCalculator from './components/ProfitsCalculator';
 import ProfitPeriods from './components/ProfitPeriods';
+import Favorites from './pages/Favorites';
 import './styles/App.css';
 import './styles/AdminResponsive.css';
 
@@ -73,6 +74,14 @@ function App() {
                 <Route path="/subscriber-instructions" element={<SubscriberInstructions />} />
                 <Route path="/member-welcome" element={<MemberWelcome />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route
+                  path="/favorites"
+                  element={
+                    <PrivateRoute>
+                      <Favorites />
+                    </PrivateRoute>
+                  }
+                />
                 <Route
                   path="/checkout"
                   element={

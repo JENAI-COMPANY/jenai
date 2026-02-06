@@ -6,41 +6,74 @@ export const FavoritesContext = createContext();
 export const FavoritesProvider = ({ children }) => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Load favorites from localStorage when user logs in
+  // Fetch favorites from API when user logs in
   useEffect(() => {
     if (isAuthenticated && user) {
-      const savedFavorites = localStorage.getItem(`favorites_${user._id}`);
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
+      fetchFavorites();
     } else {
       setFavorites([]);
     }
   }, [isAuthenticated, user]);
 
-  // Save favorites to localStorage whenever they change
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      localStorage.setItem(`favorites_${user._id}`, JSON.stringify(favorites));
-    }
-  }, [favorites, isAuthenticated, user]);
-
-  const addToFavorites = (productId) => {
-    if (!favorites.includes(productId)) {
-      setFavorites([...favorites, productId]);
+  const fetchFavorites = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/favorites', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFavorites(data.data.map(p => p._id));
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      setLoading(false);
     }
   };
 
-  const removeFromFavorites = (productId) => {
-    setFavorites(favorites.filter(id => id !== productId));
+  const addToFavorites = async (productId) => {
+    if (favorites.includes(productId)) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/favorites/${productId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFavorites([...favorites, productId]);
+      }
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+    }
   };
 
-  const toggleFavorite = (productId) => {
+  const removeFromFavorites = async (productId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/favorites/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFavorites(favorites.filter(id => id !== productId));
+      }
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (productId) => {
     if (favorites.includes(productId)) {
-      removeFromFavorites(productId);
+      await removeFromFavorites(productId);
     } else {
-      addToFavorites(productId);
+      await addToFavorites(productId);
     }
   };
 
@@ -52,10 +85,12 @@ export const FavoritesProvider = ({ children }) => {
     <FavoritesContext.Provider
       value={{
         favorites,
+        loading,
         addToFavorites,
         removeFromFavorites,
         toggleFavorite,
-        isFavorite
+        isFavorite,
+        fetchFavorites
       }}
     >
       {children}

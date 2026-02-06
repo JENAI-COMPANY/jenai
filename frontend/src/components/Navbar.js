@@ -212,6 +212,12 @@ const Navbar = () => {
               )}
 
               <li className="nav-item">
+                <Link to="/favorites" className="nav-link favorites-link">
+                  ❤️ {language === 'ar' ? 'المفضلة' : 'Favorites'}
+                </Link>
+              </li>
+
+              <li className="nav-item">
                 <Link to="/cart" className="nav-link">
                   {t('cart')} ({getCartCount()})
                 </Link>
