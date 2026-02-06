@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { getAdminStats } from '../services/api';
 import { MembersByRankChart, MembersByRegionChart, GrowthChart, RevenueGrowthChart } from './StatisticsCharts';
 import '../styles/Statistics.css';
 
@@ -17,8 +16,15 @@ const Statistics = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await getAdminStats();
-      setStats(response.data);
+      const response = await fetch('/api/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.data);
+      }
       setLoading(false);
     } catch (err) {
       console.error('Error fetching stats:', err);
@@ -55,9 +61,11 @@ const Statistics = () => {
     <div className="stats-container">
       <div className="stats-header">
         <h2>{language === 'ar' ? 'لوحة الإحصائيات' : 'Statistics Dashboard'}</h2>
-        <button className="stats-refresh-btn" onClick={fetchStats}>
-          🔄 {language === 'ar' ? 'تحديث' : 'Refresh'}
-        </button>
+        <div className="stats-header-controls">
+          <button className="stats-refresh-btn" onClick={() => fetchStats()}>
+            🔄 {language === 'ar' ? 'تحديث' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* Main Stats Cards */}
@@ -124,12 +132,16 @@ const Statistics = () => {
                 <span className="detail-value orange">{stats.orders.pending}</span>
               </div>
               <div className="stat-detail-item">
-                <span className="detail-label">{language === 'ar' ? 'قيد المعالجة' : 'Processing'}:</span>
-                <span className="detail-value blue">{stats.orders.processing}</span>
+                <span className="detail-label">{language === 'ar' ? 'جاهزة' : 'Prepared'}:</span>
+                <span className="detail-value blue">{stats.orders.prepared}</span>
               </div>
               <div className="stat-detail-item">
-                <span className="detail-label">{language === 'ar' ? 'تم التوصيل' : 'Delivered'}:</span>
-                <span className="detail-value green">{stats.orders.delivered}</span>
+                <span className="detail-label">{language === 'ar' ? 'في الطريق' : 'On The Way'}:</span>
+                <span className="detail-value purple">{stats.orders.onTheWay}</span>
+              </div>
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'تم الاستلام' : 'Received'}:</span>
+                <span className="detail-value green">{stats.orders.received}</span>
               </div>
               <div className="stat-detail-item">
                 <span className="detail-label">{language === 'ar' ? 'ملغاة' : 'Cancelled'}:</span>
@@ -144,15 +156,15 @@ const Statistics = () => {
           <div className="stat-icon">💰</div>
           <div className="stat-content">
             <h3>{language === 'ar' ? 'الإيرادات' : 'Revenue'}</h3>
-            <div className="stat-number">${(stats.revenue.total || 0).toFixed(2)}</div>
+            <div className="stat-number">₪{(stats.revenue.total || 0).toFixed(2)}</div>
             <div className="stat-details">
               <div className="stat-detail-item">
                 <span className="detail-label">{language === 'ar' ? 'مكتملة' : 'Completed'}:</span>
-                <span className="detail-value green">${(stats.revenue.completed || 0).toFixed(2)}</span>
+                <span className="detail-value green">₪{(stats.revenue.completed || 0).toFixed(2)}</span>
               </div>
               <div className="stat-detail-item">
                 <span className="detail-label">{language === 'ar' ? 'معلقة' : 'Pending'}:</span>
-                <span className="detail-value orange">${(stats.revenue.pending || 0).toFixed(2)}</span>
+                <span className="detail-value orange">₪{(stats.revenue.pending || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -163,15 +175,15 @@ const Statistics = () => {
           <div className="stat-icon">💵</div>
           <div className="stat-content">
             <h3>{language === 'ar' ? 'العمولات' : 'Commissions'}</h3>
-            <div className="stat-number">${(stats.commissions.total || 0).toFixed(2)}</div>
+            <div className="stat-number">₪{(stats.commissions.total || 0).toFixed(2)}</div>
             <div className="stat-details">
               <div className="stat-detail-item">
                 <span className="detail-label">{language === 'ar' ? 'مدفوعة' : 'Paid'}:</span>
-                <span className="detail-value green">${(stats.commissions.paid || 0).toFixed(2)}</span>
+                <span className="detail-value green">₪{(stats.commissions.paid || 0).toFixed(2)}</span>
               </div>
               <div className="stat-detail-item">
                 <span className="detail-label">{language === 'ar' ? 'معلقة' : 'Pending'}:</span>
-                <span className="detail-value orange">${(stats.commissions.pending || 0).toFixed(2)}</span>
+                <span className="detail-value orange">₪{(stats.commissions.pending || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -191,6 +203,52 @@ const Statistics = () => {
             </div>
           </div>
         </div>
+
+        {/* Profit Stats */}
+        {stats.profit && (
+        <div className="stat-card profit-card">
+          <div className="stat-icon">📊</div>
+          <div className="stat-content">
+            <h3>{language === 'ar' ? 'أرباح الشركة' : 'Company Profit'}</h3>
+            <div className="stat-number">₪{(stats.profit.total || 0).toFixed(2)}</div>
+            <div className="stat-details">
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'الإيرادات المكتملة' : 'Completed Revenue'}:</span>
+                <span className="detail-value blue">₪{(stats.profit.completedRevenue || 0).toFixed(2)}</span>
+              </div>
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'هامش الربح' : 'Profit Margin'}:</span>
+                <span className="detail-value green">{stats.profit.profitMargin || 0}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
+
+        {/* Member Classification Stats */}
+        {stats.memberClassification && (
+        <div className="stat-card classification-card">
+          <div className="stat-icon">👤</div>
+          <div className="stat-content">
+            <h3>{language === 'ar' ? 'تصنيف الأعضاء' : 'Member Classification'}</h3>
+            <div className="stat-number">{stats.users.members || 0}</div>
+            <div className="stat-details">
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'نشط (اشترى آخر شهر)' : 'Active (Purchased Last Month)'}:</span>
+                <span className="detail-value green">{stats.memberClassification.active || 0}</span>
+              </div>
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'غير فعال' : 'Inactive'}:</span>
+                <span className="detail-value orange">{stats.memberClassification.inactive || 0}</span>
+              </div>
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'متوقف (معلق)' : 'Stopped (Suspended)'}:</span>
+                <span className="detail-value red">{stats.memberClassification.stopped || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
       </div>
 
       {/* Top Members Table */}
@@ -222,7 +280,7 @@ const Statistics = () => {
                   <td className="username-cell">{member.username}</td>
                   <td className="points-cell">{member.points || 0}</td>
                   <td className="monthly-points-cell">{member.monthlyPoints || 0}</td>
-                  <td className="commission-cell">${(member.totalCommission || 0).toFixed(2)}</td>
+                  <td className="commission-cell">₪{(member.totalCommission || 0).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -275,7 +333,7 @@ const Statistics = () => {
                   <div className="recent-item-detail">{order.user?.name}</div>
                 </div>
                 <div className="recent-item-meta">
-                  <span className="order-amount">${(order.totalAmount || 0).toFixed(2)}</span>
+                  <span className="order-amount">₪{(order.totalAmount || 0).toFixed(2)}</span>
                   <span className={`status-badge ${order.status}`}>
                     {order.status === 'pending' ? (language === 'ar' ? 'معلق' : 'Pending') :
                      order.status === 'processing' ? (language === 'ar' ? 'قيد المعالجة' : 'Processing') :

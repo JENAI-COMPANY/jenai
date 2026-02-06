@@ -968,7 +968,17 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
     // Regional admins see stats for their regions only
     if (req.user.role === 'regional_admin') {
       userQuery.region = { $in: req.user.managedRegions };
-      orderQuery['user.region'] = { $in: req.user.managedRegions };
+      // Get user IDs in managed regions for order filtering
+      const regionUserIds = await User.find({ region: { $in: req.user.managedRegions } }).distinct('_id');
+      orderQuery.user = { $in: regionUserIds };
+    }
+
+    // Super admin can filter by specific region
+    if (req.user.role === 'super_admin' && req.query.regionId) {
+      userQuery.region = req.query.regionId;
+      // Get user IDs in selected region for order filtering
+      const regionUserIds = await User.find({ region: req.query.regionId }).distinct('_id');
+      orderQuery.user = { $in: regionUserIds };
     }
 
     // User statistics
@@ -991,19 +1001,19 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
     // Order statistics
     const totalOrders = await Order.countDocuments(orderQuery);
     const pendingOrders = await Order.countDocuments({ ...orderQuery, status: 'pending' });
-    const processingOrders = await Order.countDocuments({ ...orderQuery, status: 'processing' });
-    const shippedOrders = await Order.countDocuments({ ...orderQuery, status: 'shipped' });
-    const deliveredOrders = await Order.countDocuments({ ...orderQuery, status: 'delivered' });
+    const preparedOrders = await Order.countDocuments({ ...orderQuery, status: 'prepared' });
+    const onTheWayOrders = await Order.countDocuments({ ...orderQuery, status: 'on_the_way' });
+    const receivedOrders = await Order.countDocuments({ ...orderQuery, status: 'received' });
     const cancelledOrders = await Order.countDocuments({ ...orderQuery, status: 'cancelled' });
 
     // Revenue statistics
     const orders = await Order.find(orderQuery);
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
     const completedOrders = await Order.find({
       ...orderQuery,
-      status: { $in: ['delivered', 'completed'] }
+      status: 'received'
     });
-    const completedRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const completedRevenue = completedOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
     // Commission statistics
     const totalCommissionPaid = await User.aggregate([
@@ -1024,6 +1034,53 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
       { $match: { ...userQuery, role: 'member' } },
       { $group: { _id: null, total: { $sum: '$monthlyPoints' } } }
     ]);
+
+    // Profit statistics - calculate company profit from completed orders
+    let totalProfit = 0;
+    for (const order of completedOrders) {
+      if (order.orderItems && order.orderItems.length > 0) {
+        for (const item of order.orderItems) {
+          const itemRevenue = item.price * item.quantity;
+          const itemCost = (item.wholesalePriceAtPurchase || 0) * item.quantity;
+          const itemProfit = itemRevenue - itemCost;
+          totalProfit += itemProfit;
+        }
+      }
+    }
+
+    // Member classification statistics
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Stopped members: those who are suspended by admin
+    const stoppedMembers = await User.countDocuments({
+      ...userQuery,
+      role: 'member',
+      isSuspended: true
+    });
+
+    // Get all members who made an order in the last month
+    const activeOrderUsers = await Order.distinct('user', {
+      ...orderQuery,
+      createdAt: { $gte: oneMonthAgo },
+      status: { $in: ['pending', 'processing', 'shipped', 'delivered', 'completed'] }
+    });
+
+    // Active members: purchased in last month and not suspended
+    const activeMembers = await User.countDocuments({
+      ...userQuery,
+      role: 'member',
+      isSuspended: { $ne: true },
+      _id: { $in: activeOrderUsers }
+    });
+
+    // Inactive members: didn't purchase in last month and not suspended
+    const inactiveMembers = await User.countDocuments({
+      ...userQuery,
+      role: 'member',
+      isSuspended: { $ne: true },
+      _id: { $nin: activeOrderUsers }
+    });
 
     // Recent activity
     const recentUsers = await User.find(userQuery)
@@ -1136,9 +1193,9 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
         orders: {
           total: totalOrders,
           pending: pendingOrders,
-          processing: processingOrders,
-          shipped: shippedOrders,
-          delivered: deliveredOrders,
+          prepared: preparedOrders,
+          onTheWay: onTheWayOrders,
+          received: receivedOrders,
           cancelled: cancelledOrders
         },
         revenue: {
@@ -1154,6 +1211,16 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
         points: {
           total: totalPoints[0]?.total || 0,
           monthly: totalMonthlyPoints[0]?.total || 0
+        },
+        profit: {
+          total: totalProfit,
+          completedRevenue: completedRevenue,
+          profitMargin: completedRevenue > 0 ? ((totalProfit / completedRevenue) * 100).toFixed(2) : 0
+        },
+        memberClassification: {
+          active: activeMembers,
+          inactive: inactiveMembers,
+          stopped: stoppedMembers
         },
         recent: {
           users: recentUsers,
@@ -1235,6 +1302,28 @@ router.put('/orders/:id/status', protect, isAdmin, async (req, res) => {
         success: false,
         message: 'Order not found'
       });
+    }
+
+    const oldStatus = order.status;
+
+    // الحالات التي تعني أن الطلب تم تجهيزه
+    const processedStatuses = ['prepared', 'on_the_way', 'received'];
+    const wasProcessed = processedStatuses.includes(oldStatus);
+    const willBeProcessed = processedStatuses.includes(status);
+
+    // تحديث المخزون فقط عند الانتقال من حالة غير مجهزة إلى حالة مجهزة
+    if (!wasProcessed && willBeProcessed) {
+      for (const item of order.orderItems) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: {
+              soldCount: item.quantity,
+              stock: -item.quantity
+            }
+          });
+        }
+      }
+      console.log(`📦 Updated stock and soldCount for order ${order.orderNumber}`);
     }
 
     order.status = status;
@@ -2500,6 +2589,22 @@ router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) =>
     };
 
     const order = await Order.create(orderData);
+
+    // تحديث المخزون إذا كان الطلب بحالة مجهزة أو مستلم
+    const processedStatuses = ['prepared', 'on_the_way', 'received'];
+    if (processedStatuses.includes(orderData.status)) {
+      for (const item of orderItems) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: {
+              soldCount: item.quantity,
+              stock: -item.quantity
+            }
+          });
+        }
+      }
+      console.log(`📦 Updated stock and soldCount for admin-created order ${order.orderNumber}`);
+    }
 
     // If payment at company and user is member, add points immediately
     if (paymentMethod === 'pay_at_company' && user.role === 'member') {

@@ -40,13 +40,21 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // التحقق من صحة بيانات المنتجات
+    // التحقق من صحة بيانات المنتجات وإضافة سعر الجملة
     for (const item of orderItems) {
       if (!item.product || !item.name || !item.price || !item.quantity) {
         return res.status(400).json({
           message: 'Invalid order items data',
           messageAr: 'بيانات المنتجات غير صالحة'
         });
+      }
+
+      // جلب المنتج لإضافة سعر الجملة
+      const product = await Product.findById(item.product);
+      if (product && product.wholesalePrice !== undefined) {
+        item.wholesalePriceAtPurchase = product.wholesalePrice;
+      } else {
+        item.wholesalePriceAtPurchase = 0;
       }
     }
 
@@ -419,19 +427,42 @@ exports.updateOrderStatus = async (req, res) => {
       order.deliveredAt = Date.now();
     }
 
-    // إذا تم تغيير الحالة إلى "received" وكانت الحالة القديمة ليست "received"
-    // نقوم بتوزيع النقاط على الأجيال
-    if (req.body.status === 'received' && oldStatus !== 'received' && order.totalPoints) {
-      const buyer = order.user;
+    // الحالات التي تعني أن الطلب تم تجهيزه
+    const processedStatuses = ['prepared', 'on_the_way', 'received'];
+    const wasProcessed = processedStatuses.includes(oldStatus);
+    const willBeProcessed = processedStatuses.includes(req.body.status);
 
-      // توزيع النقاط على الشخص المشتري
-      buyer.monthlyPoints = (buyer.monthlyPoints || 0) + order.totalPoints;
-      await buyer.save();
+    // تحديث المخزون فقط عند الانتقال من حالة غير مجهزة إلى حالة مجهزة
+    if (!wasProcessed && willBeProcessed) {
+      // تحديث المخزون والكمية المباعة لكل منتج
+      for (const item of order.orderItems) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: {
+              soldCount: item.quantity,
+              stock: -item.quantity
+            }
+          });
+        }
+      }
+      console.log(`📦 Updated stock and soldCount for order ${order.orderNumber}`);
+    }
 
-      console.log(`✅ Added ${order.totalPoints} points to ${buyer.name}`);
+    // إذا تم تغيير الحالة إلى "received" (مستلم) - توزيع النقاط
+    if (req.body.status === 'received' && oldStatus !== 'received') {
+      // توزيع النقاط إذا كانت موجودة
+      if (order.totalPoints) {
+        const buyer = order.user;
 
-      // توزيع العمولات على الأجيال
-      await distributeCommissions(buyer, order.totalPoints);
+        // توزيع النقاط على الشخص المشتري
+        buyer.monthlyPoints = (buyer.monthlyPoints || 0) + order.totalPoints;
+        await buyer.save();
+
+        console.log(`✅ Added ${order.totalPoints} points to ${buyer.name}`);
+
+        // توزيع العمولات على الأجيال
+        await distributeCommissions(buyer, order.totalPoints);
+      }
     }
 
     const updatedOrder = await order.save();

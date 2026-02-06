@@ -4,6 +4,7 @@ import axios from 'axios';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { FavoritesContext } from '../context/FavoritesContext';
 import ProductCard from '../components/ProductCard';
 import CreateOrderForUser from '../components/CreateOrderForUser';
 import '../styles/ProductDetail.css';
@@ -14,6 +15,7 @@ const ProductDetail = () => {
   const { addToCart } = useContext(CartContext);
   const { isSubscriber, isAuthenticated, isAdmin } = useContext(AuthContext);
   const { language } = useLanguage();
+  const { isFavorite, toggleFavorite } = useContext(FavoritesContext);
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,12 +86,12 @@ const ProductDetail = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `/api/products/${id}/reviews`,
+        `/api/reviews/product/${id}`,
         { rating, comment: reviewText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert(language === 'ar' ? 'تم إضافة المراجعة بنجاح!' : 'Review submitted successfully!');
+      alert(language === 'ar' ? 'تم إرسال التقييم بنجاح!' : 'Review submitted successfully!');
       setReviewText('');
       setRating(5);
       fetchProduct(); // Refresh product to show new review
@@ -207,7 +209,18 @@ const ProductDetail = () => {
 
           {/* Product Info */}
           <div className="product-info-section">
-            <h1 className="product-title">{product.name}</h1>
+            <div className="product-title-row">
+              <h1 className="product-title">{product.name}</h1>
+              {isAuthenticated && (
+                <button
+                  className={`favorite-btn-detail ${isFavorite(product._id) ? 'active' : ''}`}
+                  onClick={() => toggleFavorite(product._id)}
+                  title={language === 'ar' ? 'إضافة للمفضلة' : 'Add to Favorites'}
+                >
+                  {isFavorite(product._id) ? '❤️' : '🤍'}
+                </button>
+              )}
+            </div>
 
             {/* Rating and Sales */}
             <div className="product-meta">
@@ -335,6 +348,27 @@ const ProductDetail = () => {
               <div className="points-info">
                 🎁 {language === 'ar' ? 'ستحصل على' : 'Earn'} {product.points}{' '}
                 {language === 'ar' ? 'نقطة' : 'points'}
+              </div>
+            )}
+
+            {/* Stock Details - Only for members and admins */}
+            {(isSubscriber || isAdmin) && (
+              <div className="stock-details-box">
+                <h4>{language === 'ar' ? '📦 تفاصيل المخزون' : '📦 Stock Details'}</h4>
+                <div className="stock-details-grid">
+                  <div className="stock-detail-item">
+                    <span className="stock-label">{language === 'ar' ? 'الكمية الأصلية:' : 'Original Qty:'}</span>
+                    <span className="stock-value original">{(product.stock || 0) + (product.soldCount || 0)}</span>
+                  </div>
+                  <div className="stock-detail-item">
+                    <span className="stock-label">{language === 'ar' ? 'تم بيعها:' : 'Sold:'}</span>
+                    <span className="stock-value sold">{product.soldCount || 0}</span>
+                  </div>
+                  <div className="stock-detail-item">
+                    <span className="stock-label">{language === 'ar' ? 'المتبقي:' : 'Remaining:'}</span>
+                    <span className={`stock-value remaining ${product.stock < 10 ? 'low' : ''}`}>{product.stock || 0}</span>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -500,7 +534,7 @@ const ProductDetail = () => {
                       <div key={review._id} className="review-item">
                         <div className="review-header">
                           <div className="reviewer-info">
-                            <strong>{review.user?.name || 'Anonymous'}</strong>
+                            <strong>{review.userName || review.user?.name || 'مستخدم'}</strong>
                             <div className="review-rating">{renderStars(review.rating)}</div>
                           </div>
                           <div className="review-date">

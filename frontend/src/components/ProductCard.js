@@ -2,14 +2,31 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
+import { FavoritesContext } from '../context/FavoritesContext';
 import { useLanguage } from '../context/LanguageContext';
 import '../styles/ProductCard.css';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useContext(CartContext);
   const { isMember, isAuthenticated, isAdmin } = useContext(AuthContext);
+  const { isFavorite, toggleFavorite } = useContext(FavoritesContext);
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+
+  const productId = product._id || product.id;
+  const isProductFavorite = isFavorite(productId);
+
+  const handleToggleFavorite = async (e) => {
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      localStorage.setItem('returnUrl', `/products/${productId}`);
+      navigate('/login');
+      return;
+    }
+
+    await toggleFavorite(productId);
+  };
 
   // التحقق من الخصم للعملاء العاديين
   const hasCustomerDiscount = product.customerDiscount?.enabled || false;
@@ -101,6 +118,15 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
+      {/* Favorite Button */}
+      <button
+        className={`favorite-btn ${isProductFavorite ? 'active' : ''}`}
+        onClick={handleToggleFavorite}
+        title={isProductFavorite ? (language === 'ar' ? 'إزالة من المفضلة' : 'Remove from favorites') : (language === 'ar' ? 'إضافة للمفضلة' : 'Add to favorites')}
+      >
+        {isProductFavorite ? '❤️' : '🤍'}
+      </button>
+
       <div className="product-image">
         {product.images && product.images[0] ? (
           <img src={product.images[0]} alt={product.name} />
@@ -132,9 +158,11 @@ const ProductCard = ({ product }) => {
           </div>
         )}
 
-        <p className="product-description">
-          {product.description.substring(0, 100)}...
-        </p>
+        {product.description && (
+          <p className="product-description">
+            {product.description.substring(0, 100)}...
+          </p>
+        )}
 
         {/* Sold Count */}
         {product.soldCount > 0 && (

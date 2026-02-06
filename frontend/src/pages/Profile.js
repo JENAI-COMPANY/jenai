@@ -17,6 +17,7 @@ import RegionsManagement from '../components/RegionsManagement';
 import PermissionsManagement from '../components/PermissionsManagement';
 import CategoryManagement from '../components/CategoryManagement';
 import MyTeam from '../components/MyTeam';
+import ReviewManagement from '../components/ReviewManagement';
 import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Profile.css';
 
@@ -380,6 +381,16 @@ const Profile = () => {
             </button>
           )}
 
+          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
+            <button
+              className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reviews')}
+            >
+              <span className="tab-icon">⭐</span>
+              <span className="tab-label">{language === 'ar' ? 'التقييمات' : 'Reviews'}</span>
+            </button>
+          )}
+
           {(user.role === 'customer' || user.role === 'subscriber' || user.role === 'member') && (
             <button
               className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
@@ -552,21 +563,37 @@ const Profile = () => {
                 </div>
               )}
 
-              {user.referralLink && (
-                <div className="info-item full-width">
-                  <label>{language === 'ar' ? 'رابط الإحالة:' : 'Referral Link:'}</label>
-                  <div className="info-value referral-link">
-                    {user.referralLink}
-                    <button
-                      className="copy-btn"
-                      onClick={() => {
-                        navigator.clipboard.writeText(user.referralLink);
-                        setMessage(language === 'ar' ? 'تم النسخ!' : 'Copied!');
-                        setTimeout(() => setMessage(''), 2000);
-                      }}
-                    >
-                      📋 {language === 'ar' ? 'نسخ' : 'Copy'}
-                    </button>
+              {/* Referral Section for Members */}
+              {user.role === 'member' && user.subscriberCode && (
+                <div className="referral-section">
+                  <h4 className="referral-title">
+                    🔗 {language === 'ar' ? 'رابط الإحالة الخاص بك' : 'Your Referral Link'}
+                  </h4>
+                  <div className="referral-box">
+                    <div className="referral-link-container">
+                      <input
+                        type="text"
+                        readOnly
+                        value={user.referralLink || `${window.location.origin}/register?ref=${user.subscriberCode}`}
+                        className="referral-link-input"
+                      />
+                      <button
+                        className="copy-link-btn"
+                        onClick={() => {
+                          const link = user.referralLink || `${window.location.origin}/register?ref=${user.subscriberCode}`;
+                          navigator.clipboard.writeText(link);
+                          setMessage(language === 'ar' ? 'تم نسخ الرابط!' : 'Link copied!');
+                          setTimeout(() => setMessage(''), 2000);
+                        }}
+                      >
+                        📋 {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
+                      </button>
+                    </div>
+                    <p className="referral-hint">
+                      {language === 'ar'
+                        ? 'شارك هذا الرابط مع أصدقائك للانضمام تحت إحالتك'
+                        : 'Share this link with friends to join under your referral'}
+                    </p>
                   </div>
                 </div>
               )}
@@ -694,6 +721,13 @@ const Profile = () => {
           {activeTab === 'orders' && (user.role === 'customer' || user.role === 'subscriber' || user.role === 'member') && (
             <div className="tab-panel">
               <MyOrders />
+            </div>
+          )}
+
+          {/* Reviews Management Tab - For Admins */}
+          {activeTab === 'reviews' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
+            <div className="tab-panel">
+              <ReviewManagement />
             </div>
           )}
 

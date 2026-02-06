@@ -26,7 +26,7 @@ exports.addReview = async (req, res) => {
 
     product.reviews.push({
       user: userId,
-      userName: user.name,
+      userName: user.name || user.username || 'مستخدم',
       rating,
       comment,
       isApproved: false // Requires admin approval
@@ -112,6 +112,48 @@ exports.deleteReview = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Review deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all reviews for admin (includes unapproved)
+exports.getAllReviewsAdmin = async (req, res) => {
+  try {
+    const products = await Product.find({ 'reviews.0': { $exists: true } })
+      .select('name nameAr reviews images')
+      .populate('reviews.user', 'name username phone');
+
+    const allReviews = [];
+
+    for (const product of products) {
+      for (const review of product.reviews) {
+        allReviews.push({
+          _id: review._id,
+          productId: product._id,
+          productName: product.name,
+          productNameAr: product.nameAr,
+          productImage: product.images && product.images.length > 0 ? product.images[0] : null,
+          user: review.user,
+          userName: review.userName,
+          rating: review.rating,
+          comment: review.comment,
+          isApproved: review.isApproved,
+          createdAt: review.createdAt
+        });
+      }
+    }
+
+    // Sort by date (newest first)
+    allReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({
+      success: true,
+      data: allReviews,
+      total: allReviews.length,
+      pending: allReviews.filter(r => !r.isApproved).length,
+      approved: allReviews.filter(r => r.isApproved).length
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

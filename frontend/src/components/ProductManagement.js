@@ -53,6 +53,7 @@ const ProductManagement = () => {
   });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [stockFilter, setStockFilter] = useState('all'); // all, inStock, outOfStock
 
   useEffect(() => {
     fetchProducts();
@@ -474,9 +475,31 @@ const ProductManagement = () => {
     <div className="product-management">
       <div className="pm-header">
         <h2>{language === 'ar' ? 'إدارة المنتجات' : 'Product Management'}</h2>
-        <button className="pm-add-btn" onClick={() => setShowAddForm(true)}>
-          + {language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product'}
-        </button>
+        <div className="pm-header-controls">
+          <div className="pm-stock-filters">
+            <button
+              className={`pm-filter-btn ${stockFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setStockFilter('all')}
+            >
+              {language === 'ar' ? 'الكل' : 'All'}
+            </button>
+            <button
+              className={`pm-filter-btn ${stockFilter === 'inStock' ? 'active' : ''}`}
+              onClick={() => setStockFilter('inStock')}
+            >
+              {language === 'ar' ? 'متوفر' : 'In Stock'}
+            </button>
+            <button
+              className={`pm-filter-btn ${stockFilter === 'outOfStock' ? 'active' : ''}`}
+              onClick={() => setStockFilter('outOfStock')}
+            >
+              {language === 'ar' ? 'نفذ' : 'Out of Stock'}
+            </button>
+          </div>
+          <button className="pm-add-btn" onClick={() => setShowAddForm(true)}>
+            + {language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="pm-alert pm-alert-error">{error}</div>}
@@ -1017,14 +1040,22 @@ const ProductManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {products.length === 0 ? (
+            {products.filter(product => {
+              if (stockFilter === 'inStock') return product.stock > 0;
+              if (stockFilter === 'outOfStock') return product.stock <= 0;
+              return true;
+            }).length === 0 ? (
               <tr>
                 <td colSpan="8" className="pm-no-data">
                   {language === 'ar' ? 'لا توجد منتجات' : 'No products found'}
                 </td>
               </tr>
             ) : (
-              products.map(product => (
+              products.filter(product => {
+                if (stockFilter === 'inStock') return product.stock > 0;
+                if (stockFilter === 'outOfStock') return product.stock <= 0;
+                return true;
+              }).map(product => (
                 <tr key={product.id || product._id}>
                   <td>
                     {product.media && product.media.length > 0 ? (

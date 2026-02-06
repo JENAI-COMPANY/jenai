@@ -34,6 +34,44 @@
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
 }
 
+/* Header Controls */
+.pm-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pm-stock-filters {
+  display: flex;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.pm-filter-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pm-filter-btn:hover {
+  color: #1e293b;
+  background: #e2e8f0;
+}
+
+.pm-filter-btn.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 /* Alerts */
 .pm-alert {
   padding: 1rem;

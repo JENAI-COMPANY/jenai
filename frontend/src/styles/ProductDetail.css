@@ -154,11 +154,53 @@
   gap: 20px;
 }
 
+.product-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
 .product-title {
   font-size: 32px;
   font-weight: 700;
   color: #2c3e50;
   margin: 0;
+  flex: 1;
+}
+
+.favorite-btn-detail {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.favorite-btn-detail:hover {
+  border-color: #e91e63;
+  transform: scale(1.1);
+}
+
+.favorite-btn-detail.active {
+  background: #fce4ec;
+  border-color: #e91e63;
+  animation: heartBeat 0.6s ease-in-out;
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* Product Meta */
@@ -333,6 +375,71 @@
   border-radius: 8px;
   color: #d35400;
   font-weight: 600;
+}
+
+/* Stock Details Box */
+.stock-details-box {
+  padding: 16px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 10px;
+  border: 1px solid #a5d6a7;
+}
+
+.stock-details-box h4 {
+  margin: 0 0 12px 0;
+  color: #2e7d32;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.stock-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stock-detail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stock-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.stock-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.stock-value.original {
+  color: #1976d2;
+}
+
+.stock-value.sold {
+  color: #e65100;
+}
+
+.stock-value.remaining {
+  color: #2e7d32;
+}
+
+.stock-value.remaining.low {
+  color: #f44336;
+  animation: pulse-warning 1.5s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* Purchase Section */
@@ -705,5 +812,19 @@
   .related-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
+  }
+
+  .stock-details-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stock-detail-item {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .stock-value {
+    font-size: 18px;
   }
 }
