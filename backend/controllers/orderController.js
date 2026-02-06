@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const { calculatePersonalPerformancePoints, calculateOrderPoints } = require('../utils/pointsCalculator');
+const { updateMemberRank } = require('../config/memberRanks');
 
 // Create new order
 exports.createOrder = async (req, res) => {
@@ -246,6 +247,9 @@ const distributeCommissions = async (buyer, productPoints) => {
     buyer.availableCommission = Math.floor((buyer.availableCommission || 0) + personalProfit);
     await buyer.save();
 
+    // تحديث رتبة المشتري تلقائياً
+    await updateMemberRank(buyer._id, User);
+
     console.log(`💰 ${buyer.name} (المشتري) - نقاط: ${productPoints}, ربح شخصي: ${personalProfit} شيكل`);
 
     // ══════════════════════════════════════
@@ -285,6 +289,9 @@ const distributeCommissions = async (buyer, productPoints) => {
       currentMember.availableCommission = Math.floor((currentMember.availableCommission || 0) + profit);
 
       await currentMember.save();
+
+      // تحديث رتبة العضو تلقائياً
+      await updateMemberRank(currentMember._id, User);
 
       console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - نقاط أجيال: ${genPoints.toFixed(2)}, نقاط قيادة: ${leadershipPoints.toFixed(2)}, ربح: ${profit} شيكل`);
 
