@@ -221,99 +221,9 @@ const OrderManagement = () => {
       return method;
     };
 
-    // Create print window
-    const printWindow = window.open('', '_blank');
-
-    const invoiceHTML = `
-      <!DOCTYPE html>
-      <html dir="${isArabic ? 'rtl' : 'ltr'}">
-      <head>
-        <meta charset="UTF-8">
-        <title>Order ${order.orderNumber}</title>
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: Arial, sans-serif;
-            padding: 15px;
-            direction: ${isArabic ? 'rtl' : 'ltr'};
-            font-size: 11px;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 10px;
-          }
-          .header h1 {
-            color: #10b981;
-            margin-bottom: 5px;
-            font-size: 16px;
-          }
-          .header p {
-            font-size: 10px;
-            margin: 2px 0;
-          }
-          .section {
-            margin-bottom: 12px;
-          }
-          .section h3 {
-            color: #10b981;
-            border-bottom: 1.5px solid #10b981;
-            padding-bottom: 3px;
-            margin-bottom: 6px;
-            font-size: 13px;
-          }
-          .section p {
-            margin: 3px 0;
-            line-height: 1.4;
-            font-size: 11px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-          }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 5px;
-            text-align: ${isArabic ? 'right' : 'left'};
-            font-size: 10px;
-          }
-          th {
-            background-color: #10b981;
-            color: white;
-          }
-          .total {
-            font-size: 13px;
-            margin-top: 8px;
-            font-weight: bold;
-          }
-          .total-amount {
-            color: #10b981;
-          }
-          @media print {
-            @page {
-              size: A5;
-              margin: 8mm;
-            }
-            body {
-              padding: 5px;
-              font-size: 10px;
-            }
-            .header h1 {
-              font-size: 14px;
-            }
-            .section h3 {
-              font-size: 12px;
-            }
-          }
-        </style>
-      </head>
-      <body>
+    // Create invoice content function
+    const createInvoiceContent = () => `
+      <div class="invoice-copy">
         <div class="header">
           <h1>${isArabic ? 'فاتورة الطلب' : 'Order Invoice'}</h1>
           <p>Jenai for Cooperative Marketing</p>
@@ -399,7 +309,116 @@ const OrderManagement = () => {
             <p><strong>${isArabic ? 'ملاحظات العميل:' : 'Customer Notes:'}</strong> ${order.notes}</p>
           </div>
         ` : ''}
+      </div>
+    `;
 
+    // Create print window
+    const printWindow = window.open('', '_blank');
+
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html dir="${isArabic ? 'rtl' : 'ltr'}">
+      <head>
+        <meta charset="UTF-8">
+        <title>Order ${order.orderNumber}</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 0;
+            direction: ${isArabic ? 'rtl' : 'ltr'};
+            font-size: 11px;
+          }
+          .invoice-copy {
+            padding: 15px;
+            height: 297mm;
+            page-break-after: always;
+          }
+          .invoice-copy:last-child {
+            page-break-after: auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 10px;
+          }
+          .header h1 {
+            color: #10b981;
+            margin-bottom: 5px;
+            font-size: 16px;
+          }
+          .header p {
+            font-size: 10px;
+            margin: 2px 0;
+          }
+          .section {
+            margin-bottom: 12px;
+          }
+          .section h3 {
+            color: #10b981;
+            border-bottom: 1.5px solid #10b981;
+            padding-bottom: 3px;
+            margin-bottom: 6px;
+            font-size: 13px;
+          }
+          .section p {
+            margin: 3px 0;
+            line-height: 1.4;
+            font-size: 11px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: ${isArabic ? 'right' : 'left'};
+            font-size: 10px;
+          }
+          th {
+            background-color: #10b981;
+            color: white;
+          }
+          .total {
+            font-size: 13px;
+            margin-top: 8px;
+            font-weight: bold;
+          }
+          .total-amount {
+            color: #10b981;
+          }
+          @media print {
+            @page {
+              size: 210mm 594mm;
+              margin: 0;
+            }
+            body {
+              padding: 0;
+              font-size: 10px;
+            }
+            .invoice-copy {
+              padding: 15px;
+              height: 297mm;
+            }
+            .header h1 {
+              font-size: 14px;
+            }
+            .section h3 {
+              font-size: 12px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${createInvoiceContent()}
+        ${createInvoiceContent()}
         <script>
           window.onload = function() {
             window.print();
