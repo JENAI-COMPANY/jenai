@@ -94,6 +94,15 @@ exports.register = async (req, res) => {
             message: 'Failed to generate member code. Please try again.'
           });
         }
+
+        // Set first order bonus expiration (30 days from registration)
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+        userData.firstOrderBonus = {
+          received: false,
+          points: 10,
+          expiresAt: expirationDate
+        };
       }
     }
 
@@ -143,6 +152,19 @@ exports.register = async (req, res) => {
 
     const token = generateToken(user._id);
 
+    // جلب بيانات الراعي إذا وجد
+    let sponsorInfo = null;
+    if (userData.sponsorId) {
+      const sponsor = await User.findById(userData.sponsorId).select('name subscriberCode phone');
+      if (sponsor) {
+        sponsorInfo = {
+          name: sponsor.name,
+          subscriberCode: sponsor.subscriberCode,
+          phone: sponsor.phone
+        };
+      }
+    }
+
     res.status(201).json({
       success: true,
       token,
@@ -156,8 +178,10 @@ exports.register = async (req, res) => {
         supplierCode: user.supplierCode,
         companyName: user.companyName,
         country: user.country,
-        city: user.city
-      }
+        city: user.city,
+        createdAt: user.createdAt
+      },
+      sponsor: sponsorInfo
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

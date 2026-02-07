@@ -36,6 +36,7 @@ import FAQ from './pages/FAQ';
 import ProfitsCalculator from './components/ProfitsCalculator';
 import ProfitPeriods from './components/ProfitPeriods';
 import Favorites from './pages/Favorites';
+import WelcomeMember from './pages/WelcomeMember';
 import './styles/App.css';
 import './styles/AdminResponsive.css';
 
@@ -73,6 +74,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/subscriber-instructions" element={<SubscriberInstructions />} />
                 <Route path="/member-welcome" element={<MemberWelcome />} />
+                <Route path="/welcome-member" element={<WelcomeMember />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route
                   path="/favorites"

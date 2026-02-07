@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import TermsAndConditions from '../components/TermsAndConditions';
@@ -8,8 +8,11 @@ import '../styles/Auth.css';
 
 const Register = () => {
   const { t, language } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const refCode = searchParams.get('ref');
   const [step, setStep] = useState(1);
-  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedRole, setSelectedRole] = useState(refCode ? 'member' : '');
+  const [isRefCodeLocked, setIsRefCodeLocked] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -19,12 +22,21 @@ const Register = () => {
     city: '',
     password: '',
     confirmPassword: '',
-    sponsorId: '',
+    sponsorId: refCode || '',
     acceptedTerms: false
   });
   const [error, setError] = useState('');
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Lock referral code if it came from URL
+  useEffect(() => {
+    if (refCode) {
+      setFormData(prev => ({ ...prev, sponsorId: refCode }));
+      setIsRefCodeLocked(true);
+      setSelectedRole('member');
+    }
+  }, [refCode]);
   const boxRef = useRef(null);
   const optionsRef = useRef(null);
   const formRef = useRef(null);
@@ -162,7 +174,23 @@ const Register = () => {
     const result = await register(userData);
 
     if (result.success) {
-      navigate('/member-welcome');
+      // التحويل حسب نوع الحساب
+      if (selectedRole === 'member') {
+        // للأعضاء: حفظ بيانات الراعي وflag لعرض صفحة الترحيب
+        sessionStorage.setItem('welcomeSponsorData', JSON.stringify(result.sponsor || null));
+        sessionStorage.setItem('showWelcomePage', 'true');
+
+        console.log('Register: Navigating to welcome-member');
+
+        // استخدام navigate العادي
+        navigate('/welcome-member');
+      } else if (selectedRole === 'supplier') {
+        // الموردين يذهبون للوحة التحكم
+        navigate('/supplier-dashboard');
+      } else {
+        // العملاء يذهبون للرئيسية
+        navigate('/');
+      }
     } else {
       setError(result.message);
       setStep(2); // العودة للفورم في حالة الخطأ
@@ -397,6 +425,9 @@ const Register = () => {
               {selectedRole === 'member'
                 ? ' *'
                 : (language === 'ar' ? ' (اختياري)' : ' (Optional)')}
+              {isRefCodeLocked && (
+                <span className="locked-badge">🔒</span>
+              )}
             </label>
             <input
               type="text"
@@ -405,15 +436,21 @@ const Register = () => {
               onChange={handleChange}
               placeholder={t('referralCode')}
               required={selectedRole === 'member'}
+              readOnly={isRefCodeLocked}
+              className={isRefCodeLocked ? 'locked-input' : ''}
             />
             <small className="help-text">
-              {selectedRole === 'member'
+              {isRefCodeLocked
                 ? (language === 'ar'
-                  ? 'مطلوب: أدخل كود الإحالة من الراعي الخاص بك'
-                  : 'Required: Enter the referral code from your sponsor')
-                : (language === 'ar'
-                  ? 'اختياري: أدخل كود الإحالة من الراعي الخاص بك'
-                  : 'Optional: Enter the referral code from your sponsor')}
+                  ? 'تم تعبئة كود الإحالة تلقائياً من الرابط'
+                  : 'Referral code auto-filled from link')
+                : selectedRole === 'member'
+                  ? (language === 'ar'
+                    ? 'مطلوب: أدخل كود الإحالة من الراعي الخاص بك'
+                    : 'Required: Enter the referral code from your sponsor')
+                  : (language === 'ar'
+                    ? 'اختياري: أدخل كود الإحالة من الراعي الخاص بك'
+                    : 'Optional: Enter the referral code from your sponsor')}
             </small>
           </div>
 

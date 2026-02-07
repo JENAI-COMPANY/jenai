@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 export const AuthContext = createContext();
@@ -7,8 +7,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const skipFetchRef = useRef(false);
 
   useEffect(() => {
+    // تجاهل fetchUser إذا تم التسجيل أو تسجيل الدخول للتو
+    if (skipFetchRef.current) {
+      skipFetchRef.current = false;
+      setLoading(false);
+      return;
+    }
+
     if (token) {
       fetchUser();
     } else {
@@ -37,8 +45,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post('/api/auth/login', { username, password });
       localStorage.setItem('token', data.token);
-      setToken(data.token);
+      // منع fetchUser لأن البيانات موجودة بالفعل
+      skipFetchRef.current = true;
       setUser(data.user);
+      setToken(data.token);
+      setLoading(false);
       return { success: true };
     } catch (error) {
       return {
@@ -52,9 +63,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post('/api/auth/register', userData);
       localStorage.setItem('token', data.token);
-      setToken(data.token);
+      // منع fetchUser لأن البيانات موجودة بالفعل
+      skipFetchRef.current = true;
       setUser(data.user);
-      return { success: true };
+      setToken(data.token);
+      setLoading(false);
+      return {
+        success: true,
+        user: data.user,
+        sponsor: data.sponsor
+      };
     } catch (error) {
       return {
         success: false,

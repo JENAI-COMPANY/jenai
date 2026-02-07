@@ -121,19 +121,22 @@ exports.createOrder = async (req, res) => {
         // توزيع العمولات حسب النظام الجديد
         const buyer = await User.findById(req.user._id);
 
-        // إعطاء 10 نقاط هدية لأول عملية شراء خلال شهر من التسجيل
-        if (!buyer.firstOrderBonus.received && buyer.createdAt) {
-          const oneMonthAgo = new Date();
-          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        // إعطاء 10 نقاط هدية لأول عملية شراء خلال 30 يوم من التسجيل
+        if (!buyer.firstOrderBonus.received && buyer.firstOrderBonus.expiresAt) {
+          const now = new Date();
+          const expiresAt = new Date(buyer.firstOrderBonus.expiresAt);
 
-          if (new Date(buyer.createdAt) >= oneMonthAgo) {
+          // Check if bonus hasn't expired yet (within 30 days of registration)
+          if (now <= expiresAt) {
             const bonusPoints = buyer.firstOrderBonus.points || 10;
             buyer.points = (buyer.points || 0) + bonusPoints;
             buyer.monthlyPoints = (buyer.monthlyPoints || 0) + bonusPoints;
             buyer.firstOrderBonus.received = true;
             await buyer.save();
 
-            console.log(`🎁 ${buyer.name} حصل على ${bonusPoints} نقاط هدية لأول عملية شراء!`);
+            console.log(`🎁 ${buyer.name} حصل على ${bonusPoints} نقاط هدية لأول عملية شراء خلال 30 يوم!`);
+          } else {
+            console.log(`⏰ ${buyer.name} فاتته فرصة الحصول على نقاط الترحيب (انتهت المدة)`);
           }
         }
 
