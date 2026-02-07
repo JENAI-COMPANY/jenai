@@ -337,6 +337,77 @@
   background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
   padding: 6px 10px;
   border-radius: 6px;
+}
+
+/* New Referral Section */
+.referral-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border: 2px solid #667eea40;
+  border-radius: 16px;
+}
+
+.referral-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.referral-box {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.referral-link-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.referral-link-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  background: #f9fafb;
+  color: #374151;
+  direction: ltr;
+}
+
+.referral-link-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.copy-link-btn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.copy-link-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.referral-hint {
+  margin: 12px 0 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
   display: inline-block;
   font-size: 13px;
   width: fit-content;
