@@ -138,10 +138,6 @@ const ProductDetail = () => {
     );
   }
 
-  const hasDiscount = product.subscriberPrice && product.subscriberPrice < product.price;
-  const discountPercentage = hasDiscount
-    ? Math.round(((product.price - product.subscriberPrice) / product.price) * 100)
-    : 0;
 
   return (
     <div className="product-detail-page">
@@ -165,16 +161,27 @@ const ProductDetail = () => {
           <div className="product-images">
             <div className="main-image">
               {(() => {
-                // دعم النظام الجديد (media) والقديم (images)
+                // دعم النظام الجديد (media) والقديم (images) - مع الصور والفيديوهات
                 const mediaList = product.media && product.media.length > 0
-                  ? product.media.filter(m => m.type === 'image')
-                  : (product.images || []);
+                  ? product.media
+                  : (product.images || []).map(img => ({ type: 'image', url: img }));
 
-                const currentImage = mediaList[selectedImage];
-                const imageUrl = typeof currentImage === 'string' ? currentImage : currentImage?.url;
+                const currentMedia = mediaList[selectedImage];
+                const mediaUrl = typeof currentMedia === 'string' ? currentMedia : currentMedia?.url;
+                const mediaType = typeof currentMedia === 'string' ? 'image' : currentMedia?.type;
 
-                return imageUrl ? (
-                  <img src={imageUrl} alt={product.name} />
+                return mediaUrl ? (
+                  mediaType === 'video' ? (
+                    <video
+                      src={mediaUrl}
+                      controls
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    >
+                      {language === 'ar' ? 'متصفحك لا يدعم تشغيل الفيديو' : 'Your browser does not support video playback'}
+                    </video>
+                  ) : (
+                    <img src={mediaUrl} alt={product.name} />
+                  )
                 ) : (
                   <div className="no-image">
                     {language === 'ar' ? 'لا توجد صورة' : 'No Image'}
@@ -183,22 +190,44 @@ const ProductDetail = () => {
               })()}
             </div>
             {(() => {
-              // دعم النظام الجديد (media) والقديم (images)
+              // دعم النظام الجديد (media) والقديم (images) - مع الصور والفيديوهات
               const mediaList = product.media && product.media.length > 0
-                ? product.media.filter(m => m.type === 'image')
-                : (product.images || []);
+                ? product.media
+                : (product.images || []).map(img => ({ type: 'image', url: img }));
 
               return mediaList.length > 1 && (
                 <div className="image-thumbnails">
                   {mediaList.map((item, index) => {
-                    const imageUrl = typeof item === 'string' ? item : item?.url;
+                    const mediaUrl = typeof item === 'string' ? item : item?.url;
+                    const mediaType = typeof item === 'string' ? 'image' : item?.type;
                     return (
                       <div
                         key={index}
                         className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
                         onClick={() => setSelectedImage(index)}
                       >
-                        <img src={imageUrl} alt={`${product.name} ${index + 1}`} />
+                        {mediaType === 'video' ? (
+                          <video
+                            src={mediaUrl}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <img src={mediaUrl} alt={`${product.name} ${index + 1}`} />
+                        )}
+                        {mediaType === 'video' && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            fontSize: '24px',
+                            color: 'white',
+                            textShadow: '0 0 5px black',
+                            pointerEvents: 'none'
+                          }}>
+                            ▶️
+                          </div>
+                        )}
                       </div>
                     );
                   })}

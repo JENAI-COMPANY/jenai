@@ -6,7 +6,7 @@ import axios from 'axios';
 import '../styles/Footer.css';
 
 const Footer = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { user } = useContext(AuthContext);
   const [activeUsersCount, setActiveUsersCount] = useState(0);
 
@@ -73,14 +73,6 @@ const Footer = () => {
       : 'Palestine'
   };
 
-  const socialMedia = {
-    facebook: 'https://facebook.com/jenai',
-    instagram: 'https://instagram.com/jenai',
-    twitter: 'https://twitter.com/jenai',
-    linkedin: 'https://linkedin.com/company/jenai',
-    youtube: 'https://youtube.com/jenai',
-    whatsapp: 'https://wa.me/15550100'
-  };
 
   const quickLinks = [
     { name: language === 'ar' ? 'الرئيسية' : 'Home', path: '/' },
@@ -157,7 +149,7 @@ const Footer = () => {
           <div className="contact-list">
             <div className="contact-item">
               <span className="contact-label">
-                {language === 'ar' ? 'صاحب الشركة:' : 'Company Owner:'}
+                {language === 'ar' ? 'صاحب الشركة - ريما طارق:' : 'Company Owner - Rima Tariq:'}
               </span>
               <a href={`tel:${contactInfo.companyOwner}`}>{contactInfo.companyOwner}</a>
             </div>
@@ -205,24 +197,24 @@ const Footer = () => {
             {language === 'ar' ? 'تابعنا على وسائل التواصل' : 'Follow Us'}
           </h4>
           <div className="social-icons">
-            <a href={socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="social-icon facebook">
+            <span className="social-icon facebook" style={{ cursor: 'default' }}>
               <i className="fab fa-facebook-f"></i>
-            </a>
-            <a href={socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="social-icon instagram">
+            </span>
+            <span className="social-icon instagram" style={{ cursor: 'default' }}>
               <i className="fab fa-instagram"></i>
-            </a>
-            <a href={socialMedia.twitter} target="_blank" rel="noopener noreferrer" className="social-icon twitter">
+            </span>
+            <span className="social-icon twitter" style={{ cursor: 'default' }}>
               <i className="fab fa-twitter"></i>
-            </a>
-            <a href={socialMedia.linkedin} target="_blank" rel="noopener noreferrer" className="social-icon linkedin">
+            </span>
+            <span className="social-icon linkedin" style={{ cursor: 'default' }}>
               <i className="fab fa-linkedin-in"></i>
-            </a>
-            <a href={socialMedia.youtube} target="_blank" rel="noopener noreferrer" className="social-icon youtube">
+            </span>
+            <span className="social-icon youtube" style={{ cursor: 'default' }}>
               <i className="fab fa-youtube"></i>
-            </a>
-            <a href={socialMedia.whatsapp} target="_blank" rel="noopener noreferrer" className="social-icon whatsapp">
+            </span>
+            <span className="social-icon whatsapp" style={{ cursor: 'default' }}>
               <i className="fab fa-whatsapp"></i>
-            </a>
+            </span>
           </div>
         </div>
       </div>
