@@ -25,6 +25,10 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  wholesalePriceAtPurchase: {
+    type: Number,
+    default: 0
+  },
   points: {
     type: Number,
     default: 0

@@ -63,9 +63,20 @@ exports.isRegionalAdmin = (req, res, next) => {
   next();
 };
 
+// Check if user is category admin or super admin
+exports.isCategoryAdmin = (req, res, next) => {
+  if (!['category_admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      message: 'Access denied. Category admin privileges required.',
+      messageAr: 'غير مصرح. صلاحيات مدير القسم مطلوبة.'
+    });
+  }
+  next();
+};
+
 // Check if user is any type of admin
 exports.isAdmin = (req, res, next) => {
-  if (!['regional_admin', 'super_admin'].includes(req.user.role)) {
+  if (!['regional_admin', 'category_admin', 'super_admin'].includes(req.user.role)) {
     return res.status(403).json({
       message: 'Access denied. Admin privileges required.'
     });

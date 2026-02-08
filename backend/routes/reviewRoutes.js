@@ -5,7 +5,8 @@ const {
   addReview,
   getReviews,
   approveReview,
-  deleteReview
+  deleteReview,
+  getAllReviewsAdmin
 } = require('../controllers/reviewController');
 
 // Public routes
@@ -15,6 +16,7 @@ router.get('/product/:productId', getReviews);
 router.post('/product/:productId', protect, addReview);
 
 // Admin routes
+router.get('/admin/all', protect, isAdmin, getAllReviewsAdmin);
 router.put('/:productId/:reviewId/approve', protect, isAdmin, approveReview);
 router.delete('/:productId/:reviewId', protect, isAdmin, deleteReview);
 

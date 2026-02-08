@@ -494,13 +494,17 @@ userSchema.methods.generateReferralLinks = function(baseUrl) {
 
   const frontendUrl = baseUrl || process.env.FRONTEND_URL || 'http://localhost:3000';
 
+  // Main referral link - single link for all referrals
+  this.referralLink = `${frontendUrl}/register?ref=${this.subscriberCode}`;
+
   // Customer referral link - for referring customers
-  this.customerReferralLink = `${frontendUrl}/register/customer?ref=${this.subscriberCode}`;
+  this.customerReferralLink = `${frontendUrl}/register?ref=${this.subscriberCode}`;
 
   // Member referral link - for referring new members
-  this.memberReferralLink = `${frontendUrl}/register/member?ref=${this.subscriberCode}`;
+  this.memberReferralLink = `${frontendUrl}/register?ref=${this.subscriberCode}`;
 
   return {
+    referralLink: this.referralLink,
     customerReferralLink: this.customerReferralLink,
     memberReferralLink: this.memberReferralLink,
     referralCode: this.subscriberCode

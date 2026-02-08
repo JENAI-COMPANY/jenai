@@ -70,7 +70,10 @@ const ProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/api/products');
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/products', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setProducts(response.data.data || response.data.products || []);
       setLoading(false);
     } catch (err) {
@@ -546,11 +549,23 @@ const ProductManagement = () => {
                       className="pm-category-select"
                     >
                       <option value="">{language === 'ar' ? 'اختر القسم' : 'Select Category'}</option>
-                      {categories.map((cat, index) => (
-                        <option key={index} value={cat}>{cat}</option>
-                      ))}
-                      <option value="__add_new__">+ {language === 'ar' ? 'إضافة قسم جديد' : 'Add New Category'}</option>
-                      <option value="__manage__">⚙️ {language === 'ar' ? 'إدارة الأقسام' : 'Manage Categories'}</option>
+                      {categories
+                        .filter(cat => {
+                          // Category admin can only see their managed categories
+                          if (user?.role === 'category_admin' && user?.managedCategories) {
+                            return user.managedCategories.includes(cat);
+                          }
+                          return true;
+                        })
+                        .map((cat, index) => (
+                          <option key={index} value={cat}>{cat}</option>
+                        ))}
+                      {user?.role !== 'category_admin' && (
+                        <>
+                          <option value="__add_new__">+ {language === 'ar' ? 'إضافة قسم جديد' : 'Add New Category'}</option>
+                          <option value="__manage__">⚙️ {language === 'ar' ? 'إدارة الأقسام' : 'Manage Categories'}</option>
+                        </>
+                      )}
                     </select>
 
                     {showAddCategory && (
@@ -1103,6 +1118,30 @@ const ProductManagement = () => {
                           const userRegionId = user.region ? (user.region._id || user.region) : null;
 
                           if (productRegionId && userRegionId && productRegionId.toString() === userRegionId.toString()) {
+                            return (
+                              <>
+                                <button className="pm-edit-btn" onClick={() => handleEdit(product)}>
+                                  {language === 'ar' ? 'تعديل' : 'Edit'}
+                                </button>
+                                <button className="pm-delete-btn" onClick={() => handleDelete(product._id)}>
+                                  {language === 'ar' ? 'حذف' : 'Delete'}
+                                </button>
+                              </>
+                            );
+                          } else {
+                            return (
+                              <span className="pm-no-permission">
+                                {language === 'ar' ? 'لا توجد صلاحية' : 'No permission'}
+                              </span>
+                            );
+                          }
+                        }
+                        // Category admin يرى الأزرار فقط لمنتجات أقسامه
+                        if (user && user.role === 'category_admin') {
+                          const productCategory = product.category;
+                          const userManagedCategories = user.managedCategories || [];
+
+                          if (productCategory && userManagedCategories.includes(productCategory)) {
                             return (
                               <>
                                 <button className="pm-edit-btn" onClick={() => handleEdit(product)}>

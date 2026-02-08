@@ -97,8 +97,21 @@ exports.getAllProducts = async (req, res) => {
       console.log('🔒 Regional admin filter: Only products from region', adminRegionId);
     }
 
-    // فلترة اختيارية حسب المنطقة (فقط للمستخدمين غير regional_admin)
-    if ((regionId || regionCode) && !(req.user && req.user.role === 'regional_admin')) {
+    // فلترة تلقائية لمدير القسم - يرى فقط منتجات أقسامه
+    if (req.user && req.user.role === 'category_admin') {
+      if (!req.user.managedCategories || req.user.managedCategories.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'No categories assigned to your account',
+          messageAr: 'لا توجد أقسام مخصصة لحسابك'
+        });
+      }
+      query.category = { $in: req.user.managedCategories };
+      console.log('🔒 Category admin filter: Only products from categories', req.user.managedCategories);
+    }
+
+    // فلترة اختيارية حسب المنطقة (فقط للمستخدمين غير regional_admin أو category_admin)
+    if ((regionId || regionCode) && !(req.user && (req.user.role === 'regional_admin' || req.user.role === 'category_admin'))) {
       let region;
 
       if (regionCode && typeof regionCode === 'string') {

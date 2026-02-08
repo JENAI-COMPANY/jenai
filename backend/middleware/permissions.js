@@ -12,6 +12,12 @@ const checkPermission = (permissionName) => {
       return next();
     }
 
+    // Category admin has product management permissions by default
+    if (user.role === 'category_admin' &&
+        (permissionName === 'canViewProducts' || permissionName === 'canManageProducts')) {
+      return next();
+    }
+
     // Check if user has the specific permission
     if (!user.permissions || !user.permissions[permissionName]) {
       return res.status(403).json({

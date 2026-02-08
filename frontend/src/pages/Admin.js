@@ -22,12 +22,12 @@ import {
 import Statistics from '../components/Statistics';
 import MemberRanks from '../components/MemberRanks';
 import ProfitCalculation from '../components/ProfitCalculation';
+import ReviewManagement from '../components/ReviewManagement';
 import '../styles/Admin.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
 
 const Admin = () => {
-  const { user } = useContext(AuthContext);
-  const isSuperAdmin = user?.role === 'super_admin';
+  const { user, isSuperAdmin, isCategoryAdmin } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('statistics');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -43,6 +43,8 @@ const Admin = () => {
   const [editingMember, setEditingMember] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [editingBook, setEditingBook] = useState(null);
+  const [categoryAdmins, setCategoryAdmins] = useState([]);
+  const [showCategoryAdminForm, setShowCategoryAdminForm] = useState(false);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -108,6 +110,20 @@ const Admin = () => {
     sponsorCode: ''
   });
 
+  const [newCategoryAdmin, setNewCategoryAdmin] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+    phone: '',
+    countryCode: '+970',
+    managedCategories: [],
+    permissions: {
+      canViewProducts: true,
+      canManageProducts: true
+    }
+  });
+
   // استخدام قائمة الدول من الملف المشترك
   const countries = allCountries;
 
@@ -142,6 +158,11 @@ const Admin = () => {
       } else if (activeTab === "suppliers" && isSuperAdmin) {
         const data = await getSuppliers();
         setSuppliers(data.suppliers);
+      } else if (activeTab === 'category-admins' && isSuperAdmin) {
+        const data = await getAllUsers();
+        // Filter only category admins
+        const categoryAdminsOnly = data.users.filter(user => user.role === 'category_admin');
+        setCategoryAdmins(categoryAdminsOnly);
       } else if (activeTab === 'members') {
         const data = await getAllUsers();
         // Filter only members
@@ -397,6 +418,81 @@ const Admin = () => {
     { value: 'net_60', label: 'صافي 60 يوم' }
   ];
 
+  // Category Admin handlers
+  const handleCategoryAdminChange = (e) => {
+    const value = e.target.value;
+    setNewCategoryAdmin({ ...newCategoryAdmin, [e.target.name]: value });
+  };
+
+  const handleCreateCategoryAdmin = async (e) => {
+    e.preventDefault();
+
+    if (newCategoryAdmin.password !== newCategoryAdmin.confirmPassword) {
+      alert('كلمات المرور غير متطابقة');
+      return;
+    }
+
+    if (newCategoryAdmin.managedCategories.length === 0) {
+      alert('يجب اختيار قسم واحد على الأقل');
+      return;
+    }
+
+    try {
+      const { confirmPassword, countryCode, ...adminData } = newCategoryAdmin;
+      adminData.phone = countryCode + newCategoryAdmin.phone;
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/category-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(adminData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.messageAr || 'فشل في إنشاء مدير القسم');
+      }
+
+      setShowCategoryAdminForm(false);
+      setNewCategoryAdmin({
+        username: '',
+        password: '',
+        confirmPassword: '',
+        name: '',
+        phone: '',
+        countryCode: '+970',
+        managedCategories: [],
+        permissions: { canViewProducts: true, canManageProducts: true }
+      });
+      fetchData();
+      alert('تم إنشاء مدير القسم بنجاح');
+    } catch (error) {
+      console.error('Error creating category admin:', error);
+      alert(error.message || 'فشل في إنشاء مدير القسم');
+    }
+  };
+
+  const handleDeleteCategoryAdmin = async (id) => {
+    if (!window.confirm('هل أنت متأكد من حذف مدير القسم؟')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchData();
+      alert('تم حذف مدير القسم بنجاح');
+    } catch (error) {
+      console.error('Error deleting category admin:', error);
+      alert('فشل في حذف مدير القسم');
+    }
+  };
+
   // Book handlers
   const handleBookChange = (e) => {
     const value = e.target.value;
@@ -514,11 +610,24 @@ const Admin = () => {
           الموردين
         </button>
         }
+        {isSuperAdmin && <button
+          className={activeTab === 'category-admins' ? 'tab-active' : ''}
+          onClick={() => setActiveTab('category-admins')}
+        >
+          مدراء الأقسام
+        </button>
+        }
         <button
           className={activeTab === 'library' ? 'tab-active' : ''}
           onClick={() => setActiveTab('library')}
         >
           📚 المكتبة
+        </button>
+        <button
+          className={activeTab === 'reviews' ? 'tab-active' : ''}
+          onClick={() => setActiveTab('reviews')}
+        >
+          ⭐ التقييمات
         </button>
         <button
           className={activeTab === 'profit-periods' ? 'tab-active' : ''}
@@ -542,6 +651,10 @@ const Admin = () => {
 
           {activeTab === 'profit' && (
             <ProfitCalculation />
+          )}
+
+          {activeTab === 'reviews' && (
+            <ReviewManagement />
           )}
 
           {activeTab === 'products' && (
@@ -1225,6 +1338,167 @@ const Admin = () => {
               {suppliers.length === 0 && (
                 <div className="no-data">لا يوجد موردين حالياً. قم بإضافة مورد جديد.</div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'category-admins' && isSuperAdmin && (
+            <div>
+              <div className="tab-header">
+                <h3>إدارة مدراء الأقسام</h3>
+                <button onClick={() => setShowCategoryAdminForm(!showCategoryAdminForm)} className="add-btn">
+                  {showCategoryAdminForm ? 'إلغاء' : 'إضافة مدير قسم'}
+                </button>
+              </div>
+
+              {showCategoryAdminForm && (
+                <form onSubmit={handleCreateCategoryAdmin} className="admin-form">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>اسم المستخدم *</label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={newCategoryAdmin.username}
+                        onChange={handleCategoryAdminChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>الاسم الكامل *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={newCategoryAdmin.name}
+                        onChange={handleCategoryAdminChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>كلمة المرور *</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={newCategoryAdmin.password}
+                        onChange={handleCategoryAdminChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>تأكيد كلمة المرور *</label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={newCategoryAdmin.confirmPassword}
+                        onChange={handleCategoryAdminChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>رقم الهاتف</label>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <select
+                          name="countryCode"
+                          value={newCategoryAdmin.countryCode}
+                          onChange={handleCategoryAdminChange}
+                          style={{ width: '100px' }}
+                        >
+                          {countryCodes.map(code => (
+                            <option key={code} value={code}>{code}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={newCategoryAdmin.phone}
+                          onChange={handleCategoryAdminChange}
+                          style={{ flex: 1 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label>الأقسام المسؤول عنها *</label>
+                    <div className="categories-checkboxes">
+                      {productCategories.length > 0 ? (
+                        productCategories.map((category) => (
+                          <label key={category} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={newCategoryAdmin.managedCategories.includes(category)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setNewCategoryAdmin(prev => ({
+                                  ...prev,
+                                  managedCategories: checked
+                                    ? [...prev.managedCategories, category]
+                                    : prev.managedCategories.filter(c => c !== category)
+                                }));
+                              }}
+                            />
+                            <span>{category}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p style={{ color: '#999' }}>لا توجد أقسام متاحة. قم بإضافة منتجات أولاً.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-actions">
+                    <button type="submit" className="submit-btn">إنشاء مدير القسم</button>
+                    <button type="button" onClick={() => setShowCategoryAdminForm(false)} className="cancel-btn">
+                      إلغاء
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>الاسم</th>
+                      <th>اسم المستخدم</th>
+                      <th>الأقسام المسؤول عنها</th>
+                      <th>الإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categoryAdmins.map(admin => (
+                      <tr key={admin._id}>
+                        <td>{admin.name}</td>
+                        <td>{admin.username}</td>
+                        <td>
+                          {admin.managedCategories && admin.managedCategories.length > 0
+                            ? admin.managedCategories.join(', ')
+                            : 'لا يوجد'}
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => handleDeleteCategoryAdmin(admin._id)}
+                            className="delete-btn"
+                          >
+                            حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {categoryAdmins.length === 0 && (
+                  <div className="no-data">لا يوجد مدراء أقسام حالياً. قم بإضافة مدير قسم جديد.</div>
+                )}
+              </div>
             </div>
           )}
 

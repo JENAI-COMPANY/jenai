@@ -10,25 +10,34 @@
 
 .admin-tabs {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 2rem;
   border-bottom: 2px solid #eee;
+  padding-bottom: 0.5rem;
 }
 
 .admin-tabs button {
-  background: none;
-  border: none;
-  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #666;
-  border-bottom: 3px solid transparent;
   transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.admin-tabs button:hover {
+  background: #e9ecef;
+  color: #3498db;
 }
 
 .admin-tabs button.tab-active {
-  color: #3498db;
-  border-bottom-color: #3498db;
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
 }
 
 .tab-content {

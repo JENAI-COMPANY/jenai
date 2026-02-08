@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
+import { AuthContext } from '../context/AuthContext';
 import '../styles/OrderManagement.css';
 
 const OrderManagement = () => {
   const { language } = useLanguage();
+  const { user } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,6 +51,15 @@ const OrderManagement = () => {
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
+    // Block category_admin from setting "received" status
+    if (user?.role === 'category_admin' && newStatus === 'received') {
+      setError(language === 'ar'
+        ? 'مدراء الأقسام لا يمكنهم تأكيد استلام الطلب'
+        : 'Category admins cannot confirm order receipt');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       await axios.put(
@@ -598,7 +609,9 @@ const OrderManagement = () => {
                       <option value="pending">{language === 'ar' ? 'قيد الانتظار' : 'Pending'}</option>
                       <option value="prepared">{language === 'ar' ? 'جاهز' : 'Prepared'}</option>
                       <option value="on_the_way">{language === 'ar' ? 'في الطريق' : 'On The Way'}</option>
-                      <option value="received">{language === 'ar' ? 'تم الاستلام' : 'Received'}</option>
+                      {user?.role !== 'category_admin' && (
+                        <option value="received">{language === 'ar' ? 'تم الاستلام' : 'Received'}</option>
+                      )}
                     </select>
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>

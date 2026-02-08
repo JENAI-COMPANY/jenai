@@ -957,6 +957,123 @@ router.post('/regional-admin', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/category-admin
+// @desc    Create category admin
+// @access  Private/Super Admin Only
+router.post('/category-admin', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { username, name, password, phone, managedCategories, permissions } = req.body;
+
+    // Validate required fields
+    if (!username || !name || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username, name and password are required',
+        messageAr: 'اسم المستخدم والاسم وكلمة المرور مطلوبة'
+      });
+    }
+
+    // Validate at least one category is assigned
+    if (!managedCategories || managedCategories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one category must be assigned',
+        messageAr: 'يجب تعيين قسم واحد على الأقل'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username already exists',
+        messageAr: 'اسم المستخدم موجود بالفعل'
+      });
+    }
+
+    const categoryAdmin = await User.create({
+      username: username.toLowerCase(),
+      name,
+      password,
+      phone: phone || '',
+      role: 'category_admin',
+      managedCategories: managedCategories || [],
+      permissions: permissions || {
+        canViewProducts: true,
+        canManageProducts: true,
+        canViewOrders: true,
+        canManageOrders: true
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: categoryAdmin._id,
+        username: categoryAdmin.username,
+        name: categoryAdmin.name,
+        role: categoryAdmin.role,
+        managedCategories: categoryAdmin.managedCategories,
+        permissions: categoryAdmin.permissions
+      },
+      message: 'Category admin created successfully',
+      messageAr: 'تم إنشاء مدير القسم بنجاح'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   PUT /api/admin/category-admin/:id
+// @desc    Update category admin
+// @access  Private/Super Admin Only
+router.put('/category-admin/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { managedCategories, permissions, isActive } = req.body;
+
+    const categoryAdmin = await User.findById(req.params.id);
+
+    if (!categoryAdmin || categoryAdmin.role !== 'category_admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'Category admin not found',
+        messageAr: 'مدير القسم غير موجود'
+      });
+    }
+
+    // Update fields
+    if (managedCategories !== undefined) categoryAdmin.managedCategories = managedCategories;
+    if (permissions !== undefined) categoryAdmin.permissions = permissions;
+    if (isActive !== undefined) categoryAdmin.isActive = isActive;
+
+    await categoryAdmin.save();
+
+    res.json({
+      success: true,
+      data: {
+        id: categoryAdmin._id,
+        username: categoryAdmin.username,
+        name: categoryAdmin.name,
+        role: categoryAdmin.role,
+        managedCategories: categoryAdmin.managedCategories,
+        permissions: categoryAdmin.permissions,
+        isActive: categoryAdmin.isActive
+      },
+      message: 'Category admin updated successfully',
+      messageAr: 'تم تحديث مدير القسم بنجاح'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // @route   GET /api/admin/stats
 // @desc    Get dashboard statistics
 // @access  Private/Admin
@@ -1248,6 +1365,10 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
 // @access  Private/Admin
 router.get('/orders', protect, isAdmin, async (req, res) => {
   try {
+    console.log('📋 GET /orders endpoint called');
+    console.log('👤 User role:', req.user.role);
+    console.log('📁 Managed categories:', req.user.managedCategories);
+
     let query = {};
 
     // Regional admins can only see orders from their regions
@@ -1266,10 +1387,59 @@ router.get('/orders', protect, isAdmin, async (req, res) => {
       query.user = { $in: userIds };
     }
 
-    const orders = await Order.find(query)
+    // Category admins can only see orders containing their managed categories
+    if (req.user.role === 'category_admin') {
+      console.log('🔒 Applying category_admin filter');
+      if (!req.user.managedCategories || req.user.managedCategories.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'No categories assigned to your account',
+          messageAr: 'لا توجد أقسام مخصصة لحسابك'
+        });
+      }
+
+      // Find all products in managed categories
+      const products = await Product.find({
+        category: { $in: req.user.managedCategories }
+      }).select('_id name category');
+
+      console.log(`📦 Found ${products.length} products in managed categories:`,
+        products.map(p => ({ id: p._id, name: p.name, category: p.category })));
+
+      const productIds = products.map(p => p._id);
+
+      // Filter orders containing these products
+      query['orderItems.product'] = { $in: productIds };
+      console.log('🔍 Order query:', JSON.stringify(query, null, 2));
+    }
+
+    let orders = await Order.find(query)
       .populate('user', 'username name')
-      .populate('orderItems.product', 'name price')
+      .populate('orderItems.product', 'name price category')
       .sort('-createdAt');
+
+    // For category_admin: Filter out orders that contain products from other categories
+    if (req.user.role === 'category_admin') {
+      orders = orders.filter(order => {
+        // Get only existing products (not deleted)
+        const existingProducts = order.orderItems.filter(item => item.product);
+
+        // If no existing products, don't show this order
+        if (existingProducts.length === 0) {
+          return false;
+        }
+
+        // Check if ALL existing products are from managed categories
+        const allProductsFromManagedCategories = existingProducts.every(item => {
+          return req.user.managedCategories.includes(item.product.category);
+        });
+
+        return allProductsFromManagedCategories;
+      });
+      console.log(`🔍 After filtering: ${orders.length} orders remain (only orders with products from managed categories)`);
+    }
+
+    console.log(`✅ Returning ${orders.length} orders`);
 
     res.json({
       success: true,
@@ -1277,6 +1447,7 @@ router.get('/orders', protect, isAdmin, async (req, res) => {
       orders: orders
     });
   } catch (error) {
+    console.error('❌ Error in GET /orders:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -1295,13 +1466,43 @@ router.put('/orders/:id', protect, isAdmin, adminUpdateOrder);
 router.put('/orders/:id/status', protect, isAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findById(req.params.id);
+
+    // Block category_admin from setting status to "received"
+    if (req.user.role === 'category_admin' && status === 'received') {
+      return res.status(403).json({
+        success: false,
+        message: 'Category admins cannot confirm order receipt',
+        messageAr: 'مدراء الأقسام لا يمكنهم تأكيد استلام الطلب'
+      });
+    }
+
+    const order = await Order.findById(req.params.id)
+      .populate('orderItems.product', 'category');
 
     if (!order) {
       return res.status(404).json({
         success: false,
         message: 'Order not found'
       });
+    }
+
+    // Validate category_admin has access to this order
+    if (req.user.role === 'category_admin') {
+      const orderCategories = [...new Set(
+        order.orderItems.map(item => item.product?.category).filter(Boolean)
+      )];
+
+      const hasAccess = orderCategories.some(cat =>
+        req.user.managedCategories.includes(cat)
+      );
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied to this order',
+          messageAr: 'غير مصرح لك بالوصول إلى هذا الطلب'
+        });
+      }
     }
 
     const oldStatus = order.status;

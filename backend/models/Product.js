@@ -51,6 +51,11 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Please provide a subscriber price'],
     min: 0
   },
+  wholesalePrice: {
+    type: Number,
+    required: [true, 'Please provide a wholesale price'],
+    min: 0
+  },
   bulkPrice: {
     type: Number,
     min: 0

@@ -22,7 +22,7 @@ router.get('/:id', protect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('-password')
-      .populate('sponsorId', 'name subscriberCode');
+      .populate('sponsorId', 'name subscriberCode phone');
 
     if (!user) {
       return res.status(404).json({
