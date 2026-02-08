@@ -203,6 +203,14 @@ const Navbar = () => {
                 </li>
               )}
 
+              {(user?.role === 'super_admin' || user?.role === 'regional_admin') && (
+                <li className="nav-item">
+                  <Link to="/admin" className="nav-link">
+                    {language === 'ar' ? 'لوحة التحكم' : 'Admin Dashboard'}
+                  </Link>
+                </li>
+              )}
+
               {user?.role === 'super_admin' && (
                 <li className="nav-item">
                   <Link to="/suppliers" className="nav-link">

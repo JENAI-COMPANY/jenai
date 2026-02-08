@@ -691,6 +691,24 @@ const MyTeam = () => {
 
                 <div className="info-item">
                   <span className="info-label">
+                    {language === 'ar' ? 'رقم الهاتف:' : 'Phone Number:'}
+                  </span>
+                  <span className="info-value">
+                    {selectedMember.phone || (language === 'ar' ? 'غير محدد' : 'Not specified')}
+                  </span>
+                </div>
+
+                <div className="info-item">
+                  <span className="info-label">
+                    {language === 'ar' ? 'المدينة:' : 'City:'}
+                  </span>
+                  <span className="info-value">
+                    {selectedMember.city || (language === 'ar' ? 'غير محدد' : 'Not specified')}
+                  </span>
+                </div>
+
+                <div className="info-item">
+                  <span className="info-label">
                     {language === 'ar' ? 'الرتبة:' : 'Rank:'}
                   </span>
                   <span className="info-value rank-badge">

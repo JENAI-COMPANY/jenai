@@ -298,6 +298,21 @@
   border: 2px solid #e1e8ed;
 }
 
+/* Locked Input (From Referral Link) */
+.locked-input {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%) !important;
+  border: 2px solid #4caf50 !important;
+  color: #2e7d32 !important;
+  font-weight: 600 !important;
+  cursor: not-allowed !important;
+}
+
+.locked-badge {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
 .help-text {
   display: block;
   margin-top: 0.75rem;

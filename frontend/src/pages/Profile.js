@@ -251,6 +251,27 @@ const Profile = () => {
             <span className="tab-label">{language === 'ar' ? 'الملف الشخصي' : 'Profile'}</span>
           </button>
 
+          {/* Category Admin Tabs */}
+          {user.role === 'category_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`}
+              onClick={() => setActiveTab('products')}
+            >
+              <span className="tab-icon">📦</span>
+              <span className="tab-label">{language === 'ar' ? 'إدارة المنتجات' : 'Manage Products'}</span>
+            </button>
+          )}
+
+          {user.role === 'category_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+              onClick={() => setActiveTab('orders')}
+            >
+              <span className="tab-icon">📋</span>
+              <span className="tab-label">{language === 'ar' ? 'إدارة الطلبات' : 'Manage Orders'}</span>
+            </button>
+          )}
+
           {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'statistics' ? 'active' : ''}`}
@@ -641,7 +662,7 @@ const Profile = () => {
           )}
 
           {/* Products Management Tab */}
-          {activeTab === 'products' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
+          {activeTab === 'products' && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'category_admin') && (
             <div className="tab-panel">
               <ProductManagement />
             </div>
@@ -711,7 +732,7 @@ const Profile = () => {
           )}
 
           {/* Orders Management Tab - For Admins */}
-          {activeTab === 'orders' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
+          {activeTab === 'orders' && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'category_admin') && (
             <div className="tab-panel">
               <OrderManagement />
             </div>

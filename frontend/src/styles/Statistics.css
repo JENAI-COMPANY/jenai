@@ -28,6 +28,35 @@
   margin: 0;
 }
 
+.stats-header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.region-filter-select {
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  background: white;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: all 0.3s;
+  outline: none;
+  min-width: 180px;
+}
+
+.region-filter-select:hover {
+  border-color: #667eea;
+}
+
+.region-filter-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .stats-refresh-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
