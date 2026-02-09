@@ -98,7 +98,7 @@ const Register = () => {
 
     setCheckingReferrer(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/check-referral/${code}`);
+      const response = await fetch(`/api/auth/check-referral/${code}`);
       const data = await response.json();
 
       if (data.success && data.referrer) {
