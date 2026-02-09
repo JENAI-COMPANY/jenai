@@ -26,6 +26,8 @@ const Register = () => {
     acceptedTerms: false
   });
   const [error, setError] = useState('');
+  const [referrerName, setReferrerName] = useState('');
+  const [checkingReferrer, setCheckingReferrer] = useState(false);
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -35,6 +37,7 @@ const Register = () => {
       setFormData(prev => ({ ...prev, sponsorId: refCode }));
       setIsRefCodeLocked(true);
       setSelectedRole('member');
+      checkReferralCode(refCode);
     }
   }, [refCode]);
   const boxRef = useRef(null);
@@ -86,6 +89,31 @@ const Register = () => {
     setSelectedRole(role);
   };
 
+  // التحقق من كود الإحالة وجلب اسم الراعي
+  const checkReferralCode = async (code) => {
+    if (!code || code.trim() === '') {
+      setReferrerName('');
+      return;
+    }
+
+    setCheckingReferrer(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/check-referral/${code}`);
+      const data = await response.json();
+
+      if (data.success && data.referrer) {
+        setReferrerName(data.referrer.name);
+      } else {
+        setReferrerName('');
+      }
+    } catch (error) {
+      console.error('Error checking referral code:', error);
+      setReferrerName('');
+    } finally {
+      setCheckingReferrer(false);
+    }
+  };
+
   const handleNextStep = () => {
     if (selectedRole) {
       setStep(2);
@@ -103,6 +131,11 @@ const Register = () => {
       setFormData({ ...formData, [name]: englishOnly });
     } else {
       setFormData({ ...formData, [name]: value });
+
+      // التحقق من كود الإحالة عند تغييره
+      if (name === 'sponsorId') {
+        checkReferralCode(value);
+      }
     }
   };
 
@@ -439,6 +472,21 @@ const Register = () => {
               readOnly={isRefCodeLocked}
               className={isRefCodeLocked ? 'locked-input' : ''}
             />
+            {checkingReferrer && (
+              <small className="help-text" style={{ color: '#667eea' }}>
+                {language === 'ar' ? 'جاري التحقق...' : 'Checking...'}
+              </small>
+            )}
+            {!checkingReferrer && referrerName && (
+              <small className="help-text" style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                ✓ {language === 'ar' ? 'اسم الراعي: ' : 'Sponsor Name: '}{referrerName}
+              </small>
+            )}
+            {!checkingReferrer && formData.sponsorId && !referrerName && (
+              <small className="help-text" style={{ color: '#f44336' }}>
+                {language === 'ar' ? 'كود الإحالة غير صحيح' : 'Invalid referral code'}
+              </small>
+            )}
             <small className="help-text">
               {isRefCodeLocked
                 ? (language === 'ar'

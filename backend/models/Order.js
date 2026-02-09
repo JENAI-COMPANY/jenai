@@ -102,6 +102,10 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  priceDifference: {
+    type: Number,
+    default: 0
+  },
   isPaid: {
     type: Boolean,
     default: false

@@ -85,23 +85,15 @@ exports.createOrder = async (req, res) => {
 
     const order = await Order.create(orderData);
 
+    // ═══════════════════════════════════════════════════════════════
+    // حساب وحفظ النقاط في الطلب فقط - لا يتم توزيعها حتى حالة "تم الاستلام"
+    // ═══════════════════════════════════════════════════════════════
+
     // Calculate points for members based on new system
     if (req.user.role === 'member') {
       let totalPoints = 0;
-      const products = [];
-
-      // جلب بيانات المنتجات
-      for (const item of orderItems) {
-        if (item.product) {
-          const product = await Product.findById(item.product);
-          if (product) {
-            products.push(product);
-          }
-        }
-      }
 
       // حساب النقاط باستخدام النظام الجديد
-      // استخدام النقاط المحددة في المنتج مباشرة
       for (const item of orderItems) {
         if (item.product) {
           const product = await Product.findById(item.product);
@@ -111,60 +103,30 @@ exports.createOrder = async (req, res) => {
         }
       }
 
-      // إضافة النقاط للعضو وتوزيع العمولات
+      // حفظ النقاط في الطلب فقط (بدون توزيع)
       if (totalPoints > 0) {
-        // حفظ النقاط في الطلب
         await Order.findByIdAndUpdate(order._id, {
           totalPoints: totalPoints
         });
-
-        // توزيع العمولات حسب النظام الجديد
-        const buyer = await User.findById(req.user._id);
-
-        // إعطاء 10 نقاط هدية لأول عملية شراء خلال 30 يوم من التسجيل
-        if (!buyer.firstOrderBonus.received && buyer.firstOrderBonus.expiresAt) {
-          const now = new Date();
-          const expiresAt = new Date(buyer.firstOrderBonus.expiresAt);
-
-          // Check if bonus hasn't expired yet (within 30 days of registration)
-          if (now <= expiresAt) {
-            const bonusPoints = buyer.firstOrderBonus.points || 10;
-            buyer.points = (buyer.points || 0) + bonusPoints;
-            buyer.monthlyPoints = (buyer.monthlyPoints || 0) + bonusPoints;
-            buyer.firstOrderBonus.received = true;
-            await buyer.save();
-
-            console.log(`🎁 ${buyer.name} حصل على ${bonusPoints} نقاط هدية لأول عملية شراء خلال 30 يوم!`);
-          } else {
-            console.log(`⏰ ${buyer.name} فاتته فرصة الحصول على نقاط الترحيب (انتهت المدة)`);
-          }
-        }
-
-        await distributeCommissions(buyer, totalPoints);
+        console.log(`📝 تم حفظ ${totalPoints} نقطة للطلب ${order.orderNumber} - سيتم توزيعها عند الاستلام`);
       }
-    }
-
-    // Calculate commissions if user is a subscriber
-    if (req.user.role === 'subscriber' && req.user.sponsorId) {
-      await calculateCommissions(order, req.user);
     }
 
     // Handle price difference profit AND points for customers referred by members
     if (req.user.role === 'customer') {
-      // Check if customer has a referring member
       const referrer = req.user.sponsorId || req.user.referredBy;
 
       if (referrer) {
         const referrerUser = await User.findById(referrer);
 
-        // Only give price difference and points if referrer is a member
+        // Only calculate if referrer is a member
         if (referrerUser && referrerUser.role === 'member') {
           let totalPriceDifference = 0;
           let totalPoints = 0;
 
           // Calculate price difference AND points for each product
           for (const item of orderItems) {
-            // استخدام الأسعار المحفوظة في الطلب (من Frontend)
+            // حساب فرق السعر
             if (item.customerPriceAtPurchase && item.memberPriceAtPurchase) {
               const priceDiff = item.customerPriceAtPurchase - item.memberPriceAtPurchase;
               totalPriceDifference += priceDiff * item.quantity;
@@ -176,30 +138,16 @@ exports.createOrder = async (req, res) => {
             }
           }
 
-          // إضافة فرق السعر مباشرة لأرباح العضو (بالعملة، ليس نقاط)
-          if (totalPriceDifference > 0) {
-            referrerUser.totalCommission = Math.floor((referrerUser.totalCommission || 0) + totalPriceDifference);
-            referrerUser.availableCommission = Math.floor((referrerUser.availableCommission || 0) + totalPriceDifference);
-
-            console.log(`💰 فرق السعر: العضو ${referrerUser.name} حصل على ${totalPriceDifference} شيكل من شراء العميل ${req.user.name}`);
-          }
-
-          // إضافة النقاط للعضو وتوزيع العمولات على شجرته
-          if (totalPoints > 0) {
-            // حفظ النقاط في الطلب
+          // حفظ البيانات في الطلب فقط (بدون توزيع)
+          if (totalPoints > 0 || totalPriceDifference > 0) {
             await Order.findByIdAndUpdate(order._id, {
               totalPoints: totalPoints,
-              referredBy: referrerUser._id // حفظ معلومات العضو المُحيل
+              priceDifference: totalPriceDifference,
+              referredBy: referrerUser._id
             });
 
-            // توزيع العمولات على شجرة العضو المُحيل
-            await distributeCommissions(referrerUser, totalPoints);
-
-            console.log(`📊 النقاط: العضو ${referrerUser.name} حصل على ${totalPoints} نقطة من شراء العميل ${req.user.name}`);
+            console.log(`📝 تم حفظ ${totalPoints} نقطة و ${totalPriceDifference} شيكل للطلب ${order.orderNumber} - سيتم توزيعها عند الاستلام`);
           }
-
-          // حفظ التغييرات على العضو المُحيل
-          await referrerUser.save();
         }
       }
     }
@@ -348,6 +296,9 @@ const calculateCommissions = async (order, buyer) => {
   await Order.findByIdAndUpdate(order._id, { commissions });
 };
 
+// Export distributeCommissions to use it in admin routes
+exports.distributeCommissions = distributeCommissions;
+
 // Get order by ID
 exports.getOrderById = async (req, res) => {
   try {
@@ -423,6 +374,10 @@ exports.getAllOrders = async (req, res) => {
 // Update order status (Admin only)
 exports.updateOrderStatus = async (req, res) => {
   try {
+    console.log('**************************************************');
+    console.log('***** UPDATE ORDER STATUS FUNCTION CALLED *****');
+    console.log('**************************************************');
+
     const order = await Order.findById(req.params.id).populate('user');
 
     if (!order) {
@@ -431,6 +386,11 @@ exports.updateOrderStatus = async (req, res) => {
 
     const oldStatus = order.status;
     order.status = req.body.status || order.status;
+
+    console.log(`🔄 تحديث حالة الطلب ${order.orderNumber}:`);
+    console.log(`   الحالة القديمة: ${oldStatus}`);
+    console.log(`   الحالة الجديدة: ${req.body.status}`);
+    console.log(`   النقاط المحفوظة: ${order.totalPoints}`);
 
     if (req.body.status === 'delivered') {
       order.isDelivered = true;
@@ -458,21 +418,75 @@ exports.updateOrderStatus = async (req, res) => {
       console.log(`📦 Updated stock and soldCount for order ${order.orderNumber}`);
     }
 
-    // إذا تم تغيير الحالة إلى "received" (مستلم) - توزيع النقاط
+    // ═══════════════════════════════════════════════════════════════
+    // إذا تم تغيير الحالة إلى "received" (مستلم) - توزيع النقاط والأرباح
+    // ═══════════════════════════════════════════════════════════════
+    console.log(`🔍 فحص شرط التوزيع: req.body.status === 'received' (${req.body.status === 'received'}) && oldStatus !== 'received' (${oldStatus !== 'received'})`);
+
     if (req.body.status === 'received' && oldStatus !== 'received') {
-      // توزيع النقاط إذا كانت موجودة
-      if (order.totalPoints) {
-        const buyer = order.user;
+      console.log(`📥 تغيير حالة الطلب ${order.orderNumber} إلى "تم الاستلام" - بدء توزيع النقاط والأرباح`);
 
-        // توزيع النقاط على الشخص المشتري
-        buyer.monthlyPoints = (buyer.monthlyPoints || 0) + order.totalPoints;
-        await buyer.save();
+      const buyer = order.user;
 
-        console.log(`✅ Added ${order.totalPoints} points to ${buyer.name}`);
+      // ══════════════════════════════════════════════
+      // حالة 1: المشتري عضو (member)
+      // ══════════════════════════════════════════════
+      if (buyer.role === 'member' && order.totalPoints) {
+        console.log(`👤 المشتري عضو: ${buyer.name}`);
 
-        // توزيع العمولات على الأجيال
+        // إعطاء 10 نقاط هدية لأول عملية شراء خلال 30 يوم من التسجيل
+        if (!buyer.firstOrderBonus.received && buyer.firstOrderBonus.expiresAt) {
+          const now = new Date();
+          const expiresAt = new Date(buyer.firstOrderBonus.expiresAt);
+
+          if (now <= expiresAt) {
+            const bonusPoints = buyer.firstOrderBonus.points || 10;
+            buyer.points = (buyer.points || 0) + bonusPoints;
+            buyer.monthlyPoints = (buyer.monthlyPoints || 0) + bonusPoints;
+            buyer.firstOrderBonus.received = true;
+            await buyer.save();
+
+            console.log(`🎁 ${buyer.name} حصل على ${bonusPoints} نقاط هدية لأول عملية شراء خلال 30 يوم!`);
+          }
+        }
+
+        // توزيع العمولات على العضو المشتري وأجياله
         await distributeCommissions(buyer, order.totalPoints);
+        console.log(`✅ تم توزيع ${order.totalPoints} نقطة للعضو ${buyer.name} وأجياله`);
       }
+
+      // ══════════════════════════════════════════════
+      // حالة 2: المشتري عميل (customer) لديه عضو مُحيل
+      // ══════════════════════════════════════════════
+      if (buyer.role === 'customer' && order.referredBy) {
+        console.log(`👤 المشتري عميل: ${buyer.name}`);
+
+        const referrerUser = await User.findById(order.referredBy);
+
+        if (referrerUser && referrerUser.role === 'member') {
+          console.log(`👤 العضو المُحيل: ${referrerUser.name}`);
+
+          // إضافة فرق السعر للعضو المُحيل (إن وجد)
+          if (order.priceDifference && order.priceDifference > 0) {
+            referrerUser.totalCommission = Math.floor((referrerUser.totalCommission || 0) + order.priceDifference);
+            referrerUser.availableCommission = Math.floor((referrerUser.availableCommission || 0) + order.priceDifference);
+
+            console.log(`💰 فرق السعر: العضو ${referrerUser.name} حصل على ${order.priceDifference} شيكل من شراء العميل ${buyer.name}`);
+          }
+
+          // إضافة النقاط وتوزيع العمولات على شجرة العضو المُحيل
+          if (order.totalPoints && order.totalPoints > 0) {
+            await distributeCommissions(referrerUser, order.totalPoints);
+
+            console.log(`📊 النقاط: العضو ${referrerUser.name} حصل على توزيع ${order.totalPoints} نقطة من شراء العميل ${buyer.name}`);
+          }
+
+          // حفظ التغييرات على العضو المُحيل
+          await referrerUser.save();
+        }
+      }
+
+      console.log(`✅ انتهى توزيع النقاط والأرباح للطلب ${order.orderNumber}`);
     }
 
     const updatedOrder = await order.save();

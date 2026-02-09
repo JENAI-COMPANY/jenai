@@ -109,6 +109,13 @@ const WelcomeMember = () => {
 
           <div className="info-row">
             <span className="info-label">
+              {language === 'ar' ? 'اسم المستخدم:' : 'Username:'}
+            </span>
+            <span className="info-value">{user.username}</span>
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">
               {language === 'ar' ? 'رقم العضوية:' : 'Membership ID:'}
             </span>
             <span className="info-value highlight">{user.subscriberCode}</span>
