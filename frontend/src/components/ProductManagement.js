@@ -54,6 +54,7 @@ const ProductManagement = () => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [stockFilter, setStockFilter] = useState('all'); // all, inStock, outOfStock
+  const [categoryFilter, setCategoryFilter] = useState('all'); // all, or specific category
 
   useEffect(() => {
     fetchProducts();
@@ -479,6 +480,7 @@ const ProductManagement = () => {
       <div className="pm-header">
         <h2>{language === 'ar' ? 'إدارة المنتجات' : 'Product Management'}</h2>
         <div className="pm-header-controls">
+          {/* Stock Filters */}
           <div className="pm-stock-filters">
             <button
               className={`pm-filter-btn ${stockFilter === 'all' ? 'active' : ''}`}
@@ -499,6 +501,28 @@ const ProductManagement = () => {
               {language === 'ar' ? 'نفذ' : 'Out of Stock'}
             </button>
           </div>
+
+          {/* Category Filters */}
+          {categories.length > 0 && (
+            <div className="pm-category-filters">
+              <button
+                className={`pm-filter-btn ${categoryFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setCategoryFilter('all')}
+              >
+                {language === 'ar' ? 'كل الأقسام' : 'All Categories'}
+              </button>
+              {categories.map((category, index) => (
+                <button
+                  key={index}
+                  className={`pm-filter-btn ${categoryFilter === category ? 'active' : ''}`}
+                  onClick={() => setCategoryFilter(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+
           <button className="pm-add-btn" onClick={() => setShowAddForm(true)}>
             + {language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product'}
           </button>
@@ -1056,8 +1080,13 @@ const ProductManagement = () => {
           </thead>
           <tbody>
             {products.filter(product => {
-              if (stockFilter === 'inStock') return product.stock > 0;
-              if (stockFilter === 'outOfStock') return product.stock <= 0;
+              // Stock filter
+              if (stockFilter === 'inStock' && product.stock <= 0) return false;
+              if (stockFilter === 'outOfStock' && product.stock > 0) return false;
+
+              // Category filter
+              if (categoryFilter !== 'all' && product.category !== categoryFilter) return false;
+
               return true;
             }).length === 0 ? (
               <tr>
@@ -1067,8 +1096,13 @@ const ProductManagement = () => {
               </tr>
             ) : (
               products.filter(product => {
-                if (stockFilter === 'inStock') return product.stock > 0;
-                if (stockFilter === 'outOfStock') return product.stock <= 0;
+                // Stock filter
+                if (stockFilter === 'inStock' && product.stock <= 0) return false;
+                if (stockFilter === 'outOfStock' && product.stock > 0) return false;
+
+                // Category filter
+                if (categoryFilter !== 'all' && product.category !== categoryFilter) return false;
+
                 return true;
               }).map(product => (
                 <tr key={product.id || product._id}>
