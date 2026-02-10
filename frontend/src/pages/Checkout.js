@@ -96,7 +96,9 @@ const Checkout = () => {
           price: isSubscriber ? actualMemberPrice : actualCustomerPrice,
           customerPriceAtPurchase: actualCustomerPrice,
           memberPriceAtPurchase: actualMemberPrice,
-          points: item.points || 0
+          points: item.points || 0,
+          selectedColor: item.selectedColor || '',
+          selectedSize: item.selectedSize || ''
         };
       });
 

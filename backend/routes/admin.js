@@ -8,7 +8,9 @@ const {
   canViewMembers,
   canManageMembers,
   canViewProducts,
-  canManageProducts
+  canManageProducts,
+  canViewOrders,
+  canManageOrders
 } = require('../middleware/permissions');
 const User = require('../models/User');
 const Product = require('../models/Product');
@@ -957,6 +959,28 @@ router.post('/regional-admin', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/category-admins
+// @desc    Get all category admins
+// @access  Private/Super Admin Only
+router.get('/category-admins', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const categoryAdmins = await User.find({ role: 'category_admin' })
+      .select('username name phone managedCategories permissions isActive createdAt')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: categoryAdmins.length,
+      data: categoryAdmins
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 // @route   POST /api/admin/category-admin
 // @desc    Create category admin
 // @access  Private/Super Admin Only
@@ -1065,6 +1089,53 @@ router.put('/category-admin/:id', protect, isSuperAdmin, async (req, res) => {
       },
       message: 'Category admin updated successfully',
       messageAr: 'تم تحديث مدير القسم بنجاح'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   PUT /api/admin/category-admin/:id/permissions
+// @desc    Update category admin permissions
+// @access  Private/Super Admin Only
+router.put('/category-admin/:id/permissions', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { permissions } = req.body;
+
+    const categoryAdmin = await User.findById(req.params.id);
+
+    if (!categoryAdmin || categoryAdmin.role !== 'category_admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'Category admin not found',
+        messageAr: 'مدير القسم غير موجود'
+      });
+    }
+
+    // Update only the 4 specific permissions for category admins
+    categoryAdmin.permissions = {
+      ...categoryAdmin.permissions,
+      canViewProducts: permissions.canViewProducts !== undefined ? permissions.canViewProducts : categoryAdmin.permissions.canViewProducts,
+      canManageProducts: permissions.canManageProducts !== undefined ? permissions.canManageProducts : categoryAdmin.permissions.canManageProducts,
+      canViewOrders: permissions.canViewOrders !== undefined ? permissions.canViewOrders : categoryAdmin.permissions.canViewOrders,
+      canManageOrders: permissions.canManageOrders !== undefined ? permissions.canManageOrders : categoryAdmin.permissions.canManageOrders
+    };
+
+    await categoryAdmin.save();
+
+    res.json({
+      success: true,
+      data: {
+        id: categoryAdmin._id,
+        username: categoryAdmin.username,
+        name: categoryAdmin.name,
+        permissions: categoryAdmin.permissions
+      },
+      message: 'Permissions updated successfully',
+      messageAr: 'تم تحديث الصلاحيات بنجاح'
     });
   } catch (error) {
     res.status(500).json({
@@ -1363,7 +1434,7 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
 // @route   GET /api/admin/orders
 // @desc    Get all orders
 // @access  Private/Admin
-router.get('/orders', protect, isAdmin, async (req, res) => {
+router.get('/orders', protect, isAdmin, canViewOrders, async (req, res) => {
   try {
     console.log('📋 GET /orders endpoint called');
     console.log('👤 User role:', req.user.role);
@@ -1458,12 +1529,12 @@ router.get('/orders', protect, isAdmin, async (req, res) => {
 // @route   PUT /api/admin/orders/:id
 // @desc    Update order details (for pending orders only)
 // @access  Private/Admin
-router.put('/orders/:id', protect, isAdmin, adminUpdateOrder);
+router.put('/orders/:id', protect, isAdmin, canManageOrders, adminUpdateOrder);
 
 // @route   PUT /api/admin/orders/:id/status
 // @desc    Update order status
 // @access  Private/Admin
-router.put('/orders/:id/status', protect, isAdmin, async (req, res) => {
+router.put('/orders/:id/status', protect, isAdmin, canManageOrders, async (req, res) => {
   try {
     const { status } = req.body;
 

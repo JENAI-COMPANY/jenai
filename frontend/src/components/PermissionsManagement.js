@@ -85,6 +85,10 @@ const PermissionsManagement = () => {
     return matchesSearch && matchesRole;
   });
 
+  // فصل المستخدمين حسب النوع
+  const regionalAdmins = filteredUsers.filter(u => u.role === 'regional_admin');
+  const categoryAdmins = filteredUsers.filter(u => u.role === 'category_admin');
+
   if (loading) {
     return <div className="loading">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>;
   }
@@ -127,20 +131,19 @@ const PermissionsManagement = () => {
         </div>
       </div>
 
-      {/* Users List */}
-      <div className="permissions-list">
-        {filteredUsers.length === 0 ? (
-          <div className="no-users">
-            {language === 'ar' ? 'لا يوجد مستخدمون' : 'No users found'}
-          </div>
-        ) : (
+      {/* Regional Admins Section */}
+      {regionalAdmins.length > 0 && (
+        <div className="permissions-section">
+          <h3 className="section-title">
+            {language === 'ar' ? '👥 مدراء المناطق' : '👥 Regional Admins'}
+          </h3>
           <div className="permissions-table-wrapper">
             <table className="permissions-table">
               <thead>
                 <tr>
                   <th>{language === 'ar' ? 'المستخدم' : 'User'}</th>
                   <th>{language === 'ar' ? 'الدور' : 'Role'}</th>
-                  <th>{language === 'ar' ? 'المنطقة/القسم' : 'Region/Category'}</th>
+                  <th>{language === 'ar' ? 'المنطقة' : 'Region'}</th>
                   <th>{language === 'ar' ? 'عرض الأعضاء' : 'View Members'}</th>
                   <th>{language === 'ar' ? 'التحكم بالأعضاء' : 'Manage Members'}</th>
                   <th>{language === 'ar' ? 'عرض المنتجات' : 'View Products'}</th>
@@ -148,7 +151,7 @@ const PermissionsManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map(user => (
+                {regionalAdmins.map(user => (
                   <tr key={user._id}>
                     <td>
                       <div className="user-info">
@@ -157,21 +160,15 @@ const PermissionsManagement = () => {
                       </div>
                     </td>
                     <td>
-                      <span className="role-badge">
-                        {user.role === 'regional_admin'
-                          ? (language === 'ar' ? 'مدير منطقة' : 'Regional Admin')
-                          : user.role === 'category_admin'
-                          ? (language === 'ar' ? 'مدير قسم' : 'Category Admin')
-                          : user.role}
+                      <span className="role-badge regional">
+                        {language === 'ar' ? 'مدير منطقة' : 'Regional Admin'}
                       </span>
                     </td>
                     <td>
-                      {user.role === 'regional_admin' && user.region
+                      {user.region
                         ? (typeof user.region === 'object'
                             ? (language === 'ar' ? user.region.nameAr : user.region.nameEn)
                             : user.region)
-                        : user.role === 'category_admin' && user.managedCategories?.length > 0
-                        ? user.managedCategories.join(', ')
                         : '-'}
                     </td>
                     <td>
@@ -219,42 +216,175 @@ const PermissionsManagement = () => {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Category Admins Section */}
+      {categoryAdmins.length > 0 && (
+        <div className="permissions-section category-admin-section">
+          <h3 className="section-title">
+            {language === 'ar' ? '🏷️ مدراء الأقسام' : '🏷️ Category Admins'}
+          </h3>
+          <div className="permissions-table-wrapper">
+            <table className="permissions-table">
+              <thead>
+                <tr>
+                  <th>{language === 'ar' ? 'المستخدم' : 'User'}</th>
+                  <th>{language === 'ar' ? 'الدور' : 'Role'}</th>
+                  <th>{language === 'ar' ? 'المنطقة/القسم' : 'Region/Category'}</th>
+                  <th>{language === 'ar' ? 'عرض المنتجات' : 'View Products'}</th>
+                  <th>{language === 'ar' ? 'التحكم بالمنتجات' : 'Manage Products'}</th>
+                  <th>{language === 'ar' ? 'عرض الطلبات' : 'View Orders'}</th>
+                  <th>{language === 'ar' ? 'التحكم بالطلبات' : 'Manage Orders'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoryAdmins.map(user => (
+                  <tr key={user._id}>
+                    <td>
+                      <div className="user-info">
+                        <div className="user-name">{user.name}</div>
+                        <div className="user-username">@{user.username}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="role-badge category">
+                        {language === 'ar' ? 'مدير قسم' : 'Category Admin'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.managedCategories?.length > 0
+                        ? user.managedCategories.join(', ')
+                        : '-'}
+                    </td>
+                    <td>
+                      <label className="permission-switch">
+                        <input
+                          type="checkbox"
+                          checked={user.permissions?.canViewProducts === true}
+                          onChange={(e) => handlePermissionChange(user._id, 'canViewProducts', e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </td>
+                    <td>
+                      <label className="permission-switch">
+                        <input
+                          type="checkbox"
+                          checked={user.permissions?.canManageProducts === true}
+                          onChange={(e) => handlePermissionChange(user._id, 'canManageProducts', e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </td>
+                    <td>
+                      <label className="permission-switch">
+                        <input
+                          type="checkbox"
+                          checked={user.permissions?.canViewOrders === true}
+                          onChange={(e) => handlePermissionChange(user._id, 'canViewOrders', e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </td>
+                    <td>
+                      <label className="permission-switch">
+                        <input
+                          type="checkbox"
+                          checked={user.permissions?.canManageOrders === true}
+                          onChange={(e) => handlePermissionChange(user._id, 'canManageOrders', e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* No Users Message */}
+      {filteredUsers.length === 0 && (
+        <div className="no-users">
+          {language === 'ar' ? 'لا يوجد مستخدمون' : 'No users found'}
+        </div>
+      )}
 
       {/* Permission Legend */}
       <div className="permissions-legend">
         <h3>{language === 'ar' ? 'شرح الصلاحيات' : 'Permissions Explanation'}</h3>
-        <ul>
-          <li>
-            <strong>{language === 'ar' ? 'عرض الأعضاء:' : 'View Members:'}</strong>
-            {' '}
-            {language === 'ar'
-              ? 'يمكن للمستخدم رؤية قائمة الأعضاء في منطقته/قسمه فقط'
-              : 'User can view the list of members in their region/category only'}
-          </li>
-          <li>
-            <strong>{language === 'ar' ? 'التحكم بالأعضاء:' : 'Manage Members:'}</strong>
-            {' '}
-            {language === 'ar'
-              ? 'يمكن للمستخدم تعديل وإدارة الأعضاء في منطقته/قسمه'
-              : 'User can edit and manage members in their region/category'}
-          </li>
-          <li>
-            <strong>{language === 'ar' ? 'عرض المنتجات:' : 'View Products:'}</strong>
-            {' '}
-            {language === 'ar'
-              ? 'يمكن للمستخدم رؤية المنتجات في منطقته/قسمه فقط'
-              : 'User can view products in their region/category only'}
-          </li>
-          <li>
-            <strong>{language === 'ar' ? 'التحكم بالمنتجات:' : 'Manage Products:'}</strong>
-            {' '}
-            {language === 'ar'
-              ? 'يمكن للمستخدم إضافة وتعديل وحذف المنتجات في منطقته/قسمه'
-              : 'User can add, edit and delete products in their region/category'}
-          </li>
-        </ul>
+
+        {/* Regional Admins Permissions */}
+        <div className="legend-section">
+          <h4>{language === 'ar' ? 'مدراء المناطق:' : 'Regional Admins:'}</h4>
+          <ul>
+            <li>
+              <strong>{language === 'ar' ? 'عرض الأعضاء:' : 'View Members:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن للمستخدم رؤية قائمة الأعضاء في منطقته فقط'
+                : 'User can view the list of members in their region only'}
+            </li>
+            <li>
+              <strong>{language === 'ar' ? 'التحكم بالأعضاء:' : 'Manage Members:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن للمستخدم تعديل وإدارة الأعضاء في منطقته'
+                : 'User can edit and manage members in their region'}
+            </li>
+            <li>
+              <strong>{language === 'ar' ? 'عرض المنتجات:' : 'View Products:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن للمستخدم رؤية المنتجات في منطقته فقط'
+                : 'User can view products in their region only'}
+            </li>
+            <li>
+              <strong>{language === 'ar' ? 'التحكم بالمنتجات:' : 'Manage Products:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن للمستخدم إضافة وتعديل وحذف المنتجات في منطقته'
+                : 'User can add, edit and delete products in their region'}
+            </li>
+          </ul>
+        </div>
+
+        {/* Category Admins Permissions */}
+        <div className="legend-section category-legend">
+          <h4>{language === 'ar' ? 'مدراء الأقسام:' : 'Category Admins:'}</h4>
+          <ul>
+            <li>
+              <strong>{language === 'ar' ? 'عرض المنتجات:' : 'View Products:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن لمدير القسم رؤية المنتجات في الأقسام المخصصة له فقط'
+                : 'Category admin can view products in assigned categories only'}
+            </li>
+            <li>
+              <strong>{language === 'ar' ? 'التحكم بالمنتجات:' : 'Manage Products:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن لمدير القسم إضافة وتعديل المنتجات في الأقسام المخصصة له (الصور، الأوصاف، الأسعار، النقاط)'
+                : 'Category admin can add and edit products in assigned categories (images, descriptions, prices, points)'}
+            </li>
+            <li>
+              <strong>{language === 'ar' ? 'عرض الطلبات:' : 'View Orders:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن لمدير القسم رؤية الطلبات التي تحتوي على منتجات من أقسامه فقط'
+                : 'Category admin can view orders containing products from their assigned categories only'}
+            </li>
+            <li>
+              <strong>{language === 'ar' ? 'التحكم بالطلبات:' : 'Manage Orders:'}</strong>
+              {' '}
+              {language === 'ar'
+                ? 'يمكن لمدير القسم تحديث حالة الطلبات (قيد الانتظار، جاهز، في الطريق) ولكن لا يمكنه تأكيد الاستلام'
+                : 'Category admin can update order status (pending, prepared, on the way) but cannot confirm receipt'}
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );

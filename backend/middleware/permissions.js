@@ -12,17 +12,12 @@ const checkPermission = (permissionName) => {
       return next();
     }
 
-    // Category admin has product management permissions by default
-    if (user.role === 'category_admin' &&
-        (permissionName === 'canViewProducts' || permissionName === 'canManageProducts')) {
-      return next();
-    }
-
     // Check if user has the specific permission
     if (!user.permissions || !user.permissions[permissionName]) {
       return res.status(403).json({
         success: false,
-        message: `Access denied. You don't have permission: ${permissionName}`
+        message: `Access denied. You don't have permission: ${permissionName}`,
+        messageAr: `غير مصرح. ليس لديك صلاحية: ${permissionName}`
       });
     }
 
@@ -120,6 +115,12 @@ const canViewProducts = checkPermission('canViewProducts');
 // التحقق من أن المستخدم له صلاحية إدارة المنتجات
 const canManageProducts = checkPermission('canManageProducts');
 
+// التحقق من أن المستخدم له صلاحية عرض الطلبات
+const canViewOrders = checkPermission('canViewOrders');
+
+// التحقق من أن المستخدم له صلاحية إدارة الطلبات
+const canManageOrders = checkPermission('canManageOrders');
+
 module.exports = {
   checkPermission,
   checkRegionalAccess,
@@ -127,5 +128,7 @@ module.exports = {
   canViewMembers,
   canManageMembers,
   canViewProducts,
-  canManageProducts
+  canManageProducts,
+  canViewOrders,
+  canManageOrders
 };

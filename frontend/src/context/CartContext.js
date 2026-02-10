@@ -82,13 +82,21 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem(cartKey, JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = (product, quantity = 1, selectedColor = '', selectedSize = '') => {
     setCartItems((prevItems) => {
       const productId = product.id || product._id;
-      const existingItem = prevItems.find((item) => (item.id || item._id) === productId);
+      // Check if same product with same color and size exists
+      const existingItem = prevItems.find((item) =>
+        (item.id || item._id) === productId &&
+        item.selectedColor === selectedColor &&
+        item.selectedSize === selectedSize
+      );
+
       if (existingItem) {
         return prevItems.map((item) =>
-          (item.id || item._id) === productId
+          (item.id || item._id) === productId &&
+          item.selectedColor === selectedColor &&
+          item.selectedSize === selectedSize
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
@@ -106,25 +114,37 @@ export const CartProvider = ({ children }) => {
         stock: product.stock,
         images: product.images,
         category: product.category,
-        quantity: quantity
+        quantity: quantity,
+        selectedColor: selectedColor,
+        selectedSize: selectedSize
       };
 
       return [...prevItems, cartItem];
     });
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems((prevItems) => prevItems.filter((item) => (item.id || item._id) !== productId));
+  const removeFromCart = (productId, selectedColor = '', selectedSize = '') => {
+    setCartItems((prevItems) =>
+      prevItems.filter((item) =>
+        !((item.id || item._id) === productId &&
+          item.selectedColor === selectedColor &&
+          item.selectedSize === selectedSize)
+      )
+    );
   };
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = (productId, quantity, selectedColor = '', selectedSize = '') => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, selectedColor, selectedSize);
       return;
     }
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        (item.id || item._id) === productId ? { ...item, quantity } : item
+        (item.id || item._id) === productId &&
+        item.selectedColor === selectedColor &&
+        item.selectedSize === selectedSize
+          ? { ...item, quantity }
+          : item
       )
     );
   };

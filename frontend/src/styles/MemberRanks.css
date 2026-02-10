@@ -278,12 +278,23 @@
 }
 
 .mr-rank-badge {
-  display: inline-block;
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+/* تكبير أيقونات الرتب */
+.mr-rank-badge img,
+.mr-rank-badge span[role="img"],
+.mr-rank-badge .rank-icon {
+  font-size: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 /* شارات الرتب */

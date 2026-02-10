@@ -413,13 +413,24 @@
 }
 
 .rank-badge {
-  padding: 0.25rem 0.75rem;
+  padding: 0.4rem 1rem;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* تكبير أيقونات الرتب */
+.rank-badge img,
+.rank-badge span[role="img"],
+.rank-badge .rank-icon {
+  font-size: 1.3rem;
+  width: 22px;
+  height: 22px;
 }
 
 .profit-cell {

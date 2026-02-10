@@ -73,6 +73,7 @@ const userSchema = new mongoose.Schema({
     canManageUsers: { type: Boolean, default: false },
     canManageProducts: { type: Boolean, default: false },
     canManageOrders: { type: Boolean, default: false },
+    canViewOrders: { type: Boolean, default: false },
     canViewReports: { type: Boolean, default: false },
     canManageCommissions: { type: Boolean, default: false },
     canViewMembers: { type: Boolean, default: false },

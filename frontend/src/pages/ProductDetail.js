@@ -26,6 +26,8 @@ const ProductDetail = () => {
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -68,8 +70,20 @@ const ProductDetail = () => {
       return;
     }
 
+    // Validate color selection if required
+    if (product.hasColorOptions && product.colors && product.colors.length > 0 && !selectedColor) {
+      alert(language === 'ar' ? 'يرجى اختيار اللون' : 'Please select a color');
+      return;
+    }
+
+    // Validate size selection if required
+    if (product.hasSizeOptions && product.sizes && product.sizes.length > 0 && !selectedSize) {
+      alert(language === 'ar' ? 'يرجى اختيار النمرة' : 'Please select a size');
+      return;
+    }
+
     for (let i = 0; i < quantity; i++) {
-      addToCart(product);
+      addToCart(product, 1, selectedColor, selectedSize);
     }
     alert(language === 'ar' ? `تمت إضافة ${quantity} قطعة إلى السلة!` : `${quantity} item(s) added to cart!`);
   };
@@ -403,6 +417,42 @@ const ProductDetail = () => {
 
             {/* Quantity and Add to Cart */}
             <div className="purchase-section">
+              {/* خيارات اللون */}
+              {product.hasColorOptions && product.colors && product.colors.length > 0 && (
+                <div className="product-options-selector">
+                  <label>{language === 'ar' ? '🎨 اللون:' : '🎨 Color:'}</label>
+                  <div className="options-buttons">
+                    {product.colors.map((color, index) => (
+                      <button
+                        key={index}
+                        className={`option-button ${selectedColor === color ? 'selected' : ''}`}
+                        onClick={() => setSelectedColor(color)}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* خيارات النمرة/المقاس */}
+              {product.hasSizeOptions && product.sizes && product.sizes.length > 0 && (
+                <div className="product-options-selector">
+                  <label>{language === 'ar' ? '📏 النمرة/المقاس:' : '📏 Size:'}</label>
+                  <div className="options-buttons">
+                    {product.sizes.map((size, index) => (
+                      <button
+                        key={index}
+                        className={`option-button ${selectedSize === size ? 'selected' : ''}`}
+                        onClick={() => setSelectedSize(size)}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="quantity-selector">
                 <label>{language === 'ar' ? 'الكمية:' : 'Quantity:'}</label>
                 <div className="quantity-controls">

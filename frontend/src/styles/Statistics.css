@@ -267,11 +267,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 24px;
 }
 
 .rank-badge.rank-1 {

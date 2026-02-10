@@ -627,13 +627,16 @@
 }
 
 .info-value.rank-badge {
-  display: inline-block;
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 20px;
-  font-size: 1rem;
+  border-radius: 24px;
+  font-size: 2rem;
   text-transform: capitalize;
+  line-height: 1.5;
 }
 
 .info-value.points-value {

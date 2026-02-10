@@ -23,7 +23,7 @@ router.route('/')
 router.get('/categories', getCategories);
 
 router.route('/:id')
-  .get(getProduct)
+  .get(optionalAuth, getProduct)
   .put(protect, isAdmin, canManageProducts, upload.array('media', 10), updateProduct)
   .delete(protect, isAdmin, canManageProducts, deleteProduct);
 

@@ -49,12 +49,19 @@ const ProductManagement = () => {
       originalPrice: '',
       discountedPrice: ''
     },
+    // خيارات اللون والنمرة
+    hasColorOptions: false,
+    colors: [],
+    hasSizeOptions: false,
+    sizes: [],
     mediaToDelete: [] // قائمة URLs الصور المحذوفة
   });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [stockFilter, setStockFilter] = useState('all'); // all, inStock, outOfStock
   const [categoryFilter, setCategoryFilter] = useState('all'); // all, or specific category
+  const [newColor, setNewColor] = useState('');
+  const [newSize, setNewSize] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -257,8 +264,53 @@ const ProductManagement = () => {
     }
   };
 
+  // إضافة لون جديد
+  const addColor = () => {
+    if (newColor.trim() && !formData.colors.includes(newColor.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        colors: [...prev.colors, newColor.trim()]
+      }));
+      setNewColor('');
+    }
+  };
+
+  // حذف لون
+  const removeColor = (colorToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      colors: prev.colors.filter(color => color !== colorToRemove)
+    }));
+  };
+
+  // إضافة نمرة جديدة
+  const addSize = () => {
+    if (newSize.trim() && !formData.sizes.includes(newSize.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        sizes: [...prev.sizes, newSize.trim()]
+      }));
+      setNewSize('');
+    }
+  };
+
+  // حذف نمرة
+  const removeSize = (sizeToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter(size => size !== sizeToRemove)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate category is selected
+    if (!formData.category || formData.category.trim() === '') {
+      setError(language === 'ar' ? 'يرجى اختيار القسم' : 'Please select a category');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
 
     // Validate at least one image is uploaded for new products
     if (!editingProduct && mediaPreviews.length === 0) {
@@ -300,6 +352,12 @@ const ProductManagement = () => {
       // إضافة بيانات الخصم
       formDataToSend.append('customerDiscount', JSON.stringify(formData.customerDiscount));
       formDataToSend.append('subscriberDiscount', JSON.stringify(formData.subscriberDiscount));
+
+      // إضافة خيارات اللون والنمرة
+      formDataToSend.append('hasColorOptions', formData.hasColorOptions);
+      formDataToSend.append('colors', JSON.stringify(formData.colors));
+      formDataToSend.append('hasSizeOptions', formData.hasSizeOptions);
+      formDataToSend.append('sizes', JSON.stringify(formData.sizes));
 
       // Append media files
       mediaFiles.forEach((file) => {
@@ -376,6 +434,10 @@ const ProductManagement = () => {
         originalPrice: '',
         discountedPrice: ''
       },
+      hasColorOptions: product.hasColorOptions || false,
+      colors: product.colors || [],
+      hasSizeOptions: product.hasSizeOptions || false,
+      sizes: product.sizes || [],
       mediaToDelete: [] // قائمة فارغة عند بدء التعديل
     });
 
@@ -441,10 +503,16 @@ const ProductManagement = () => {
         originalPrice: '',
         discountedPrice: ''
       },
+      hasColorOptions: false,
+      colors: [],
+      hasSizeOptions: false,
+      sizes: [],
       mediaToDelete: []
     });
     setMediaFiles([]);
     setMediaPreviews([]);
+    setNewColor('');
+    setNewSize('');
     setEditingProduct(null);
     setShowAddForm(false);
   };
@@ -502,25 +570,22 @@ const ProductManagement = () => {
             </button>
           </div>
 
-          {/* Category Filters */}
+          {/* Category Filter Dropdown */}
           {categories.length > 0 && (
-            <div className="pm-category-filters">
-              <button
-                className={`pm-filter-btn ${categoryFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setCategoryFilter('all')}
-              >
+            <select
+              className="pm-category-dropdown"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="all">
                 {language === 'ar' ? 'كل الأقسام' : 'All Categories'}
-              </button>
+              </option>
               {categories.map((category, index) => (
-                <button
-                  key={index}
-                  className={`pm-filter-btn ${categoryFilter === category ? 'active' : ''}`}
-                  onClick={() => setCategoryFilter(category)}
-                >
+                <option key={index} value={category}>
                   {category}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           )}
 
           <button className="pm-add-btn" onClick={() => setShowAddForm(true)}>
@@ -553,7 +618,7 @@ const ProductManagement = () => {
                 </div>
 
                 <div className="pm-form-group">
-                  <label>{language === 'ar' ? 'القسم' : 'Category'}</label>
+                  <label>{language === 'ar' ? 'القسم' : 'Category'} *</label>
                   <div className="pm-category-input">
                     <select
                       value={showManageCategories || showAddCategory ? '' : formData.category}
@@ -571,6 +636,7 @@ const ProductManagement = () => {
                         }
                       }}
                       className="pm-category-select"
+                      required
                     >
                       <option value="">{language === 'ar' ? 'اختر القسم' : 'Select Category'}</option>
                       {categories
@@ -967,6 +1033,94 @@ const ProductManagement = () => {
                     value={formData.points}
                     onChange={(e) => setFormData({ ...formData, points: e.target.value })}
                   />
+                </div>
+
+                {/* خيارات اللون */}
+                <div className="pm-form-group pm-full-width">
+                  <div className="pm-checkbox">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={formData.hasColorOptions}
+                        onChange={(e) => setFormData({ ...formData, hasColorOptions: e.target.checked })}
+                      />
+                      {language === 'ar' ? '🎨 تفعيل خيارات الألوان' : '🎨 Enable Color Options'}
+                    </label>
+                  </div>
+
+                  {formData.hasColorOptions && (
+                    <div className="pm-options-container">
+                      <div className="pm-add-option">
+                        <input
+                          type="text"
+                          value={newColor}
+                          onChange={(e) => setNewColor(e.target.value)}
+                          placeholder={language === 'ar' ? 'أضف لون (مثال: أحمر، أزرق، أخضر)' : 'Add color (e.g. Red, Blue, Green)'}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addColor();
+                            }
+                          }}
+                        />
+                        <button type="button" onClick={addColor} className="pm-add-btn">
+                          {language === 'ar' ? '+ إضافة' : '+ Add'}
+                        </button>
+                      </div>
+                      <div className="pm-options-list">
+                        {formData.colors.map((color, index) => (
+                          <span key={index} className="pm-option-tag">
+                            {color}
+                            <button type="button" onClick={() => removeColor(color)} className="pm-remove-tag">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* خيارات النمرة/المقاس */}
+                <div className="pm-form-group pm-full-width">
+                  <div className="pm-checkbox">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={formData.hasSizeOptions}
+                        onChange={(e) => setFormData({ ...formData, hasSizeOptions: e.target.checked })}
+                      />
+                      {language === 'ar' ? '📏 تفعيل خيارات النمرة/المقاس' : '📏 Enable Size Options'}
+                    </label>
+                  </div>
+
+                  {formData.hasSizeOptions && (
+                    <div className="pm-options-container">
+                      <div className="pm-add-option">
+                        <input
+                          type="text"
+                          value={newSize}
+                          onChange={(e) => setNewSize(e.target.value)}
+                          placeholder={language === 'ar' ? 'أضف نمرة (مثال: S, M, L, XL أو 38, 40, 42)' : 'Add size (e.g. S, M, L, XL or 38, 40, 42)'}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addSize();
+                            }
+                          }}
+                        />
+                        <button type="button" onClick={addSize} className="pm-add-btn">
+                          {language === 'ar' ? '+ إضافة' : '+ Add'}
+                        </button>
+                      </div>
+                      <div className="pm-options-list">
+                        {formData.sizes.map((size, index) => (
+                          <span key={index} className="pm-option-tag">
+                            {size}
+                            <button type="button" onClick={() => removeSize(size)} className="pm-remove-tag">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pm-form-group pm-full-width">

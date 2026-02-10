@@ -48,13 +48,24 @@
 }
 
 .user-rank-badge {
-  display: inline-block;
-  padding: 0.4rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1.2rem;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   font-weight: 700;
   margin-top: 0.5rem;
   text-transform: uppercase;
+}
+
+/* تكبير أيقونات الرتب */
+.user-rank-badge img,
+.user-rank-badge span[role="img"],
+.user-rank-badge .rank-icon {
+  font-size: 1.4rem;
+  width: 24px;
+  height: 24px;
 }
 
 .user-rank-badge[data-rank="bronze"] { background: #cd7f32; }
@@ -282,13 +293,24 @@
 }
 
 .member-rank-badge {
-  display: inline-block;
-  padding: 0.3rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
   border-radius: 15px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 700;
   margin-bottom: 1rem;
   text-transform: uppercase;
+}
+
+/* تكبير أيقونات الرتب */
+.member-rank-badge img,
+.member-rank-badge span[role="img"],
+.member-rank-badge .rank-icon {
+  font-size: 1.3rem;
+  width: 22px;
+  height: 22px;
 }
 
 .member-rank-badge[data-rank="bronze"] { background: #cd7f32; color: white; }
@@ -387,12 +409,23 @@
 }
 
 .table-rank-badge {
-  display: inline-block;
-  padding: 0.3rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
   border-radius: 15px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+/* تكبير أيقونات الرتب في الجدول */
+.table-rank-badge img,
+.table-rank-badge span[role="img"],
+.table-rank-badge .rank-icon {
+  font-size: 1.3rem;
+  width: 22px;
+  height: 22px;
 }
 
 .table-rank-badge[data-rank="bronze"] { background: #cd7f32; color: white; }

@@ -299,7 +299,24 @@ const productSchema = new mongoose.Schema({
   totalReviews: {
     type: Number,
     default: 0
-  }
+  },
+  // Product options - Colors and Sizes
+  hasColorOptions: {
+    type: Boolean,
+    default: false
+  },
+  colors: [{
+    type: String,
+    trim: true
+  }],
+  hasSizeOptions: {
+    type: Boolean,
+    default: false
+  },
+  sizes: [{
+    type: String,
+    trim: true
+  }]
 }, {
   timestamps: true
 });

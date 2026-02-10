@@ -36,6 +36,14 @@ const orderItemSchema = new mongoose.Schema({
   isBulk: {
     type: Boolean,
     default: false
+  },
+  selectedColor: {
+    type: String,
+    trim: true
+  },
+  selectedSize: {
+    type: String,
+    trim: true
   }
 });
 

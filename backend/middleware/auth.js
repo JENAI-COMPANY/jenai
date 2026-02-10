@@ -74,6 +74,86 @@ exports.isCategoryAdmin = (req, res, next) => {
   next();
 };
 
+// Check if category admin has permission to view products
+exports.canViewProducts = (req, res, next) => {
+  // Super admin always has access
+  if (req.user.role === 'super_admin') {
+    return next();
+  }
+
+  // Check category admin permissions
+  if (req.user.role === 'category_admin') {
+    if (!req.user.permissions?.canViewProducts) {
+      return res.status(403).json({
+        message: 'Access denied. You do not have permission to view products.',
+        messageAr: 'غير مصرح. ليس لديك صلاحية لعرض المنتجات.'
+      });
+    }
+  }
+
+  next();
+};
+
+// Check if category admin has permission to manage products
+exports.canManageProducts = (req, res, next) => {
+  // Super admin always has access
+  if (req.user.role === 'super_admin') {
+    return next();
+  }
+
+  // Check category admin permissions
+  if (req.user.role === 'category_admin') {
+    if (!req.user.permissions?.canManageProducts) {
+      return res.status(403).json({
+        message: 'Access denied. You do not have permission to manage products.',
+        messageAr: 'غير مصرح. ليس لديك صلاحية للتحكم بالمنتجات.'
+      });
+    }
+  }
+
+  next();
+};
+
+// Check if category admin has permission to view orders
+exports.canViewOrders = (req, res, next) => {
+  // Super admin always has access
+  if (req.user.role === 'super_admin') {
+    return next();
+  }
+
+  // Check category admin permissions
+  if (req.user.role === 'category_admin') {
+    if (!req.user.permissions?.canViewOrders) {
+      return res.status(403).json({
+        message: 'Access denied. You do not have permission to view orders.',
+        messageAr: 'غير مصرح. ليس لديك صلاحية لعرض الطلبات.'
+      });
+    }
+  }
+
+  next();
+};
+
+// Check if category admin has permission to manage orders
+exports.canManageOrders = (req, res, next) => {
+  // Super admin always has access
+  if (req.user.role === 'super_admin') {
+    return next();
+  }
+
+  // Check category admin permissions
+  if (req.user.role === 'category_admin') {
+    if (!req.user.permissions?.canManageOrders) {
+      return res.status(403).json({
+        message: 'Access denied. You do not have permission to manage orders.',
+        messageAr: 'غير مصرح. ليس لديك صلاحية للتحكم بالطلبات.'
+      });
+    }
+  }
+
+  next();
+};
+
 // Check if user is any type of admin
 exports.isAdmin = (req, res, next) => {
   if (!['regional_admin', 'category_admin', 'super_admin'].includes(req.user.role)) {

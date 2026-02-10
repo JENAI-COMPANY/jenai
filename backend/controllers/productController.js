@@ -99,6 +99,15 @@ exports.getAllProducts = async (req, res) => {
 
     // فلترة تلقائية لمدير القسم - يرى فقط منتجات أقسامه
     if (req.user && req.user.role === 'category_admin') {
+      // Check if category admin has permission to view products
+      if (!req.user.permissions || !req.user.permissions.canViewProducts) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You do not have permission to view products.',
+          messageAr: 'غير مصرح. ليس لديك صلاحية لعرض المنتجات.'
+        });
+      }
+
       if (!req.user.managedCategories || req.user.managedCategories.length === 0) {
         return res.status(403).json({
           success: false,

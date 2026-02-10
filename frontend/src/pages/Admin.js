@@ -617,6 +617,13 @@ const Admin = () => {
           مدراء الأقسام
         </button>
         }
+        {isSuperAdmin && <button
+          className={activeTab === 'category-permissions' ? 'tab-active' : ''}
+          onClick={() => setActiveTab('category-permissions')}
+        >
+          🔒 صلاحيات مدراء الأقسام
+        </button>
+        }
         <button
           className={activeTab === 'library' ? 'tab-active' : ''}
           onClick={() => setActiveTab('library')}

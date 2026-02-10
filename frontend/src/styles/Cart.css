@@ -76,10 +76,23 @@
   color: #2c3e50;
 }
 
+.item-option {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0.25rem 0;
+  padding: 0.25rem 0;
+}
+
+.item-option strong {
+  color: #555;
+  font-weight: 600;
+}
+
 .item-price {
   color: #27ae60;
   font-size: 1.1rem;
   font-weight: bold;
+  margin-top: 0.5rem;
 }
 
 .item-quantity {

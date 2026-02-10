@@ -277,7 +277,11 @@ const OrderManagement = () => {
             <tbody>
               ${order.orderItems?.map(item => `
                 <tr>
-                  <td>${item.name}</td>
+                  <td>
+                    ${item.name}
+                    ${item.selectedColor ? `<br/><small style="color: #666;">🎨 ${isArabic ? 'اللون:' : 'Color:'} ${item.selectedColor}</small>` : ''}
+                    ${item.selectedSize ? `<br/><small style="color: #666;">📏 ${isArabic ? 'النمرة:' : 'Size:'} ${item.selectedSize}</small>` : ''}
+                  </td>
                   <td style="text-align: center;">${item.quantity}</td>
                   <td>$${item.price?.toFixed(2)}</td>
                   <td style="text-align: center;">${item.points || 0} ${isArabic ? 'نقطة' : 'pts'}</td>
@@ -710,7 +714,19 @@ const OrderManagement = () => {
                   <tbody>
                     {selectedOrder.orderItems?.map((item, index) => (
                       <tr key={index}>
-                        <td>{item.name}</td>
+                        <td>
+                          {item.name}
+                          {item.selectedColor && (
+                            <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                              🎨 {language === 'ar' ? 'اللون:' : 'Color:'} {item.selectedColor}
+                            </div>
+                          )}
+                          {item.selectedSize && (
+                            <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                              📏 {language === 'ar' ? 'النمرة:' : 'Size:'} {item.selectedSize}
+                            </div>
+                          )}
+                        </td>
                         <td>{item.quantity}</td>
                         <td>${item.price?.toFixed(2)}</td>
                         <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>

@@ -31,10 +31,12 @@ const Cart = () => {
       <h2>{t('cartTitle')}</h2>
       <div className="cart-content">
         <div className="cart-items">
-          {cartItems.map((item) => {
+          {cartItems.map((item, index) => {
             const displayPrice = isSubscriber ? (item.subscriberPrice || 0) : (item.customerPrice || 0);
+            // Create unique key combining product ID, color, and size
+            const uniqueKey = `${item._id}-${item.selectedColor || 'nocolor'}-${item.selectedSize || 'nosize'}-${index}`;
             return (
-              <div key={item._id} className="cart-item">
+              <div key={uniqueKey} className="cart-item">
                 <div className="item-image">
                   {item.images && item.images[0] ? (
                     <img src={item.images[0]} alt={item.name} />
@@ -44,14 +46,24 @@ const Cart = () => {
                 </div>
                 <div className="item-details">
                   <h3>{item.name}</h3>
+                  {item.selectedColor && (
+                    <p className="item-option">
+                      <strong>{language === 'ar' ? 'اللون:' : 'Color:'}</strong> {item.selectedColor}
+                    </p>
+                  )}
+                  {item.selectedSize && (
+                    <p className="item-option">
+                      <strong>{language === 'ar' ? 'النمرة:' : 'Size:'}</strong> {item.selectedSize}
+                    </p>
+                  )}
                   <p className="item-price">₪{displayPrice.toFixed(2)}</p>
                 </div>
                 <div className="item-quantity">
-                  <button onClick={() => updateQuantity(item._id, item.quantity - 1)}>
+                  <button onClick={() => updateQuantity(item._id, item.quantity - 1, item.selectedColor || '', item.selectedSize || '')}>
                     -
                   </button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item._id, item.quantity + 1)}>
+                  <button onClick={() => updateQuantity(item._id, item.quantity + 1, item.selectedColor || '', item.selectedSize || '')}>
                     +
                   </button>
                 </div>
@@ -59,7 +71,7 @@ const Cart = () => {
                   ₪{(displayPrice * item.quantity).toFixed(2)}
                 </div>
                 <button
-                  onClick={() => removeFromCart(item._id)}
+                  onClick={() => removeFromCart(item._id, item.selectedColor || '', item.selectedSize || '')}
                   className="remove-btn"
                 >
                   {t('remove')}

@@ -275,13 +275,22 @@ const MyOrders = () => {
       isArabic ? 'Total' : 'المجموع'
     ];
 
-    const tableRows = order.orderItems?.map(item => [
-      item.name,
-      item.quantity.toString(),
-      `$${item.price?.toFixed(2)}`,
-      `${item.points || 0} ${isArabic ? 'pts' : 'نقطة'}`,
-      `$${(item.quantity * item.price)?.toFixed(2)}`
-    ]) || [];
+    const tableRows = order.orderItems?.map(item => {
+      let itemName = item.name;
+      if (item.selectedColor) {
+        itemName += `\n🎨 ${isArabic ? 'اللون:' : 'Color:'} ${item.selectedColor}`;
+      }
+      if (item.selectedSize) {
+        itemName += `\n📏 ${isArabic ? 'النمرة:' : 'Size:'} ${item.selectedSize}`;
+      }
+      return [
+        itemName,
+        item.quantity.toString(),
+        `$${item.price?.toFixed(2)}`,
+        `${item.points || 0} ${isArabic ? 'pts' : 'نقطة'}`,
+        `$${(item.quantity * item.price)?.toFixed(2)}`
+      ];
+    }) || [];
 
     doc.autoTable({
       head: [tableColumns],
@@ -510,7 +519,19 @@ const MyOrders = () => {
                   <tbody>
                     {selectedOrder.orderItems?.map((item, index) => (
                       <tr key={index}>
-                        <td>{item.name}</td>
+                        <td>
+                          {item.name}
+                          {item.selectedColor && (
+                            <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                              🎨 {language === 'ar' ? 'اللون:' : 'Color:'} {item.selectedColor}
+                            </div>
+                          )}
+                          {item.selectedSize && (
+                            <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                              📏 {language === 'ar' ? 'النمرة:' : 'Size:'} {item.selectedSize}
+                            </div>
+                          )}
+                        </td>
                         <td>{item.quantity}</td>
                         <td>${item.price?.toFixed(2)}</td>
                         <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
