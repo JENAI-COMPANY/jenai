@@ -51,7 +51,7 @@ async function calculateLeadershipCommission(memberId) {
 
       // حساب مجموع النقاط الشخصية
       const totalPersonalPoints = generationMembers.reduce((sum, m) => {
-        return sum + (m.personalPoints || 0);
+        return sum + (m.points || 0);
       }, 0);
 
       // حساب عمولة القيادة من هذا الجيل
@@ -80,7 +80,7 @@ async function getGenerationMembers(memberId, generationLevel) {
     return await User.find({
       referredBy: memberId,
       role: 'member'
-    }).select('personalPoints').lean();
+    }).select('points').lean();
   }
 
   // الأجيال التالية: ابحث بشكل تكراري

@@ -60,11 +60,11 @@ const MEMBER_RANKS = {
     minBronzeLines: 1,
     description: 'خط عمودي واحد وصل رتبة برونزي',
     descriptionEn: '1 Bronze line in first level',
-    // عمولة القيادة: الجيل الأول 5% + الثاني 4% + الثالث 3%
+    // عمولة القيادة: الجيل الأول 5% + الثاني 4%
     leadershipCommission: {
       generation1: 0.05,  // 5%
       generation2: 0.04,  // 4%
-      generation3: 0.03,  // 3%
+      generation3: 0,
       generation4: 0,
       generation5: 0
     }
@@ -76,11 +76,11 @@ const MEMBER_RANKS = {
     minBronzeLines: 2,
     description: 'خطان عموديان وصلا رتبة برونزي',
     descriptionEn: '2 Bronze lines in first level',
-    // عمولة القيادة: الجيل الأول 5% + الثاني 4%
+    // عمولة القيادة: الجيل الأول 5% + الثاني 4% + الثالث 3%
     leadershipCommission: {
       generation1: 0.05,  // 5%
       generation2: 0.04,  // 4%
-      generation3: 0,
+      generation3: 0.03,  // 3%
       generation4: 0,
       generation5: 0
     }
@@ -436,7 +436,7 @@ const getDownlineStructure = async (User, memberId) => {
     if (currentLevel > 5) return;
 
     const directMembers = await User.find({
-      sponsorId: currentMemberId,
+      referredBy: currentMemberId,
       role: 'member'
     }).select('name username subscriberCode monthlyPoints memberRank');
 
@@ -445,7 +445,11 @@ const getDownlineStructure = async (User, memberId) => {
     }
 
     const levelKey = `level${currentLevel}`;
-    structure[levelKey] = directMembers;
+    // إضافة الأعضاء بدلاً من استبدالهم
+    if (!structure[levelKey]) {
+      structure[levelKey] = [];
+    }
+    structure[levelKey].push(...directMembers);
 
     // بناء المستوى التالي بشكل متكرر
     for (const member of directMembers) {
