@@ -218,10 +218,10 @@ const distributeCommissions = async (buyer, productPoints) => {
       const genRate = GENERATION_RATES[generationLevel];
       const genPoints = productPoints * genRate;
 
-      // عمولة القيادة (حسب الرتبة)
+      // عمولة القيادة (حسب الرتبة) - تُحسب من نقاط عمولة الأجيال
       const leadershipRates = LEADERSHIP_RATES[currentMember.memberRank] || [];
       const leadershipRate = leadershipRates[generationLevel] || 0;
-      const leadershipPoints = productPoints * leadershipRate;
+      const leadershipPoints = genPoints * leadershipRate; // ✅ من genPoints وليس productPoints
 
       // إجمالي النقاط والربح (بدون حذف أعشار في الحسابات الوسيطة)
       const totalPoints = genPoints + leadershipPoints;
