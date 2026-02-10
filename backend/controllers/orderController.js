@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { calculatePersonalPerformancePoints, calculateOrderPoints } = require('../utils/pointsCalculator');
 const { updateMemberRank } = require('../config/memberRanks');
+const { updateUplineLeadershipCommissions } = require('../utils/calculateLeadershipCommission');
 
 // Create new order
 exports.createOrder = async (req, res) => {
@@ -169,21 +170,11 @@ const distributeCommissions = async (buyer, productPoints) => {
     // النسب الثابتة لعمولة الأجيال (للجميع)
     const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
 
-    // نسب عمولة القيادة حسب الرتبة
-    const LEADERSHIP_RATES = {
-      'agent': [],
-      'bronze': [0.05], // برونزي: جيل 1 فقط - 5%
-      'silver': [0.05, 0.04], // فضي: جيل 1+2 - 5% + 4%
-      'gold': [0.05, 0.04, 0.03], // ذهبي: جيل 1+2+3 - 5% + 4% + 3%
-      'ruby': [0.05, 0.04, 0.03, 0.02], // ياقوتي: جيل 1+2+3+4 - 5% + 4% + 3% + 2%
-      'diamond': [0.05, 0.04, 0.03, 0.02, 0.01], // ماسي: جيل 1+2+3+4+5 - 5% + 4% + 3% + 2% + 1%
-      'double_diamond': [0.05, 0.04, 0.03, 0.02, 0.01],
-      'regional_ambassador': [0.05, 0.04, 0.03, 0.02, 0.01],
-      'global_ambassador': [0.05, 0.04, 0.03, 0.02, 0.01]
-    };
-
     // معامل التحويل من نقاط إلى شيكل
     const POINTS_TO_CURRENCY = 0.55;
+
+    // ملاحظة: عمولة القيادة تُحسب بشكل منفصل في utils/calculateLeadershipCommission.js
+    // بناءً على مجموع النقاط الشخصية لأعضاء كل جيل
 
     // ══════════════════════════════════════
     // 1. الربح الشخصي للمشتري (20%)
@@ -218,38 +209,37 @@ const distributeCommissions = async (buyer, productPoints) => {
       const genRate = GENERATION_RATES[generationLevel];
       const genPoints = productPoints * genRate;
 
-      // عمولة القيادة (حسب الرتبة) - تُحسب من نقاط عمولة الأجيال
-      const leadershipRates = LEADERSHIP_RATES[currentMember.memberRank] || [];
-      const leadershipRate = leadershipRates[generationLevel] || 0;
-      const leadershipPoints = genPoints * leadershipRate; // ✅ من genPoints وليس productPoints
-
-      // إجمالي النقاط والربح (بدون حذف أعشار في الحسابات الوسيطة)
-      const totalPoints = genPoints + leadershipPoints;
-      const profit = totalPoints * POINTS_TO_CURRENCY;
+      // حساب الربح من عمولة الأجيال فقط
+      const profit = Math.floor(genPoints * POINTS_TO_CURRENCY);
 
       // تحديث العضو
       const genFieldName = `generation${generationLevel + 1}Points`;
       currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
 
-      if (leadershipPoints > 0) {
-        currentMember.leadershipPoints = (currentMember.leadershipPoints || 0) + leadershipPoints;
-      }
-
-      // حذف الأعشار فقط عند الحفظ النهائي
-      currentMember.totalCommission = Math.floor((currentMember.totalCommission || 0) + profit);
-      currentMember.availableCommission = Math.floor((currentMember.availableCommission || 0) + profit);
+      // تحديث الربح (عمولة الأجيال فقط - عمولة القيادة تُحسب بشكل منفصل)
+      currentMember.totalCommission = (currentMember.totalCommission || 0) + profit;
+      currentMember.availableCommission = (currentMember.availableCommission || 0) + profit;
 
       await currentMember.save();
 
       // تحديث رتبة العضو تلقائياً
       await updateMemberRank(currentMember._id, User);
 
-      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - نقاط أجيال: ${genPoints.toFixed(2)}, نقاط قيادة: ${leadershipPoints.toFixed(2)}, ربح: ${profit} شيكل`);
+      console.log(`💰 ${currentMember.name} (جيل ${generationLevel + 1}) - نقاط أجيال: ${genPoints.toFixed(2)}, ربح: ${profit} شيكل`);
 
       // الانتقال للجيل التالي
       currentMemberId = currentMember.referredBy;
       generationLevel++;
     }
+
+    // ══════════════════════════════════════
+    // 3. تحديث عمولة القيادة للسلسلة العلوية
+    // ══════════════════════════════════════
+    // بعد تحديث نقاط المشتري، قم بتحديث عمولة القيادة للأعضاء العلويين
+    // (تُحسب من مجموع النقاط الشخصية لأعضاء كل جيل)
+    console.log('🔄 تحديث عمولة القيادة للسلسلة العلوية...');
+    await updateUplineLeadershipCommissions(buyer._id);
+
   } catch (error) {
     console.error('❌ خطأ في توزيع العمولات:', error);
   }
