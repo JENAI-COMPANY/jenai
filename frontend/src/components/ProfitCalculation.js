@@ -171,13 +171,13 @@ const ProfitCalculation = () => {
       language === 'ar' ? 'المستخدم' : 'Username',
       language === 'ar' ? 'الرتبة' : 'Rank',
       language === 'ar' ? 'نقاط شخصية' : 'Personal Pts',
-      language === 'ar' ? 'نقاط فريق' : 'Team Pts',
+      language === 'ar' ? 'نقاط أجيال' : 'Generation Pts',
       language === 'ar' ? 'عمولة شخصية' : 'Personal Comm',
-      language === 'ar' ? 'عمولة فريق' : 'Team Comm',
+      language === 'ar' ? 'عمولة أجيال' : 'Generation Comm',
       language === 'ar' ? 'قيادة' : 'Leadership',
       language === 'ar' ? 'عمولة زبون' : 'Cust. Comm',
       language === 'ar' ? 'قبل الخصم' : 'Before Ded.',
-      language === 'ar' ? 'عمولة 5%' : '5% Comm.',
+      language === 'ar' ? 'خصم 3%' : '3% Ded.',
       language === 'ar' ? 'النهائي' : 'Final'
     ];
 
@@ -187,7 +187,7 @@ const ProfitCalculation = () => {
         // 1. النقاط الشخصية
         const personalPts = member.points?.personal || member.totalPoints || 0;
 
-        // 2. نقاط الفريق (مجموع نقاط الأجيال الخام)
+        // 2. نقاط الأجيال (مجموع نقاط الأجيال الخام)
         const gen1Pts = member.points?.generation1 || 0;
         const gen2Pts = member.points?.generation2 || 0;
         const gen3Pts = member.points?.generation3 || 0;
@@ -198,7 +198,7 @@ const ProfitCalculation = () => {
         // 3. حساب أرباح الأداء الشخصي: (نقاط × 20% × 0.55)
         const personalComm = Math.floor(personalPts * 0.20 * 0.55);
 
-        // 4. حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
+        // 4. حساب أرباح الأجيال: نقاط الأجيال (بعد النسب) × 0.55
         const teamComm = Math.floor(teamPts * 0.55);
 
         // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
@@ -210,7 +210,7 @@ const ProfitCalculation = () => {
         // 7. قبل الخصم
         const totalBeforeDeduction = member.profit?.totalProfitBeforeDeduction || (personalComm + teamComm + leadProfit + customerCommission);
 
-        // 8. عمولة تطوير الموقع 5%
+        // 8. خصم تطوير الموقع 3%
         const websiteCommission = member.profit?.websiteDevelopmentCommission || 0;
 
         // 9. الناتج النهائي بعد الخصم
@@ -430,13 +430,13 @@ const ProfitCalculation = () => {
                   <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
                   <th>{language === 'ar' ? 'الرتبة' : 'Member Rank'}</th>
                   <th>{language === 'ar' ? 'النقاط الشخصية' : 'Personal Pts'}</th>
-                  <th>{language === 'ar' ? 'نقاط الفريق' : 'Team Pts'}</th>
+                  <th>{language === 'ar' ? 'نقاط الأجيال' : 'Generation Pts'}</th>
                   <th>{language === 'ar' ? 'عمولة شخصية' : 'Personal Comm'}</th>
-                  <th>{language === 'ar' ? 'عمولة الفريق' : 'Team Comm'}</th>
+                  <th>{language === 'ar' ? 'عمولة الأجيال' : 'Generation Comm'}</th>
                   <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
                   <th>{language === 'ar' ? 'عمولة شراء زبون' : 'Customer Comm'}</th>
                   <th>{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</th>
-                  <th>{language === 'ar' ? 'عمولة الموقع 5%' : 'Site Commission 5%'}</th>
+                  <th>{language === 'ar' ? 'خصم الموقع 3%' : 'Site Deduction 3%'}</th>
                   <th>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</th>
                 </tr>
               </thead>
@@ -447,7 +447,7 @@ const ProfitCalculation = () => {
                     // 1. النقاط الشخصية
                     const personalPts = member.points?.personal || member.totalPoints || 0;
 
-                    // 2. نقاط الفريق (مجموع نقاط الأجيال الخام)
+                    // 2. نقاط الأجيال (مجموع نقاط الأجيال الخام)
                     const gen1Pts = member.points?.generation1 || 0;
                     const gen2Pts = member.points?.generation2 || 0;
                     const gen3Pts = member.points?.generation3 || 0;
@@ -458,7 +458,7 @@ const ProfitCalculation = () => {
                     // 3. حساب أرباح الأداء الشخصي: (نقاط × 20% × 0.55)
                     const personalComm = Math.floor(personalPts * 0.20 * 0.55);
 
-                    // 4. حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
+                    // 4. حساب أرباح الأجيال: نقاط الأجيال (بعد النسب) × 0.55
                     const teamComm = Math.floor(teamPts * 0.55);
 
                     // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
@@ -470,7 +470,7 @@ const ProfitCalculation = () => {
                     // 7. قبل الخصم
                     const totalBeforeDeduction = member.profit?.totalProfitBeforeDeduction || (personalComm + teamComm + leadProfit + customerCommission);
 
-                    // 8. عمولة تطوير الموقع 5%
+                    // 8. خصم تطوير الموقع 3%
                     const websiteCommission = member.profit?.websiteDevelopmentCommission || 0;
 
                     // 9. الناتج النهائي بعد الخصم

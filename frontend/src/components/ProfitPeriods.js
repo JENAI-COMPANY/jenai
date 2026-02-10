@@ -178,8 +178,8 @@ const ProfitPeriods = () => {
     const membersTableY = doc.lastAutoTable.finalY + 10;
 
     const tableHeaders = isArabic
-      ? ['#', 'الاسم', 'اسم المستخدم', 'الرتبة', 'النقاط الشخصية', 'نقاط الفريق', 'أرباح الأداء', 'عمولة القيادة', 'إجمالي الأرباح']
-      : ['#', 'Name', 'Username', 'Rank', 'Personal Points', 'Team Points', 'Performance', 'Leadership', 'Total'];
+      ? ['#', 'الاسم', 'اسم المستخدم', 'الرتبة', 'النقاط الشخصية', 'نقاط الأجيال', 'أرباح الأداء', 'عمولة القيادة', 'إجمالي الأرباح']
+      : ['#', 'Name', 'Username', 'Rank', 'Personal Points', 'Generation Points', 'Performance', 'Leadership', 'Total'];
 
     const tableBody = selectedPeriod.membersProfits
       .sort((a, b) => b.profit.totalProfit - a.profit.totalProfit)
@@ -527,7 +527,7 @@ const ProfitPeriods = () => {
                   <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
                   <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
                   <th>{language === 'ar' ? 'النقاط الشخصية' : 'Personal Points'}</th>
-                  <th>{language === 'ar' ? 'نقاط الفريق' : 'Team Points'}</th>
+                  <th>{language === 'ar' ? 'نقاط الأجيال' : 'Generation Points'}</th>
                   <th>{language === 'ar' ? 'أرباح الأداء' : 'Performance'}</th>
                   <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
                   <th>{language === 'ar' ? 'إجمالي الأرباح' : 'Total'}</th>
@@ -606,7 +606,7 @@ const ProfitPeriods = () => {
               {/* Performance Profits Section */}
               <div className="details-section">
                 <h4 className="section-title">
-                  {language === 'ar' ? '💰 أرباح الأداء (النقاط الشخصية + نقاط الفريق)' : '💰 Performance Profits (Personal + Team Points)'}
+                  {language === 'ar' ? '💰 أرباح الأداء (النقاط الشخصية + نقاط الأجيال)' : '💰 Performance Profits (Personal + Generation Points)'}
                 </h4>
 
                 <div className="calculation-row">
@@ -615,7 +615,7 @@ const ProfitPeriods = () => {
                 </div>
 
                 <div className="team-points-breakdown">
-                  <div className="calc-label">{language === 'ar' ? 'نقاط الفريق (5 أجيال):' : 'Team Points (5 Generations):'}</div>
+                  <div className="calc-label">{language === 'ar' ? 'نقاط الأجيال (5 أجيال):' : 'Generation Points (5 Generations):'}</div>
                   <div className="generations-list">
                     <div className="generation-item">
                       <span>{language === 'ar' ? 'الجيل 1:' : 'Gen 1:'}</span>

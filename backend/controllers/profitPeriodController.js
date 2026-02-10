@@ -149,14 +149,14 @@ exports.calculatePeriodProfits = async (req, res) => {
       // إجمالي الأرباح للعضو قبل الخصم (أرباح الأداء + القيادة + عمولة شراء الزبون)
       const memberTotalProfit = performanceProfitInShekel + leadershipCommission.commissionInShekel + customerPurchaseCommission;
 
-      // حساب عمولة تطوير الموقع (5% من الإجمالي) - بدون تقريب
-      const websiteDevelopmentCommission = memberTotalProfit * 0.05;
+      // حساب عمولة تطوير الموقع (3% من الإجمالي، فقط إذا كان الربح > 100 شيكل)
+      const websiteDevelopmentCommission = memberTotalProfit > 100 ? memberTotalProfit * 0.03 : 0;
 
       // الناتج النهائي: نخصم العمولة ثم نقرب للأسفل
       const finalProfit = Math.floor(memberTotalProfit - websiteDevelopmentCommission);
 
       // Debug: طباعة القيم للتحقق
-      console.log(`💰 ${member.name}: أداء=${performanceProfitInShekel}, قيادة=${leadershipCommission.commissionInShekel}, عمولة زبون=${customerPurchaseCommission.toFixed(2)}, قبل الخصم=${memberTotalProfit.toFixed(2)}, عمولة 5%=${websiteDevelopmentCommission.toFixed(2)}, النهائي=${finalProfit}`);
+      console.log(`💰 ${member.name}: أداء=${performanceProfitInShekel}, قيادة=${leadershipCommission.commissionInShekel}, عمولة زبون=${customerPurchaseCommission.toFixed(2)}, قبل الخصم=${memberTotalProfit.toFixed(2)}, خصم موقع 3%=${websiteDevelopmentCommission.toFixed(2)}, النهائي=${finalProfit}`);
 
       membersProfits.push({
         memberId: member._id,
