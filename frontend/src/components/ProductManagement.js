@@ -76,13 +76,32 @@ const ProductManagement = () => {
     }
   }, []);
 
+  useEffect(() => {
+    console.log('🔍 Category Filter changed:', categoryFilter);
+    console.log('🔍 Total products:', products.length);
+    const filtered = products.filter(product => {
+      if (stockFilter === 'inStock' && product.stock <= 0) return false;
+      if (stockFilter === 'outOfStock' && product.stock > 0) return false;
+      if (categoryFilter !== 'all' && product.category !== categoryFilter) {
+        console.log(`❌ Product "${product.name}" category "${product.category}" !== filter "${categoryFilter}"`);
+        return false;
+      }
+      return true;
+    });
+    console.log('🔍 Filtered products:', filtered.length);
+  }, [categoryFilter, stockFilter, products]);
+
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/products', {
+      // Fetch all products for admin panel (no pagination limit)
+      const response = await axios.get('/api/products?limit=1000', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setProducts(response.data.data || response.data.products || []);
+      const productsData = response.data.data || response.data.products || [];
+      console.log('📦 Products fetched:', productsData.length);
+      console.log('📦 Social Media products:', productsData.filter(p => p.category === 'قسم خدمات السوشيال ميديا').length);
+      setProducts(productsData);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching products:', err);
