@@ -584,6 +584,7 @@ const calculateLeadershipCommission = async (User, memberId) => {
     }
   }
 
+  // تقريب المجموع الكلي مرة واحدة في النهاية لتجنب فقدان الكسور
   const commissionInShekel = Math.floor(totalCommissionPoints * POINTS_TO_SHEKEL_RATE);
 
   return {
