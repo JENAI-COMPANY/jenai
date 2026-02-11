@@ -96,7 +96,7 @@ const ProductManagement = () => {
       const response = await axios.get('/api/categories');
       // Extract category names (strings) for backward compatibility with Product model
       const cats = response.data.categories || [];
-      const categoryNames = cats.map(cat => typeof cat === 'string' ? cat : cat.name || cat.nameAr || '');
+      const categoryNames = cats.map(cat => typeof cat === 'string' ? cat : cat.nameAr || cat.name || '');
       setCategories(categoryNames);
     } catch (err) {
       console.error('Error fetching categories:', err);

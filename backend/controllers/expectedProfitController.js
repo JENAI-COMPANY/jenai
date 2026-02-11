@@ -89,15 +89,14 @@ exports.getExpectedProfit = async (req, res) => {
     }
 
     // ══════════════════════════════════════
-    // 4. حساب الإجمالي قبل الخصم
+    // 4. حساب الإجمالي المتوقع (بدون خصم)
     // ══════════════════════════════════════
+    // الأرباح المتوقعة تُعرض بدون خصم لأنها متوقعة وليست حقيقية
+    // الخصم 3% يطبق فقط عند احتساب الأرباح الحقيقي
     const totalExpectedProfit = performanceProfitInShekel + leadershipCommission + customerPurchaseCommission;
 
-    // حساب عمولة تطوير الموقع (5%)
-    const websiteDevelopmentCommission = totalExpectedProfit * 0.05;
-
-    // الناتج النهائي
-    const finalExpectedProfit = Math.floor(totalExpectedProfit - websiteDevelopmentCommission);
+    // الناتج النهائي = الإجمالي بدون خصم
+    const finalExpectedProfit = Math.floor(totalExpectedProfit);
 
     // إرجاع التفاصيل
     res.json({
@@ -114,9 +113,9 @@ exports.getExpectedProfit = async (req, res) => {
         // عمولة شراء الزبون
         customerPurchaseCommission: Math.floor(customerPurchaseCommission),
 
-        // الإجماليات
+        // الإجماليات (بدون خصم في الأرباح المتوقعة)
         totalBeforeDeduction: Math.floor(totalExpectedProfit),
-        websiteDevelopmentCommission: Math.floor(websiteDevelopmentCommission),
+        websiteDevelopmentCommission: 0, // لا يوجد خصم في الأرباح المتوقعة
         finalExpectedProfit: finalExpectedProfit,
 
         // معلومات إضافية
