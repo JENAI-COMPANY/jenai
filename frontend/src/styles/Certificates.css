@@ -9,7 +9,7 @@
 .cert-hero {
   position: relative;
   height: 280px;
-  background: linear-gradient(135deg, #1a3c5e 0%, #2d6a9f 50%, #1a3c5e 100%);
+  background: linear-gradient(135deg, #8B6914 0%, #c9a227 50%, #8B6914 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,7 +26,7 @@
 .cert-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(26,60,94,0.85) 0%, rgba(45,106,159,0.75) 100%);
+  background: linear-gradient(135deg, rgba(139,105,20,0.85) 0%, rgba(201,162,39,0.75) 100%);
 }
 
 .cert-hero-content {
@@ -70,7 +70,7 @@
 .cert-section-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1a3c5e;
+  color: #8B6914;
   margin: 0 0 2rem;
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@
 
 .cert-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(26,60,94,0.2);
+  box-shadow: 0 10px 30px rgba(139,105,20,0.2);
 }
 
 .cert-img-wrapper {
@@ -125,7 +125,7 @@
 .cert-img-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(26,60,94,0.6);
+  background: rgba(139,105,20,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,7 +160,7 @@
 }
 
 .fatwa-box-header {
-  background: linear-gradient(135deg, #1a3c5e 0%, #2d6a9f 100%);
+  background: linear-gradient(135deg, #8B6914 0%, #c9a227 100%);
   padding: 2rem;
   text-align: center;
   color: white;
@@ -232,7 +232,7 @@
   transform: translateY(-50%);
   width: 28px;
   height: 28px;
-  background: #1a3c5e;
+  background: #8B6914;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -268,7 +268,7 @@
 .fatwa-name {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #1a3c5e;
+  color: #8B6914;
   margin: 0 0 0.3rem;
 }
 
