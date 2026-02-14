@@ -713,7 +713,7 @@ const Profile = () => {
           {/* Members Management Tab */}
           {activeTab === 'members' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
             <div className="tab-panel">
-              <UserManagement defaultFilterRole="member" />
+              <MembersManagement />
             </div>
           )}
 
