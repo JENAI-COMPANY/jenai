@@ -1028,41 +1028,37 @@ const UserManagement = () => {
               </label>
             </div>
             <div className="um-form-row">
-              <div className="um-form-group">
+              <div className="um-form-group" style={{ position: 'relative' }}>
                 <label>{language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={editPassword.showNew ? 'text' : 'password'}
-                    value={editPassword.newPassword}
-                    onChange={(e) => setEditPassword({ ...editPassword, newPassword: e.target.value })}
-                    placeholder={language === 'ar' ? 'اتركه فارغاً للإبقاء على الحالية' : 'Leave empty to keep current'}
-                    style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
-                  />
-                  <span
-                    onClick={() => setEditPassword({ ...editPassword, showNew: !editPassword.showNew })}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none', color: '#888', zIndex: 1 }}
-                  >
-                    {editPassword.showNew ? '🙈' : '👁️'}
-                  </span>
-                </div>
+                <input
+                  type={editPassword.showNew ? 'text' : 'password'}
+                  value={editPassword.newPassword}
+                  onChange={(e) => setEditPassword({ ...editPassword, newPassword: e.target.value })}
+                  placeholder={language === 'ar' ? 'اتركه فارغاً للإبقاء على الحالية' : 'Leave empty to keep current'}
+                  style={{ paddingRight: '38px' }}
+                />
+                <span
+                  onClick={() => setEditPassword({ ...editPassword, showNew: !editPassword.showNew })}
+                  style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
+                >
+                  {editPassword.showNew ? '🙈' : '👁️'}
+                </span>
               </div>
-              <div className="um-form-group">
+              <div className="um-form-group" style={{ position: 'relative' }}>
                 <label>{language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={editPassword.showConfirm ? 'text' : 'password'}
-                    value={editPassword.confirmPassword}
-                    onChange={(e) => setEditPassword({ ...editPassword, confirmPassword: e.target.value })}
-                    placeholder={language === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter new password'}
-                    style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
-                  />
-                  <span
-                    onClick={() => setEditPassword({ ...editPassword, showConfirm: !editPassword.showConfirm })}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none', color: '#888', zIndex: 1 }}
-                  >
-                    {editPassword.showConfirm ? '🙈' : '👁️'}
-                  </span>
-                </div>
+                <input
+                  type={editPassword.showConfirm ? 'text' : 'password'}
+                  value={editPassword.confirmPassword}
+                  onChange={(e) => setEditPassword({ ...editPassword, confirmPassword: e.target.value })}
+                  placeholder={language === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter new password'}
+                  style={{ paddingRight: '38px' }}
+                />
+                <span
+                  onClick={() => setEditPassword({ ...editPassword, showConfirm: !editPassword.showConfirm })}
+                  style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
+                >
+                  {editPassword.showConfirm ? '🙈' : '👁️'}
+                </span>
                 {editPassword.newPassword && editPassword.confirmPassword && editPassword.newPassword !== editPassword.confirmPassword && (
                   <small style={{ color: '#e74c3c', fontSize: '11px' }}>
                     {language === 'ar' ? '⚠️ كلمتا المرور غير متطابقتين' : '⚠️ Passwords do not match'}
