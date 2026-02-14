@@ -372,6 +372,15 @@
   background: #fff3cd;
   color: #856404;
 }
+.news-badge-inactive {
+  background: #fde8e8;
+  color: #c0392b;
+}
+.news-card-inactive {
+  opacity: 0.75;
+  border: 2px dashed #e0a0a0;
+  background: #fef9f9;
+}
 .news-date {
   color: #888;
   font-size: 12px;

@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const News = require('../models/News');
-const { protect } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 
-// GET all active news (public)
-router.get('/', async (req, res) => {
+// GET news - super_admin sees all, public sees only active
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const { category, search } = req.query;
-    const query = { isActive: true };
+    // الأدمن يرى جميع الأخبار (منشورة وغير منشورة)
+    const isSuperAdmin = req.user && req.user.role === 'super_admin';
+    const query = isSuperAdmin ? {} : { isActive: true };
 
     if (category) query.category = category;
     if (search) {

@@ -45,7 +45,9 @@ const News = () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.append('category', selectedCategory);
       if (searchTerm) params.append('search', searchTerm);
-      const res = await axios.get(`/api/news?${params.toString()}`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(`/api/news?${params.toString()}`, { headers });
       setNews(res.data.news || []);
     } catch (err) {
       console.error('Error fetching news:', err);
@@ -422,7 +424,7 @@ const News = () => {
 };
 
 const NewsCard = ({ item, isSuperAdmin, onOpen, onEdit, onDelete, formatDate, language, featured }) => (
-  <div className={`news-card ${featured ? 'news-card-featured' : ''}`}>
+  <div className={`news-card ${featured ? 'news-card-featured' : ''} ${!item.isActive && isSuperAdmin ? 'news-card-inactive' : ''}`}>
     {item.image && (
       <div className="news-card-image" onClick={() => onOpen(item)}>
         <img src={item.image} alt={item.titleAr} />
@@ -437,6 +439,9 @@ const NewsCard = ({ item, isSuperAdmin, onOpen, onEdit, onDelete, formatDate, la
     <div className="news-card-body">
       <div className="news-card-meta">
         <span className="news-badge">{item.category}</span>
+        {!item.isActive && isSuperAdmin && (
+          <span className="news-badge news-badge-inactive">🚫 غير منشور</span>
+        )}
         <span className="news-date">{formatDate(item.createdAt)}</span>
       </div>
       <h3 className="news-card-title" onClick={() => onOpen(item)}>
