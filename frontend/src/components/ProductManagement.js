@@ -1225,6 +1225,7 @@ const ProductManagement = () => {
                 </div>
               </div>
 
+              {error && <div className="pm-alert pm-alert-error" style={{marginBottom: '12px', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600'}}>{error}</div>}
               <div className="pm-form-actions">
                 <button type="submit" className="pm-save-btn">
                   {editingProduct ? (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes') : (language === 'ar' ? 'إضافة المنتج' : 'Add Product')}
