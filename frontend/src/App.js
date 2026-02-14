@@ -34,6 +34,7 @@ import ReturnPolicy from './pages/ReturnPolicy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
 import FAQ from './pages/FAQ';
+import Certificates from './pages/Certificates';
 import ProfitsCalculator from './components/ProfitsCalculator';
 import ProfitPeriods from './components/ProfitPeriods';
 import Favorites from './pages/Favorites';
@@ -63,6 +64,7 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsConditions />} />
                 <Route path="/faq" element={<FAQ />} />
+                <Route path="/certificates" element={<Certificates />} />
                 <Route
                   path="/academy"
                   element={
