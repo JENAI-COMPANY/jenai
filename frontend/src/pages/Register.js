@@ -129,6 +129,9 @@ const Register = () => {
     if (name === 'username') {
       const englishOnly = value.replace(/[^a-zA-Z0-9_-]/g, '');
       setFormData({ ...formData, [name]: englishOnly });
+    } else if (name === 'city') {
+      const englishOnly = value.replace(/[^a-zA-Z\s-]/g, '');
+      setFormData({ ...formData, [name]: englishOnly });
     } else {
       setFormData({ ...formData, [name]: value });
 
@@ -420,7 +423,7 @@ const Register = () => {
             <input
               type="text"
               name="city"
-              placeholder={language === 'ar' ? 'أدخل اسم المدينة' : 'Enter city name'}
+              placeholder="Jenin / Ramallah / Gaza"
               value={formData.city}
               onChange={handleChange}
               required={selectedRole === 'member'}

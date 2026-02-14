@@ -831,12 +831,12 @@ const UserManagement = () => {
                   </small>
                 </div>
                 <div className="um-form-group">
-                  <label>{language === 'ar' ? 'المدينة' : 'City'}</label>
+                  <label>{language === 'ar' ? 'المدينة (إنجليزي)' : 'City (English)'}</label>
                   <input
                     type="text"
                     value={editingUser.city || ''}
-                    onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value })}
-                    placeholder={language === 'ar' ? 'مثال: جنين' : 'Example: Jenin'}
+                    onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value.replace(/[^a-zA-Z\s-]/g, '') })}
+                    placeholder="Jenin / Ramallah / Gaza"
                   />
                   <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                     {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
@@ -1133,12 +1133,12 @@ const UserManagement = () => {
                     </small>
                   </div>
                   <div className="um-form-group">
-                    <label>{language === 'ar' ? 'المدينة' : 'City'}</label>
+                    <label>{language === 'ar' ? 'المدينة (إنجليزي)' : 'City (English)'}</label>
                     <input
                       type="text"
                       value={newUser.city || ''}
-                      onChange={(e) => setNewUser({ ...newUser, city: e.target.value })}
-                      placeholder={language === 'ar' ? 'مثال: جنين' : 'Example: Jenin'}
+                      onChange={(e) => setNewUser({ ...newUser, city: e.target.value.replace(/[^a-zA-Z\s-]/g, '') })}
+                      placeholder="Jenin / Ramallah / Gaza"
                     />
                     <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                       {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
