@@ -140,6 +140,22 @@
   opacity: 1;
 }
 
+.cert-card-wide {
+  grid-column: span 2;
+}
+
+.cert-double-pages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.cert-page {
+  border-radius: 8px;
+  aspect-ratio: auto;
+}
+
 .cert-card-name {
   text-align: center;
   padding: 0.8rem 1rem;

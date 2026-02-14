@@ -6,9 +6,19 @@ const Certificates = () => {
   const { language } = useLanguage();
 
   const certificates = [
-    { image: '/images/certificates/cert1.jpg', name: language === 'ar' ? 'شهادة تسجيل الشركة ١' : 'Company Registration Certificate 1' },
-    { image: '/images/certificates/cert2.jpg', name: language === 'ar' ? 'شهادة تسجيل الشركة ٢' : 'Company Registration Certificate 2' },
-    { image: '/images/certificates/cert3.jpg', name: language === 'ar' ? 'شهادة تسجيل الشركة ٣' : 'Company Registration Certificate 3' },
+    {
+      type: 'single',
+      image: '/images/certificates/cert1.jpg',
+      name: language === 'ar' ? 'شهادة تسجيل الشركة' : 'Company Registration Certificate'
+    },
+    {
+      type: 'double',
+      pages: [
+        '/images/certificates/cert2.jpg',
+        '/images/certificates/cert3.jpg'
+      ],
+      name: language === 'ar' ? 'شهادة تسجيل الشركة - الوثيقة الرسمية' : 'Company Registration Certificate - Official Document'
+    },
   ];
 
   return (
@@ -32,18 +42,26 @@ const Certificates = () => {
           </h2>
           <div className="cert-grid">
             {certificates.map((cert, index) => (
-              <div key={index} className="cert-card">
-                <div className="cert-img-wrapper">
-                  <img
-                    src={cert.image}
-                    alt={cert.name}
-                    className="cert-img"
-                    onClick={() => window.open(cert.image, '_blank')}
-                  />
-                  <div className="cert-img-overlay">
-                    <span>🔍 {language === 'ar' ? 'عرض بالحجم الكامل' : 'View Full Size'}</span>
+              <div key={index} className={`cert-card ${cert.type === 'double' ? 'cert-card-wide' : ''}`}>
+                {cert.type === 'single' ? (
+                  <div className="cert-img-wrapper" onClick={() => window.open(cert.image, '_blank')}>
+                    <img src={cert.image} alt={cert.name} className="cert-img" />
+                    <div className="cert-img-overlay">
+                      <span>🔍 {language === 'ar' ? 'عرض بالحجم الكامل' : 'View Full Size'}</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="cert-double-pages">
+                    {cert.pages.map((page, pi) => (
+                      <div key={pi} className="cert-img-wrapper cert-page" onClick={() => window.open(page, '_blank')}>
+                        <img src={page} alt={`${cert.name} - ${language === 'ar' ? 'صفحة' : 'Page'} ${pi + 1}`} className="cert-img" />
+                        <div className="cert-img-overlay">
+                          <span>🔍 {language === 'ar' ? `صفحة ${pi + 1}` : `Page ${pi + 1}`}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <p className="cert-card-name">{cert.name}</p>
               </div>
             ))}
