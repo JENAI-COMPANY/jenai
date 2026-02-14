@@ -624,6 +624,8 @@ const ProductManagement = () => {
               <h3>{editingProduct ? (language === 'ar' ? 'تعديل المنتج' : 'Edit Product') : (language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product')}</h3>
               <button className="pm-modal-close" onClick={resetForm}>✕</button>
             </div>
+            {error && <div className="pm-alert pm-alert-error" style={{margin: '0 0 16px 0'}}>{error}</div>}
+            {message && <div className="pm-alert pm-alert-success" style={{margin: '0 0 16px 0'}}>{message}</div>}
             <form onSubmit={handleSubmit} className="pm-form" autoComplete="off">
               <div className="pm-form-grid">
                 <div className="pm-form-group">
