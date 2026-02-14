@@ -211,22 +211,174 @@
   box-shadow: 0 10px 30px rgba(243, 156, 18, 0.3);
 }
 
-.certificate-icon {
-  font-size: 3.5rem;
+.certificate-image-wrapper {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.certificate-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.certificate-image:hover {
+  transform: scale(1.03);
+}
+
+/* Fatwa Section */
+.fatwa-section {
+  background: linear-gradient(135deg, #fefefe 0%, #f8f4e8 100%);
+}
+
+.fatwa-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 2px solid #e8d5a3;
+  direction: rtl;
+  text-align: right;
+}
+
+.fatwa-header {
+  background: linear-gradient(135deg, #1a3c5e 0%, #2d6a9f 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.fatwa-bismillah {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-family: 'Traditional Arabic', 'Amiri', serif;
+  letter-spacing: 1px;
+}
+
+.fatwa-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f3c96b;
+  margin: 0;
+}
+
+.fatwa-body {
+  padding: 2rem 2.5rem;
+}
+
+.fatwa-intro {
+  font-size: 1.05rem;
+  line-height: 2;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  border-right: 4px solid #f39c12;
+  padding-right: 1rem;
+}
+
+.fatwa-list {
+  list-style: none;
+  counter-reset: fatwa-counter;
+  padding: 0;
+  margin: 0;
+}
+
+.fatwa-list li {
+  counter-increment: fatwa-counter;
+  position: relative;
+  padding: 0.8rem 3.5rem 0.8rem 1rem;
+  margin-bottom: 0.7rem;
+  border-radius: 8px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #2c3e50;
+  transition: background 0.2s;
+}
+
+.fatwa-list li:hover {
+  background: #fff8e8;
+  border-color: #f3c96b;
+}
+
+.fatwa-list li::before {
+  content: counter(fatwa-counter);
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: #1a3c5e;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.fatwa-footer {
+  background: #f8f4e8;
+  padding: 1.5rem 2.5rem 2rem;
+  border-top: 2px solid #e8d5a3;
+  text-align: center;
+}
+
+.fatwa-closing {
+  font-size: 1.1rem;
+  color: #555;
+  font-style: italic;
   margin-bottom: 1rem;
 }
 
+.fatwa-signature {
+  background: white;
+  display: inline-block;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  border: 1px solid #e8d5a3;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+
+.fatwa-scholar-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1a3c5e;
+  margin: 0 0 0.3rem;
+}
+
+.fatwa-scholar-title {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 0 0 0.2rem;
+}
+
+.fatwa-scholar-location,
+.fatwa-date {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0 0 0.2rem;
+  font-weight: 600;
+}
+
+/* end fatwa */
+
 .certificate-name {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #2c3e50;
   margin-bottom: 0.5rem;
-}
-
-.certificate-year {
-  font-size: 1rem;
-  color: #f39c12;
-  font-weight: 600;
+  text-align: center;
 }
 
 .services-grid {
