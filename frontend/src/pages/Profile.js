@@ -616,13 +616,13 @@ const Profile = () => {
                       <input
                         type="text"
                         readOnly
-                        value={user.referralLink || `https://jenai-4u.com/register?ref=${user.subscriberCode}`}
+                        value={`https://jenai-4u.com/register?ref=${user.subscriberCode}`}
                         className="referral-link-input"
                       />
                       <button
                         className="copy-link-btn"
                         onClick={() => {
-                          const link = user.referralLink || `https://jenai-4u.com/register?ref=${user.subscriberCode}`;
+                          const link = `https://jenai-4u.com/register?ref=${user.subscriberCode}`;
                           navigator.clipboard.writeText(link);
                           setMessage(language === 'ar' ? 'تم نسخ الرابط!' : 'Link copied!');
                           setTimeout(() => setMessage(''), 2000);
