@@ -72,7 +72,10 @@ exports.getAllProducts = async (req, res) => {
 
     console.log('📋 Query parameters received:', { category, search, regionId, regionCode, isNewArrival, isOffer });
 
-    const query = { isActive: true };
+    // المدراء يرون جميع المنتجات (نشطة وغير نشطة)، المستخدمون العاديون يرون النشطة فقط
+    const adminRoles = ['super_admin', 'regional_admin', 'category_admin'];
+    const isAdminRequest = req.user && adminRoles.includes(req.user.role);
+    const query = isAdminRequest ? {} : { isActive: true };
 
     if (category) {
       query.category = category;
