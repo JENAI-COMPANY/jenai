@@ -283,7 +283,7 @@ const Profile = () => {
             </button>
           )}
 
-          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
+          {(user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'admin_secretary') && (
             <button
               className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => setActiveTab('users')}
@@ -403,7 +403,7 @@ const Profile = () => {
             </button>
           )}
 
-          {(user.role === 'super_admin' || user.role === 'regional_admin') && (
+          {(user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'sales_employee') && (
             <button
               className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
               onClick={() => setActiveTab('orders')}
@@ -666,7 +666,7 @@ const Profile = () => {
           )}
 
           {/* Users Management Tab */}
-          {activeTab === 'users' && (user.role === 'super_admin' || user.role === 'regional_admin') && (
+          {activeTab === 'users' && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'admin_secretary') && (
             <div className="tab-panel">
               <UserManagement />
             </div>
@@ -750,7 +750,7 @@ const Profile = () => {
           )}
 
           {/* Orders Management Tab - For Admins */}
-          {activeTab === 'orders' && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'category_admin') && (
+          {activeTab === 'orders' && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'category_admin' || user.role === 'sales_employee') && (
             <div className="tab-panel">
               <OrderManagement />
             </div>
