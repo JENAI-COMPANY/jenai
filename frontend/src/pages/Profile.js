@@ -937,7 +937,7 @@ const Profile = () => {
                             <th>{language === 'ar' ? 'أرباح القيادة' : 'Leadership Profit'}</th>
                             <th>{language === 'ar' ? 'عمولة شراء زبون' : 'Customer Comm'}</th>
                             <th>{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</th>
-                            <th>{language === 'ar' ? 'عمولة الموقع 5%' : 'Site Commission 5%'}</th>
+                            <th>{language === 'ar' ? 'خصم الموقع 3%' : 'Site Deduction 3%'}</th>
                             <th>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</th>
                             <th>{language === 'ar' ? 'تاريخ الاحتساب' : 'Calculated Date'}</th>
                           </tr>

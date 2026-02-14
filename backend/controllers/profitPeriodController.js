@@ -480,6 +480,9 @@ exports.getMyProfitPeriods = async (req, res) => {
           teamProfit: memberProfit.profit.teamProfit,
           performanceProfit: memberProfit.profit.performanceProfit,
           leadershipProfit: memberProfit.profit.leadershipProfit,
+          customerPurchaseCommission: memberProfit.profit.customerPurchaseCommission || 0,
+          totalProfitBeforeDeduction: memberProfit.profit.totalProfitBeforeDeduction || 0,
+          websiteDevelopmentCommission: memberProfit.profit.websiteDevelopmentCommission || 0,
           totalProfit: memberProfit.profit.totalProfit,
           points: memberProfit.points,
           rankName: memberProfit.rankName
