@@ -45,6 +45,11 @@ const Admin = () => {
   const [editingBook, setEditingBook] = useState(null);
   const [categoryAdmins, setCategoryAdmins] = useState([]);
   const [showCategoryAdminForm, setShowCategoryAdminForm] = useState(false);
+  const [salesEmployees, setSalesEmployees] = useState([]);
+  const [adminSecretaries, setAdminSecretaries] = useState([]);
+  const [showStaffForm, setShowStaffForm] = useState(null); // 'sales' | 'secretary' | null
+  const [editingStaff, setEditingStaff] = useState(null);
+  const [newStaff, setNewStaff] = useState({ username: '', password: '', name: '', phone: '', countryCode: '+970' });
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -127,6 +132,13 @@ const Admin = () => {
   // استخدام قائمة الدول من الملف المشترك
   const countries = allCountries;
 
+  // Set default tab based on role
+  useEffect(() => {
+    if (user?.role === 'sales_employee') setActiveTab('orders');
+    else if (user?.role === 'admin_secretary') setActiveTab('members');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
+
   useEffect(() => {
     fetchData();
     fetchProductCategories();
@@ -171,6 +183,15 @@ const Admin = () => {
       } else if (activeTab === 'library') {
         const data = await getBooks();
         setBooks(data.books || []);
+      } else if (activeTab === 'staff' && isSuperAdmin) {
+        const token = localStorage.getItem('token');
+        const axios = (await import('axios')).default;
+        const [empRes, secRes] = await Promise.all([
+          axios.get('/api/admin/sales-employees', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('/api/admin/admin-secretaries', { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        setSalesEmployees(empRes.data.data || []);
+        setAdminSecretaries(secRes.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -561,48 +582,62 @@ const Admin = () => {
       <h2>لوحة التحكم</h2>
 
       <div className="admin-tabs">
-        <button
-          className={activeTab === 'statistics' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('statistics')}
-        >
-          📊 الإحصائيات
-        </button>
-        <button
-          className={activeTab === 'ranks' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('ranks')}
-        >
-          🏆 الدرجات التسع
-        </button>
-        <button
-          className={activeTab === 'profit' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('profit')}
-        >
-          💰 احتساب الأرباح
-        </button>
-        <button
-          className={activeTab === 'products' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('products')}
-        >
-          المنتجات
-        </button>
-        <button
-          className={activeTab === 'orders' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('orders')}
-        >
-          الطلبات
-        </button>
-        <button
-          className={activeTab === 'subscribers' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('subscribers')}
-        >
-          المشتركين
-        </button>
-        <button
-          className={activeTab === 'members' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('members')}
-        >
-          الأعضاء
-        </button>
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'statistics' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('statistics')}
+          >
+            📊 الإحصائيات
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'ranks' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('ranks')}
+          >
+            🏆 الدرجات التسع
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'profit' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('profit')}
+          >
+            💰 احتساب الأرباح
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'products' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('products')}
+          >
+            المنتجات
+          </button>
+        )}
+        {user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'orders' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('orders')}
+          >
+            الطلبات
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'subscribers' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('subscribers')}
+          >
+            المشتركين
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && (
+          <button
+            className={activeTab === 'members' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('members')}
+          >
+            الأعضاء
+          </button>
+        )}
         {isSuperAdmin && <button
           className={activeTab === 'suppliers' ? 'tab-active' : ''}
           onClick={() => setActiveTab('suppliers')}
@@ -624,24 +659,37 @@ const Admin = () => {
           🔒 صلاحيات مدراء الأقسام
         </button>
         }
-        <button
-          className={activeTab === 'library' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('library')}
+        {isSuperAdmin && <button
+          className={activeTab === 'staff' ? 'tab-active' : ''}
+          onClick={() => setActiveTab('staff')}
         >
-          📚 المكتبة
+          👥 الموظفون
         </button>
-        <button
-          className={activeTab === 'reviews' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('reviews')}
-        >
-          ⭐ التقييمات
-        </button>
-        <button
-          className={activeTab === 'profit-periods' ? 'tab-active' : ''}
-          onClick={() => window.location.href = '/profit-periods'}
-        >
-          💰 فترات الأرباح
-        </button>
+        }
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'library' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('library')}
+          >
+            📚 المكتبة
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'reviews' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('reviews')}
+          >
+            ⭐ التقييمات
+          </button>
+        )}
+        {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
+          <button
+            className={activeTab === 'profit-periods' ? 'tab-active' : ''}
+            onClick={() => window.location.href = '/profit-periods'}
+          >
+            💰 فترات الأرباح
+          </button>
+        )}
       </div>
 
       {loading && activeTab !== 'statistics' ? (
@@ -1713,10 +1761,175 @@ const Admin = () => {
               )}
             </div>
           )}
+
+          {activeTab === 'staff' && isSuperAdmin && (
+            <div>
+              <h3 style={{ marginBottom: '20px' }}>👥 إدارة الموظفين</h3>
+
+              {/* موظفو المبيعات */}
+              <div style={{ marginBottom: '30px', background: '#f8f9fa', borderRadius: '12px', padding: '20px' }}>
+                <div className="tab-header" style={{ marginBottom: '15px' }}>
+                  <h4>🛒 موظفو المبيعات</h4>
+                  <button className="add-btn" onClick={() => { setShowStaffForm(showStaffForm === 'sales' ? null : 'sales'); setEditingStaff(null); setNewStaff({ username: '', password: '', name: '', phone: '', countryCode: '+970' }); }}>
+                    {showStaffForm === 'sales' ? 'إلغاء' : '+ إضافة موظف مبيعات'}
+                  </button>
+                </div>
+                <p style={{ color: '#666', fontSize: '13px', marginBottom: '10px' }}>صلاحياته: إنشاء طلبيات للزبائن + إدارة الطلبات فقط</p>
+
+                {showStaffForm === 'sales' && (
+                  <StaffForm
+                    data={editingStaff || newStaff}
+                    onChange={(e) => editingStaff ? setEditingStaff({ ...editingStaff, [e.target.name]: e.target.value }) : setNewStaff({ ...newStaff, [e.target.name]: e.target.value })}
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const axios = (await import('axios')).default;
+                      const token = localStorage.getItem('token');
+                      const data = editingStaff || newStaff;
+                      try {
+                        if (editingStaff) {
+                          await axios.put(`/api/admin/sales-employee/${editingStaff._id}`, data, { headers: { Authorization: `Bearer ${token}` } });
+                        } else {
+                          await axios.post('/api/admin/sales-employee', data, { headers: { Authorization: `Bearer ${token}` } });
+                        }
+                        setShowStaffForm(null); setEditingStaff(null);
+                        fetchData();
+                      } catch (err) { alert(err.response?.data?.messageAr || 'حدث خطأ'); }
+                    }}
+                    isEdit={!!editingStaff}
+                  />
+                )}
+
+                <table className="admin-table" style={{ marginTop: '10px' }}>
+                  <thead><tr><th>الاسم</th><th>المستخدم</th><th>الهاتف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                  <tbody>
+                    {salesEmployees.length === 0 ? (
+                      <tr><td colSpan="5" style={{ textAlign: 'center', color: '#999' }}>لا يوجد موظفو مبيعات</td></tr>
+                    ) : salesEmployees.map(emp => (
+                      <tr key={emp._id}>
+                        <td>{emp.name}</td>
+                        <td>{emp.username}</td>
+                        <td>{emp.phone || '-'}</td>
+                        <td><span style={{ color: emp.isActive !== false ? '#27ae60' : '#e74c3c' }}>{emp.isActive !== false ? '✅ نشط' : '🚫 موقوف'}</span></td>
+                        <td>
+                          <button className="edit-btn" onClick={() => { setEditingStaff(emp); setShowStaffForm('sales'); }}>تعديل</button>
+                          <button className="delete-btn" style={{ marginRight: '5px' }} onClick={async () => {
+                            if (!window.confirm(`حذف ${emp.name}؟`)) return;
+                            const axios = (await import('axios')).default;
+                            const token = localStorage.getItem('token');
+                            await axios.delete(`/api/admin/sales-employee/${emp._id}`, { headers: { Authorization: `Bearer ${token}` } });
+                            fetchData();
+                          }}>حذف</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* سكرتارية الإدارة */}
+              <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '20px' }}>
+                <div className="tab-header" style={{ marginBottom: '15px' }}>
+                  <h4>📋 سكرتارية الإدارة</h4>
+                  <button className="add-btn" onClick={() => { setShowStaffForm(showStaffForm === 'secretary' ? null : 'secretary'); setEditingStaff(null); setNewStaff({ username: '', password: '', name: '', phone: '', countryCode: '+970' }); }}>
+                    {showStaffForm === 'secretary' ? 'إلغاء' : '+ إضافة سكرتير'}
+                  </button>
+                </div>
+                <p style={{ color: '#666', fontSize: '13px', marginBottom: '10px' }}>صلاحياته: إدارة المستخدمين وتغيير كود الراعي فقط</p>
+
+                {showStaffForm === 'secretary' && (
+                  <StaffForm
+                    data={editingStaff || newStaff}
+                    onChange={(e) => editingStaff ? setEditingStaff({ ...editingStaff, [e.target.name]: e.target.value }) : setNewStaff({ ...newStaff, [e.target.name]: e.target.value })}
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const axios = (await import('axios')).default;
+                      const token = localStorage.getItem('token');
+                      const data = editingStaff || newStaff;
+                      try {
+                        if (editingStaff) {
+                          await axios.put(`/api/admin/admin-secretary/${editingStaff._id}`, data, { headers: { Authorization: `Bearer ${token}` } });
+                        } else {
+                          await axios.post('/api/admin/admin-secretary', data, { headers: { Authorization: `Bearer ${token}` } });
+                        }
+                        setShowStaffForm(null); setEditingStaff(null);
+                        fetchData();
+                      } catch (err) { alert(err.response?.data?.messageAr || 'حدث خطأ'); }
+                    }}
+                    isEdit={!!editingStaff}
+                  />
+                )}
+
+                <table className="admin-table" style={{ marginTop: '10px' }}>
+                  <thead><tr><th>الاسم</th><th>المستخدم</th><th>الهاتف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                  <tbody>
+                    {adminSecretaries.length === 0 ? (
+                      <tr><td colSpan="5" style={{ textAlign: 'center', color: '#999' }}>لا يوجد سكرتارية إدارة</td></tr>
+                    ) : adminSecretaries.map(sec => (
+                      <tr key={sec._id}>
+                        <td>{sec.name}</td>
+                        <td>{sec.username}</td>
+                        <td>{sec.phone || '-'}</td>
+                        <td><span style={{ color: sec.isActive !== false ? '#27ae60' : '#e74c3c' }}>{sec.isActive !== false ? '✅ نشط' : '🚫 موقوف'}</span></td>
+                        <td>
+                          <button className="edit-btn" onClick={() => { setEditingStaff(sec); setShowStaffForm('secretary'); }}>تعديل</button>
+                          <button className="delete-btn" style={{ marginRight: '5px' }} onClick={async () => {
+                            if (!window.confirm(`حذف ${sec.name}؟`)) return;
+                            const axios = (await import('axios')).default;
+                            const token = localStorage.getItem('token');
+                            await axios.delete(`/api/admin/admin-secretary/${sec._id}`, { headers: { Authorization: `Bearer ${token}` } });
+                            fetchData();
+                          }}>حذف</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 };
+
+const StaffForm = ({ data, onChange, onSubmit, isEdit }) => (
+  <form onSubmit={onSubmit} className="admin-form" style={{ marginBottom: '15px' }}>
+    <div className="form-row">
+      <div className="form-group">
+        <label>اسم المستخدم *</label>
+        <input type="text" name="username" value={data.username || ''} onChange={onChange} required disabled={isEdit} />
+      </div>
+      <div className="form-group">
+        <label>الاسم الكامل *</label>
+        <input type="text" name="name" value={data.name || ''} onChange={onChange} required />
+      </div>
+    </div>
+    <div className="form-row">
+      <div className="form-group">
+        <label>{isEdit ? 'كلمة مرور جديدة (اتركها فارغة للإبقاء)' : 'كلمة المرور *'}</label>
+        <input type="password" name="password" value={data.password || ''} onChange={onChange} required={!isEdit} />
+      </div>
+      <div className="form-group">
+        <label>رقم الهاتف</label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <select name="countryCode" value={data.countryCode || '+970'} onChange={onChange} style={{ width: '100px' }}>
+            {['+970', '+972', '+962', '+966', '+20', '+1'].map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input type="tel" name="phone" value={data.phone || ''} onChange={onChange} style={{ flex: 1 }} />
+        </div>
+      </div>
+    </div>
+    {isEdit && (
+      <div className="form-group">
+        <label>
+          <input type="checkbox" name="isActive" checked={data.isActive !== false} onChange={(e) => onChange({ target: { name: 'isActive', value: e.target.checked } })} />
+          {' '}الحساب نشط
+        </label>
+      </div>
+    )}
+    <button type="submit" className="submit-btn">{isEdit ? 'حفظ التعديلات' : 'إنشاء الحساب'}</button>
+  </form>
+);
 
 export default Admin;

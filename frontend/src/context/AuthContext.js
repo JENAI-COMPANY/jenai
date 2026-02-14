@@ -106,6 +106,8 @@ export const AuthProvider = ({ children }) => {
     isAdmin: user?.role === 'super_admin' || user?.role === 'regional_admin' || user?.role === 'category_admin',
     isSuperAdmin: user?.role === 'super_admin',
     isCategoryAdmin: user?.role === 'category_admin',
+    isSalesEmployee: user?.role === 'sales_employee',
+    isAdminSecretary: user?.role === 'admin_secretary',
     isMember: user?.role === 'member',
     isCustomer: user?.role === 'customer',
     isSupplier: user?.role === 'supplier',

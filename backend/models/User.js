@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['customer', 'member', 'supplier', 'regional_admin', 'category_admin', 'super_admin'],
+    enum: ['customer', 'member', 'supplier', 'regional_admin', 'category_admin', 'sales_employee', 'admin_secretary', 'super_admin'],
     default: 'customer'
   },
   phone: {

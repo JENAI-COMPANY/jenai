@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, isSuperAdmin, isRegionalAdmin, isAdmin } = require('../middleware/auth');
+const { protect, authorize, isSuperAdmin, isRegionalAdmin, isAdmin, isSalesEmployee } = require('../middleware/auth');
 const {
   checkPermission,
   checkRegionalAccess,
@@ -279,6 +279,20 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       });
     }
 
+    // Admin secretaries can ONLY change the sponsor code
+    if (req.user.role === 'admin_secretary') {
+      if (!req.body.newSponsorCode) {
+        return res.status(403).json({
+          success: false,
+          message: 'سكرتير الإدارة مسموح له فقط بتغيير كود الراعي'
+        });
+      }
+      // Strip all other fields - only allow newSponsorCode
+      Object.keys(req.body).forEach(key => {
+        if (key !== 'newSponsorCode') delete req.body[key];
+      });
+    }
+
     // Regional admins can only update users in their regions
     if (req.user.role === 'regional_admin') {
       // Convert ObjectIds to strings for comparison
@@ -333,11 +347,11 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
     // Handle sponsor code change
     if (req.body.newSponsorCode) {
-      // Only super admin can change sponsor
-      if (req.user.role !== 'super_admin') {
+      // Only super admin or admin_secretary can change sponsor
+      if (!['super_admin', 'admin_secretary'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
-          message: 'يمكن للسوبر أدمن فقط تغيير الراعي'
+          message: 'يمكن للسوبر أدمن وسكرتير الإدارة فقط تغيير الراعي'
         });
       }
 
@@ -1142,6 +1156,147 @@ router.put('/category-admin/:id/permissions', protect, isSuperAdmin, async (req,
       success: false,
       message: error.message
     });
+  }
+});
+
+// ============================================================
+// Sales Employee Routes
+// ============================================================
+
+// @route   GET /api/admin/sales-employees
+router.get('/sales-employees', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const staff = await User.find({ role: 'sales_employee' }).select('-password').sort('-createdAt');
+    res.json({ success: true, data: staff });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   POST /api/admin/sales-employee
+router.post('/sales-employee', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { username, name, password, phone, countryCode } = req.body;
+    if (!username || !name || !password) {
+      return res.status(400).json({ success: false, messageAr: 'اسم المستخدم والاسم وكلمة المرور مطلوبة' });
+    }
+    const existing = await User.findOne({ username: username.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ success: false, messageAr: 'اسم المستخدم موجود بالفعل' });
+    }
+    const emp = await User.create({
+      username: username.toLowerCase(), name, password,
+      phone: phone || '', countryCode: countryCode || '+970',
+      role: 'sales_employee'
+    });
+    res.status(201).json({
+      success: true,
+      data: { id: emp._id, username: emp.username, name: emp.name, role: emp.role, phone: emp.phone },
+      messageAr: 'تم إنشاء موظف المبيعات بنجاح'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   PUT /api/admin/sales-employee/:id
+router.put('/sales-employee/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { name, phone, countryCode, password, isActive } = req.body;
+    const emp = await User.findOne({ _id: req.params.id, role: 'sales_employee' });
+    if (!emp) return res.status(404).json({ success: false, messageAr: 'موظف المبيعات غير موجود' });
+    if (name) emp.name = name;
+    if (phone !== undefined) emp.phone = phone;
+    if (countryCode) emp.countryCode = countryCode;
+    if (password) emp.password = password;
+    if (isActive !== undefined) emp.isActive = isActive;
+    await emp.save();
+    res.json({ success: true, data: { id: emp._id, username: emp.username, name: emp.name, phone: emp.phone, isActive: emp.isActive }, messageAr: 'تم التحديث بنجاح' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   DELETE /api/admin/sales-employee/:id
+router.delete('/sales-employee/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const emp = await User.findOne({ _id: req.params.id, role: 'sales_employee' });
+    if (!emp) return res.status(404).json({ success: false, messageAr: 'موظف المبيعات غير موجود' });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, messageAr: 'تم حذف موظف المبيعات بنجاح' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================
+// Admin Secretary Routes
+// ============================================================
+
+// @route   GET /api/admin/admin-secretaries
+router.get('/admin-secretaries', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const staff = await User.find({ role: 'admin_secretary' }).select('-password').sort('-createdAt');
+    res.json({ success: true, data: staff });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   POST /api/admin/admin-secretary
+router.post('/admin-secretary', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { username, name, password, phone, countryCode } = req.body;
+    if (!username || !name || !password) {
+      return res.status(400).json({ success: false, messageAr: 'اسم المستخدم والاسم وكلمة المرور مطلوبة' });
+    }
+    const existing = await User.findOne({ username: username.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ success: false, messageAr: 'اسم المستخدم موجود بالفعل' });
+    }
+    const sec = await User.create({
+      username: username.toLowerCase(), name, password,
+      phone: phone || '', countryCode: countryCode || '+970',
+      role: 'admin_secretary',
+      permissions: { canManageMembers: true, canViewMembers: true }
+    });
+    res.status(201).json({
+      success: true,
+      data: { id: sec._id, username: sec.username, name: sec.name, role: sec.role, phone: sec.phone },
+      messageAr: 'تم إنشاء سكرتير الإدارة بنجاح'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   PUT /api/admin/admin-secretary/:id
+router.put('/admin-secretary/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { name, phone, countryCode, password, isActive } = req.body;
+    const sec = await User.findOne({ _id: req.params.id, role: 'admin_secretary' });
+    if (!sec) return res.status(404).json({ success: false, messageAr: 'سكرتير الإدارة غير موجود' });
+    if (name) sec.name = name;
+    if (phone !== undefined) sec.phone = phone;
+    if (countryCode) sec.countryCode = countryCode;
+    if (password) sec.password = password;
+    if (isActive !== undefined) sec.isActive = isActive;
+    await sec.save();
+    res.json({ success: true, data: { id: sec._id, username: sec.username, name: sec.name, phone: sec.phone, isActive: sec.isActive }, messageAr: 'تم التحديث بنجاح' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   DELETE /api/admin/admin-secretary/:id
+router.delete('/admin-secretary/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const sec = await User.findOne({ _id: req.params.id, role: 'admin_secretary' });
+    if (!sec) return res.status(404).json({ success: false, messageAr: 'سكرتير الإدارة غير موجود' });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, messageAr: 'تم حذف سكرتير الإدارة بنجاح' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -2820,9 +2975,9 @@ router.get('/search-users', protect, isSuperAdmin, async (req, res) => {
 });
 
 // @route   POST /api/admin/create-order-for-user
-// @desc    Create order for a member or customer (Super Admin only)
-// @access  Private/Super Admin Only
-router.post('/create-order-for-user', protect, isSuperAdmin, async (req, res) => {
+// @desc    Create order for a member or customer (Super Admin + Sales Employee)
+// @access  Private/Super Admin + Sales Employee
+router.post('/create-order-for-user', protect, authorize('super_admin', 'sales_employee'), async (req, res) => {
   try {
     const {
       userId,

@@ -865,6 +865,42 @@ const UserManagement = () => {
                 </div>
               )}
 
+              {/* كود الراعي - للسوبر أدمن وسكرتير الإدارة */}
+              {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin_secretary') && (
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'كود الراعي (من أحاله)' : 'Sponsor Code (Who referred)'}</label>
+                    <small style={{ color: '#555', fontSize: '12px', display: 'block', marginBottom: '6px', background: '#f5f5f5', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                      {language === 'ar' ? '📌 الراعي الحالي: ' : '📌 Current sponsor: '}
+                      <strong>{editingUser.sponsorCode || (language === 'ar' ? 'لا يوجد' : 'None')}</strong>
+                      {editCurrentSponsorName && (
+                        <span style={{ color: '#1a7a3c', marginRight: '6px', marginLeft: '6px' }}>
+                          — {editCurrentSponsorName}
+                        </span>
+                      )}
+                    </small>
+                    <input
+                      type="text"
+                      value={editingUser.newSponsorCode}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setEditingUser({ ...editingUser, newSponsorCode: val });
+                        fetchSponsorForEdit(val, false);
+                      }}
+                      placeholder={language === 'ar' ? 'أدخل كود الراعي الجديد' : 'Enter new sponsor code'}
+                    />
+                    {editingUser.newSponsorCode && (
+                      <small style={{ fontSize: '12px', display: 'block', marginTop: '4px', color: editNewSponsorName ? '#1a7a3c' : '#c0392b' }}>
+                        {editNewSponsorName
+                          ? `✅ ${language === 'ar' ? 'سيتم التغيير إلى:' : 'Will change to:'} ${editNewSponsorName} (${editingUser.newSponsorCode})`
+                          : `⚠️ ${language === 'ar' ? 'الكود غير موجود' : 'Code not found'}`}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* حقول السوبر أدمن فقط: كود الإحالة والنقاط */}
               {currentUser?.role === 'super_admin' && (
                 <>
                   <div className="um-form-row">
@@ -879,35 +915,6 @@ const UserManagement = () => {
                       <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
                         {language === 'ar' ? 'كود الإحالة الخاص بهذا المستخدم' : 'This user\'s own referral code'}
                       </small>
-                    </div>
-                    <div className="um-form-group">
-                      <label>{language === 'ar' ? 'كود الراعي (من أحاله)' : 'Sponsor Code (Who referred)'}</label>
-                      <small style={{ color: '#555', fontSize: '12px', display: 'block', marginBottom: '6px', background: '#f5f5f5', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd' }}>
-                        {language === 'ar' ? '📌 الراعي الحالي: ' : '📌 Current sponsor: '}
-                        <strong>{editingUser.sponsorCode || (language === 'ar' ? 'لا يوجد' : 'None')}</strong>
-                        {editCurrentSponsorName && (
-                          <span style={{ color: '#1a7a3c', marginRight: '6px', marginLeft: '6px' }}>
-                            — {editCurrentSponsorName}
-                          </span>
-                        )}
-                      </small>
-                      <input
-                        type="text"
-                        value={editingUser.newSponsorCode}
-                        onChange={(e) => {
-                          const val = e.target.value.toUpperCase();
-                          setEditingUser({ ...editingUser, newSponsorCode: val });
-                          fetchSponsorForEdit(val, false);
-                        }}
-                        placeholder={language === 'ar' ? 'أدخل كود الراعي الجديد' : 'Enter new sponsor code'}
-                      />
-                      {editingUser.newSponsorCode && (
-                        <small style={{ fontSize: '12px', display: 'block', marginTop: '4px', color: editNewSponsorName ? '#1a7a3c' : '#c0392b' }}>
-                          {editNewSponsorName
-                            ? `✅ ${language === 'ar' ? 'سيتم التغيير إلى:' : 'Will change to:'} ${editNewSponsorName} (${editingUser.newSponsorCode})`
-                            : `⚠️ ${language === 'ar' ? 'الكود غير موجود' : 'Code not found'}`}
-                        </small>
-                      )}
                     </div>
                   </div>
 

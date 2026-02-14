@@ -154,9 +154,31 @@ exports.canManageOrders = (req, res, next) => {
   next();
 };
 
+// Check if user is sales employee or super admin
+exports.isSalesEmployee = (req, res, next) => {
+  if (!['sales_employee', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      message: 'Access denied. Sales employee privileges required.',
+      messageAr: 'غير مصرح. صلاحيات موظف المبيعات مطلوبة.'
+    });
+  }
+  next();
+};
+
+// Check if user is admin secretary or super admin
+exports.isAdminSecretary = (req, res, next) => {
+  if (!['admin_secretary', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      message: 'Access denied. Admin secretary privileges required.',
+      messageAr: 'غير مصرح. صلاحيات سكرتير الإدارة مطلوبة.'
+    });
+  }
+  next();
+};
+
 // Check if user is any type of admin
 exports.isAdmin = (req, res, next) => {
-  if (!['regional_admin', 'category_admin', 'super_admin'].includes(req.user.role)) {
+  if (!['regional_admin', 'category_admin', 'sales_employee', 'admin_secretary', 'super_admin'].includes(req.user.role)) {
     return res.status(403).json({
       message: 'Access denied. Admin privileges required.'
     });
