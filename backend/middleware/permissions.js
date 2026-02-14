@@ -116,10 +116,24 @@ const canViewProducts = checkPermission('canViewProducts');
 const canManageProducts = checkPermission('canManageProducts');
 
 // التحقق من أن المستخدم له صلاحية عرض الطلبات
-const canViewOrders = checkPermission('canViewOrders');
+const canViewOrders = (req, res, next) => {
+  const user = req.user;
+  if (['super_admin', 'regional_admin', 'sales_employee'].includes(user.role)) return next();
+  if (!user.permissions || !user.permissions['canViewOrders']) {
+    return res.status(403).json({ success: false, message: `Access denied. You don't have permission: canViewOrders`, messageAr: 'غير مصرح. ليس لديك صلاحية: canViewOrders' });
+  }
+  next();
+};
 
 // التحقق من أن المستخدم له صلاحية إدارة الطلبات
-const canManageOrders = checkPermission('canManageOrders');
+const canManageOrders = (req, res, next) => {
+  const user = req.user;
+  if (['super_admin', 'regional_admin', 'sales_employee'].includes(user.role)) return next();
+  if (!user.permissions || !user.permissions['canManageOrders']) {
+    return res.status(403).json({ success: false, message: `Access denied. You don't have permission: canManageOrders`, messageAr: 'غير مصرح. ليس لديك صلاحية: canManageOrders' });
+  }
+  next();
+};
 
 module.exports = {
   checkPermission,
