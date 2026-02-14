@@ -18,6 +18,7 @@ import PermissionsManagement from '../components/PermissionsManagement';
 import CategoryManagement from '../components/CategoryManagement';
 import MyTeam from '../components/MyTeam';
 import ReviewManagement from '../components/ReviewManagement';
+import StaffManagement from '../components/StaffManagement';
 import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Profile.css';
 
@@ -392,6 +393,16 @@ const Profile = () => {
             </button>
           )}
 
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'staff' ? 'active' : ''}`}
+              onClick={() => setActiveTab('staff')}
+            >
+              <span className="tab-icon">👨‍💼</span>
+              <span className="tab-label">{language === 'ar' ? 'الموظفون' : 'Staff'}</span>
+            </button>
+          )}
+
           {(user.role === 'super_admin' || user.role === 'regional_admin') && (
             <button
               className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
@@ -728,6 +739,13 @@ const Profile = () => {
           {activeTab === 'categories' && user.role === 'super_admin' && (
             <div className="tab-panel">
               <CategoryManagement />
+            </div>
+          )}
+
+          {/* Staff Management Tab - For Super Admin */}
+          {activeTab === 'staff' && user.role === 'super_admin' && (
+            <div className="tab-panel">
+              <StaffManagement />
             </div>
           )}
 
