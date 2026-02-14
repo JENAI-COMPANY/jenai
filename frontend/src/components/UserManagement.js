@@ -1036,11 +1036,11 @@ const UserManagement = () => {
                     value={editPassword.newPassword}
                     onChange={(e) => setEditPassword({ ...editPassword, newPassword: e.target.value })}
                     placeholder={language === 'ar' ? 'اتركه فارغاً للإبقاء على الحالية' : 'Leave empty to keep current'}
-                    style={{ paddingLeft: '40px' }}
+                    style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
                   />
                   <span
                     onClick={() => setEditPassword({ ...editPassword, showNew: !editPassword.showNew })}
-                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none', color: '#888' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none', color: '#888', zIndex: 1 }}
                   >
                     {editPassword.showNew ? '🙈' : '👁️'}
                   </span>
@@ -1054,11 +1054,11 @@ const UserManagement = () => {
                     value={editPassword.confirmPassword}
                     onChange={(e) => setEditPassword({ ...editPassword, confirmPassword: e.target.value })}
                     placeholder={language === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter new password'}
-                    style={{ paddingLeft: '40px' }}
+                    style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }}
                   />
                   <span
                     onClick={() => setEditPassword({ ...editPassword, showConfirm: !editPassword.showConfirm })}
-                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none', color: '#888' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none', color: '#888', zIndex: 1 }}
                   >
                     {editPassword.showConfirm ? '🙈' : '👁️'}
                   </span>
