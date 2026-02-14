@@ -403,6 +403,14 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     // Check if converting customer to member
     const isConvertingToMember = user.role === 'customer' && req.body.role === 'member';
 
+    // Handle password change if provided
+    if (req.body.password) {
+      if (req.body.password.length < 6) {
+        return res.status(400).json({ success: false, message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
+      }
+      user.password = req.body.password; // pre-save hook will hash it
+    }
+
     // Update other allowed fields
     const allowedUpdates = ['name', 'username', 'phone', 'countryCode', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'compensationPoints', 'profitPoints', 'isActive', 'managedCategories'];
 
