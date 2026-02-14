@@ -129,6 +129,7 @@ const MembersManagement = () => {
       {loading ? (
         <div className="loading">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
       ) : (
+        <div style={{ overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
@@ -169,6 +170,7 @@ const MembersManagement = () => {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {!loading && members.length === 0 && (
