@@ -163,13 +163,11 @@ const Navbar = () => {
               </li>
             )}
 
-            {(isSubscriber || isAdmin) && (
-              <li className="nav-item">
-                <Link to="/library" className="nav-link" onClick={closeMobileMenu}>
-                  📚 {language === 'ar' ? 'مكتبة جيناي' : 'Jenai Library'}
-                </Link>
-              </li>
-            )}
+            <li className="nav-item">
+              <Link to="/news" className="nav-link" onClick={closeMobileMenu}>
+                📰 {language === 'ar' ? 'أخبار جيناي' : 'Jenai News'}
+              </Link>
+            </li>
 
             <li className="nav-item">
               <Link to="/services" className="nav-link" onClick={closeMobileMenu}>{language === 'ar' ? 'الخدمات' : 'Services'}</Link>

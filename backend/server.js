@@ -60,6 +60,7 @@ app.use('/api/member', require('./routes/memberRoutes'));
 app.use('/api/permissions', require('./routes/permissionsRoutes'));
 app.use('/api/team', require('./routes/teamRoutes'));
 app.use('/api/favorites', require('./routes/favoriteRoutes'));
+app.use('/api/news', require('./routes/newsRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

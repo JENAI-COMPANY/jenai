@@ -72,6 +72,7 @@ const Products = () => {
         params.isOffer = true;
       }
 
+      params.limit = 1000; // عرض جميع المنتجات بدون حد
       const data = await getProducts(params);
       setProducts(data.products);
     } catch (error) {

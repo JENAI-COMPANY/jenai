@@ -27,6 +27,7 @@ import MemberWelcome from './pages/MemberWelcome';
 import Profile from './pages/Profile';
 import ServicesManagement from './pages/ServicesManagement';
 import Library from './pages/Library';
+import News from './pages/News';
 import SupplierDashboard from './pages/SupplierDashboard';
 import SupplierManagement from './components/SupplierManagement';
 import ReturnPolicy from './pages/ReturnPolicy';
@@ -148,6 +149,7 @@ function App() {
                     </PrivateRoute>
                   }
                 />
+                <Route path="/news" element={<News />} />
                 <Route
                   path="/supplier-dashboard"
                   element={
