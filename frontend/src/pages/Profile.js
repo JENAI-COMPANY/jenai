@@ -550,12 +550,22 @@ const Profile = () => {
               <div className="info-item">
                 <label>{language === 'ar' ? 'نوع الحساب:' : 'Account Type:'}</label>
                 <div className="info-value role-badge">
-                  {user.role === 'subscriber'
-                    ? language === 'ar' ? 'مشترك' : 'Subscriber'
-                    : user.role === 'super_admin'
+                  {user.role === 'super_admin'
                     ? language === 'ar' ? 'مسؤول رئيسي' : 'Super Admin'
                     : user.role === 'regional_admin'
                     ? language === 'ar' ? 'مسؤول إقليمي' : 'Regional Admin'
+                    : user.role === 'category_admin'
+                    ? language === 'ar' ? 'مدير قسم' : 'Category Admin'
+                    : user.role === 'sales_employee'
+                    ? language === 'ar' ? 'موظف مبيعات' : 'Sales Employee'
+                    : user.role === 'admin_secretary'
+                    ? language === 'ar' ? 'سكرتير إدارة' : 'Admin Secretary'
+                    : user.role === 'member'
+                    ? language === 'ar' ? 'عضو' : 'Member'
+                    : user.role === 'supplier'
+                    ? language === 'ar' ? 'مورد' : 'Supplier'
+                    : user.role === 'subscriber'
+                    ? language === 'ar' ? 'مشترك' : 'Subscriber'
                     : language === 'ar' ? 'عميل' : 'Customer'}
                 </div>
               </div>

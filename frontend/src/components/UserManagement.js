@@ -26,7 +26,7 @@ const UserManagement = () => {
     confirmPassword: '',
     name: '',
     phone: '',
-    countryCode: '+20',
+    countryCode: '+970',
     country: '',
     city: '',
     role: 'customer',
@@ -269,6 +269,7 @@ const UserManagement = () => {
       name: user.name,
       username: user.username,
       phone: user.phone,
+      countryCode: user.countryCode || '+970',
       country: user.country || '',
       city: user.city || '',
       role: user.role,
@@ -425,7 +426,7 @@ const UserManagement = () => {
         confirmPassword: '',
         name: '',
         phone: '',
-    countryCode: '+20',
+        countryCode: '+970',
         country: '',
         city: '',
         role: 'customer',
@@ -776,7 +777,7 @@ const UserManagement = () => {
                   <label>{language === 'ar' ? 'الهاتف' : 'Phone'}</label>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <select
-                      value={editingUser.countryCode || '+20'}
+                      value={editingUser.countryCode || '+970'}
                       onChange={(e) => setEditingUser({ ...editingUser, countryCode: e.target.value })}
                       style={{ flex: '0 0 180px' }}
                     >
@@ -1077,7 +1078,7 @@ const UserManagement = () => {
                     <label>{language === 'ar' ? 'رقم الهاتف' : 'Phone'}</label>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <select
-                        value={newUser.countryCode || '+20'}
+                        value={newUser.countryCode || '+970'}
                         onChange={(e) => setNewUser({ ...newUser, countryCode: e.target.value })}
                         style={{ flex: '0 0 180px' }}
                       >
