@@ -317,6 +317,7 @@ const UserManagement = () => {
         name: editingUser.name,
         username: editingUser.username,
         phone: editingUser.phone,
+        countryCode: editingUser.countryCode,
         country: editingUser.country,
         city: editingUser.city,
         role: editingUser.role,

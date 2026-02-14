@@ -403,7 +403,7 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     const isConvertingToMember = user.role === 'customer' && req.body.role === 'member';
 
     // Update other allowed fields
-    const allowedUpdates = ['name', 'username', 'phone', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'compensationPoints', 'profitPoints', 'isActive', 'managedCategories'];
+    const allowedUpdates = ['name', 'username', 'phone', 'countryCode', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'compensationPoints', 'profitPoints', 'isActive', 'managedCategories'];
 
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
