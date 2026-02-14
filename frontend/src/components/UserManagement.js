@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable';
 import '../styles/UserManagement.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
 
-const UserManagement = () => {
+const UserManagement = ({ defaultFilterRole = 'all' }) => {
   const { language } = useLanguage();
   const { user: currentUser } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
@@ -15,7 +15,7 @@ const UserManagement = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [filterRole, setFilterRole] = useState(defaultFilterRole);
   const [filterCountry, setFilterCountry] = useState('all');
   const [showLocationStats, setShowLocationStats] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
