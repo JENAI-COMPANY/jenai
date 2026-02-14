@@ -43,6 +43,8 @@ const UserManagement = () => {
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState(null);
   const [networkLoading, setNetworkLoading] = useState(false);
+  const [editCurrentSponsorName, setEditCurrentSponsorName] = useState('');
+  const [editNewSponsorName, setEditNewSponsorName] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -116,6 +118,24 @@ const UserManagement = () => {
       } else {
         setNewUserSponsorName('');
       }
+    }
+  };
+
+  const fetchSponsorForEdit = async (code, isCurrent) => {
+    const setter = isCurrent ? setEditCurrentSponsorName : setEditNewSponsorName;
+    if (!code || code.trim() === '') {
+      setter('');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/admin/users?subscriberCode=${code.trim()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const sponsor = response.data.users?.find(u => u.subscriberCode === code.trim());
+      setter(sponsor ? sponsor.name : '');
+    } catch {
+      setter('');
     }
   };
 
@@ -243,6 +263,7 @@ const UserManagement = () => {
   };
 
   const handleEditUser = (user) => {
+    const currentSponsorCode = user.sponsorId?.subscriberCode || '';
     setEditingUser({
       ...user,
       name: user.name,
@@ -255,7 +276,7 @@ const UserManagement = () => {
       supplier: user.supplier?._id || user.supplier || '',
       subscriberCode: user.subscriberCode || '',
       subscriberCodeOriginal: user.subscriberCode || '',
-      sponsorCode: user.sponsorId?.subscriberCode || '',
+      sponsorCode: currentSponsorCode,
       newSponsorCode: '',
       points: user.points || 0,
       monthlyPoints: user.monthlyPoints || 0,
@@ -263,6 +284,11 @@ const UserManagement = () => {
       compensationPoints: 0,
       isActive: user.isActive !== false
     });
+    setEditCurrentSponsorName('');
+    setEditNewSponsorName('');
+    if (currentSponsorCode) {
+      fetchSponsorForEdit(currentSponsorCode, true);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -522,7 +548,8 @@ const UserManagement = () => {
     if (user.role === 'supplier') return false;
 
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.username.toLowerCase().includes(searchTerm.toLowerCase());
+                         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.subscriberCode || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role === filterRole;
     const matchesCountry = filterCountry === 'all' || user.country === filterCountry;
 
@@ -574,7 +601,7 @@ const UserManagement = () => {
         <div className="um-search">
           <input
             type="text"
-            placeholder={language === 'ar' ? 'بحث عن مستخدم...' : 'Search users...'}
+            placeholder={language === 'ar' ? 'بحث بالاسم أو المستخدم أو كود العضوية...' : 'Search by name, username or member code...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -855,17 +882,32 @@ const UserManagement = () => {
                     </div>
                     <div className="um-form-group">
                       <label>{language === 'ar' ? 'كود الراعي (من أحاله)' : 'Sponsor Code (Who referred)'}</label>
+                      <small style={{ color: '#555', fontSize: '12px', display: 'block', marginBottom: '6px', background: '#f5f5f5', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                        {language === 'ar' ? '📌 الراعي الحالي: ' : '📌 Current sponsor: '}
+                        <strong>{editingUser.sponsorCode || (language === 'ar' ? 'لا يوجد' : 'None')}</strong>
+                        {editCurrentSponsorName && (
+                          <span style={{ color: '#1a7a3c', marginRight: '6px', marginLeft: '6px' }}>
+                            — {editCurrentSponsorName}
+                          </span>
+                        )}
+                      </small>
                       <input
                         type="text"
                         value={editingUser.newSponsorCode}
-                        onChange={(e) => setEditingUser({ ...editingUser, newSponsorCode: e.target.value.toUpperCase() })}
-                        placeholder={editingUser.sponsorCode || (language === 'ar' ? 'أدخل كود الراعي الجديد' : 'Enter new sponsor code')}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase();
+                          setEditingUser({ ...editingUser, newSponsorCode: val });
+                          fetchSponsorForEdit(val, false);
+                        }}
+                        placeholder={language === 'ar' ? 'أدخل كود الراعي الجديد' : 'Enter new sponsor code'}
                       />
-                      <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                        {language === 'ar'
-                          ? `الراعي الحالي: ${editingUser.sponsorCode || 'لا يوجد'}`
-                          : `Current sponsor: ${editingUser.sponsorCode || 'None'}`}
-                      </small>
+                      {editingUser.newSponsorCode && (
+                        <small style={{ fontSize: '12px', display: 'block', marginTop: '4px', color: editNewSponsorName ? '#1a7a3c' : '#c0392b' }}>
+                          {editNewSponsorName
+                            ? `✅ ${language === 'ar' ? 'سيتم التغيير إلى:' : 'Will change to:'} ${editNewSponsorName} (${editingUser.newSponsorCode})`
+                            : `⚠️ ${language === 'ar' ? 'الكود غير موجود' : 'Code not found'}`}
+                        </small>
+                      )}
                     </div>
                   </div>
 
