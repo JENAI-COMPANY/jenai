@@ -13,7 +13,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
-  const { isSubscriber, isAuthenticated, isAdmin, isSalesEmployee } = useContext(AuthContext);
+  const { isSubscriber, isAuthenticated, isAdmin, isSuperAdmin, isSalesEmployee } = useContext(AuthContext);
   const { language } = useLanguage();
   const { isFavorite, toggleFavorite } = useContext(FavoritesContext);
 
@@ -492,8 +492,8 @@ const ProductDetail = () => {
                   : 'Add to Cart'}
               </button>
 
-              {/* Create Order for User - Admin + Sales Employee */}
-              {(isAdmin || isSalesEmployee) && (
+              {/* Create Order for User - Super Admin + Sales Employee Only */}
+              {(isSuperAdmin || isSalesEmployee) && (
                 <button
                   className="create-order-for-user-button"
                   onClick={() => setShowCreateOrderModal(true)}
