@@ -559,18 +559,24 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .profile-container {
+    overflow-x: hidden;
+  }
+
   .profile-layout {
-    flex-direction: column;
+    flex-direction: column !important;
+    gap: 16px;
   }
 
   .profile-tabs {
-    width: 100%;
-    min-width: unset;
-    position: static;
-    flex-direction: row;
+    width: 100% !important;
+    min-width: unset !important;
+    position: static !important;
+    flex-direction: row !important;
     overflow-x: auto;
     padding: 12px;
+    top: unset;
   }
 
   .tab-btn {
@@ -643,6 +649,12 @@
 
   .copy-btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 24px 16px;
   }
 }
 
