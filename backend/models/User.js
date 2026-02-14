@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  countryCode: {
+    type: String,
+    trim: true,
+    default: '+970'
+  },
   country: {
     type: String,
     trim: true,
