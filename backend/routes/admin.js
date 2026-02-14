@@ -393,9 +393,10 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
         $addToSet: { downline: user._id }
       });
 
-      // Update the sponsorId and referredBy (for commission calculations)
+      // Update the sponsorId, referredBy, and sponsorCode (for team lookups)
       user.sponsorId = newSponsor._id;
       user.referredBy = newSponsor._id;
+      user.sponsorCode = newSponsor.subscriberCode;
       delete req.body.newSponsorCode;
     }
 

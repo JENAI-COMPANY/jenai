@@ -79,6 +79,7 @@ exports.register = async (req, res) => {
 
       userData.sponsorId = sponsor._id;
       userData.referredBy = sponsor._id; // ← FIXED: Set referredBy for commission distribution
+      userData.sponsorCode = sponsor.subscriberCode; // ← Required for team tree lookup
 
       // Additional setup for members
       if (role === 'member') {
