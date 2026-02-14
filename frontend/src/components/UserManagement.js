@@ -1020,52 +1020,53 @@ const UserManagement = () => {
                   </small>
                 </div>
               </div>
-            </div>
+
             {/* قسم تغيير كلمة المرور */}
-            <div className="um-section-divider" style={{ margin: '20px 0 10px', borderTop: '1px dashed #ddd', paddingTop: '15px' }}>
-              <label style={{ fontWeight: 'bold', color: '#555', fontSize: '14px' }}>
+            <div style={{ borderTop: '1px dashed #ddd', paddingTop: '16px', marginTop: '4px' }}>
+              <label style={{ fontWeight: 'bold', color: '#555', fontSize: '14px', display: 'block', marginBottom: '12px' }}>
                 {language === 'ar' ? '🔒 تغيير كلمة المرور (اختياري)' : '🔒 Change Password (Optional)'}
               </label>
-            </div>
-            <div className="um-form-row">
-              <div className="um-form-group" style={{ position: 'relative' }}>
-                <label>{language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}</label>
-                <input
-                  type={editPassword.showNew ? 'text' : 'password'}
-                  value={editPassword.newPassword}
-                  onChange={(e) => setEditPassword({ ...editPassword, newPassword: e.target.value })}
-                  placeholder={language === 'ar' ? 'اتركه فارغاً للإبقاء على الحالية' : 'Leave empty to keep current'}
-                  style={{ paddingRight: '38px' }}
-                />
-                <span
-                  onClick={() => setEditPassword({ ...editPassword, showNew: !editPassword.showNew })}
-                  style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
-                >
-                  {editPassword.showNew ? '🙈' : '👁️'}
-                </span>
+              <div className="um-form-row">
+                <div className="um-form-group" style={{ position: 'relative' }}>
+                  <label>{language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}</label>
+                  <input
+                    type={editPassword.showNew ? 'text' : 'password'}
+                    value={editPassword.newPassword}
+                    onChange={(e) => setEditPassword({ ...editPassword, newPassword: e.target.value })}
+                    placeholder={language === 'ar' ? 'اتركه فارغاً للإبقاء على الحالية' : 'Leave empty to keep current'}
+                    style={{ paddingRight: '38px' }}
+                  />
+                  <span
+                    onClick={() => setEditPassword({ ...editPassword, showNew: !editPassword.showNew })}
+                    style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
+                  >
+                    {editPassword.showNew ? '🙈' : '👁️'}
+                  </span>
+                </div>
+                <div className="um-form-group" style={{ position: 'relative' }}>
+                  <label>{language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}</label>
+                  <input
+                    type={editPassword.showConfirm ? 'text' : 'password'}
+                    value={editPassword.confirmPassword}
+                    onChange={(e) => setEditPassword({ ...editPassword, confirmPassword: e.target.value })}
+                    placeholder={language === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter new password'}
+                    style={{ paddingRight: '38px' }}
+                  />
+                  <span
+                    onClick={() => setEditPassword({ ...editPassword, showConfirm: !editPassword.showConfirm })}
+                    style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
+                  >
+                    {editPassword.showConfirm ? '🙈' : '👁️'}
+                  </span>
+                  {editPassword.newPassword && editPassword.confirmPassword && editPassword.newPassword !== editPassword.confirmPassword && (
+                    <small style={{ color: '#e74c3c', fontSize: '11px' }}>
+                      {language === 'ar' ? '⚠️ كلمتا المرور غير متطابقتين' : '⚠️ Passwords do not match'}
+                    </small>
+                  )}
+                </div>
               </div>
-              <div className="um-form-group" style={{ position: 'relative' }}>
-                <label>{language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}</label>
-                <input
-                  type={editPassword.showConfirm ? 'text' : 'password'}
-                  value={editPassword.confirmPassword}
-                  onChange={(e) => setEditPassword({ ...editPassword, confirmPassword: e.target.value })}
-                  placeholder={language === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter new password'}
-                  style={{ paddingRight: '38px' }}
-                />
-                <span
-                  onClick={() => setEditPassword({ ...editPassword, showConfirm: !editPassword.showConfirm })}
-                  style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
-                >
-                  {editPassword.showConfirm ? '🙈' : '👁️'}
-                </span>
-                {editPassword.newPassword && editPassword.confirmPassword && editPassword.newPassword !== editPassword.confirmPassword && (
-                  <small style={{ color: '#e74c3c', fontSize: '11px' }}>
-                    {language === 'ar' ? '⚠️ كلمتا المرور غير متطابقتين' : '⚠️ Passwords do not match'}
-                  </small>
-                )}
-              </div>
             </div>
+            </div>{/* end um-modal-body */}
 
             <div className="um-modal-footer">
               <button className="um-save-btn" onClick={handleSaveEdit}>
