@@ -707,18 +707,20 @@ const MyTeam = () => {
                   </span>
                 </div>
 
-                <div className="info-item">
+                <div className="info-item rank-info-item">
                   <span className="info-label">
                     {language === 'ar' ? 'الرتبة:' : 'Rank:'}
                   </span>
-                  <span className="info-value rank-badge">
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                     <img
                       src={`/${getRankImage(selectedMember.memberRank || 'agent')}`}
                       alt={getRankName(selectedMember.memberRank || 'agent', language)}
-                      style={{ width: '30px', height: '30px', objectFit: 'contain', marginLeft: '8px', verticalAlign: 'middle' }}
+                      style={{ width: '100px', height: '100px', objectFit: 'contain' }}
                     />
-                    {getRankName(selectedMember.memberRank || 'agent', language)}
-                  </span>
+                    <span style={{ fontSize: '1rem', fontWeight: '700', color: '#2c3e50' }}>
+                      {getRankName(selectedMember.memberRank || 'agent', language)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="info-item">
