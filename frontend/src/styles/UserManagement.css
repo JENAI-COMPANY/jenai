@@ -267,7 +267,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  min-width: 900px;
+  min-width: 1100px;
 }
 
 .um-table thead {
@@ -288,16 +288,16 @@
   white-space: nowrap;
 }
 
-/* Fixed column widths */
+/* Fixed column widths - total ~1100px */
 .um-table thead th:nth-child(1) { width: 100px; }
-.um-table thead th:nth-child(2) { width: 160px; }
-.um-table thead th:nth-child(3) { width: 130px; }
-.um-table thead th:nth-child(4) { width: 120px; }
-.um-table thead th:nth-child(5) { width: 100px; }
-.um-table thead th:nth-child(6) { width: 140px; }
+.um-table thead th:nth-child(2) { width: 170px; }
+.um-table thead th:nth-child(3) { width: 140px; }
+.um-table thead th:nth-child(4) { width: 130px; }
+.um-table thead th:nth-child(5) { width: 110px; }
+.um-table thead th:nth-child(6) { width: 150px; }
 .um-table thead th:nth-child(7) { width: 70px; }
 .um-table thead th:nth-child(8) { width: 100px; }
-.um-table thead th:nth-child(9) { width: auto; }
+.um-table thead th:nth-child(9) { width: 170px; }
 
 .um-table tbody tr {
   border-bottom: 1px solid #f3f4f6;
@@ -315,6 +315,12 @@
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Actions column must not clip buttons */
+.um-table tbody td:last-child {
+  overflow: visible;
   white-space: nowrap;
 }
 
