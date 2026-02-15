@@ -6,7 +6,6 @@
   font-weight: 500 !important;
   font-size: 14px !important;
   line-height: 1.6 !important;
-  min-height: 36px !important;
 }
 
 .user-management select option:checked {
@@ -267,6 +266,7 @@
 .um-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .um-table thead {
@@ -320,6 +320,7 @@
   border: 2px solid;
   cursor: pointer;
   transition: all 0.2s ease;
+  max-width: 150px;
 }
 
 .um-role-badge.super_admin {
@@ -364,7 +365,6 @@
   color: #1a202c;
   font-weight: 500;
   font-size: 14px;
-  min-height: 40px;
   line-height: 1.5;
 }
 
