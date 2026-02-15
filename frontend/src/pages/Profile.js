@@ -932,7 +932,7 @@ const Profile = () => {
                       src={`/${getRankImage(user.memberRank || 'agent')}`}
                       alt={getRankName(user.memberRank || 'agent', language)}
                       className="rank-image"
-                      style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '10px' }}
+                      style={{ width: '200px', height: '200px', objectFit: 'contain', marginBottom: '10px' }}
                     />
                     <span className="rank-badge">{getRankName(user.memberRank || 'agent', language)}</span>
                   </div>
