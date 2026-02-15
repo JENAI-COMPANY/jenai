@@ -97,6 +97,15 @@ const Certificates = () => {
                 <p className="fatwa-location">رام الله، فلسطين</p>
                 <p className="fatwa-date">18 / 6 / 2025</p>
               </div>
+              <div className="fatwa-download-wrapper">
+                <a
+                  href="/fatwa-jenai.pdf"
+                  download="فتوى شركة جيناي.pdf"
+                  className="fatwa-download-btn"
+                >
+                  📄 {language === 'ar' ? 'تنزيل الفتوى (PDF)' : 'Download Fatwa (PDF)'}
+                </a>
+              </div>
             </div>
           </div>
         </section>

@@ -286,6 +286,32 @@
   margin: 0 0 0.2rem;
 }
 
+/* Download Button */
+.fatwa-download-wrapper {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.fatwa-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #8B6914 0%, #c9a227 100%);
+  color: white;
+  text-decoration: none;
+  padding: 0.85rem 2rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(139,105,20,0.3);
+  transition: all 0.3s ease;
+}
+
+.fatwa-download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139,105,20,0.45);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .cert-page { margin: -1rem; }
