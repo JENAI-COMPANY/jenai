@@ -266,7 +266,8 @@
 .um-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
+  min-width: 900px;
 }
 
 .um-table thead {
@@ -282,7 +283,21 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #e5e7eb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+/* Fixed column widths */
+.um-table thead th:nth-child(1) { width: 100px; }
+.um-table thead th:nth-child(2) { width: 160px; }
+.um-table thead th:nth-child(3) { width: 130px; }
+.um-table thead th:nth-child(4) { width: 120px; }
+.um-table thead th:nth-child(5) { width: 100px; }
+.um-table thead th:nth-child(6) { width: 140px; }
+.um-table thead th:nth-child(7) { width: 70px; }
+.um-table thead th:nth-child(8) { width: 100px; }
+.um-table thead th:nth-child(9) { width: auto; }
 
 .um-table tbody tr {
   border-bottom: 1px solid #f3f4f6;
@@ -298,6 +313,9 @@
   font-size: 14px;
   color: #1f2937;
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .um-username {
@@ -428,6 +446,8 @@
   gap: 8px;
   flex-wrap: nowrap;
   align-items: center;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 /* Modal */
