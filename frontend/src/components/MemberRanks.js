@@ -135,7 +135,7 @@ const MemberRanks = () => {
                 <img
                   src={`/${getRankImageFromNumber(parseInt(rankNum))}`}
                   alt={language === 'ar' ? rank.name : rank.nameEn}
-                  style={{ width: '50px', height: '50px', objectFit: 'contain', marginBottom: '10px' }}
+                  style={{ width: '110px', height: '110px', objectFit: 'contain', marginBottom: '10px' }}
                 />
                 <h3>{language === 'ar' ? rank.name : rank.nameEn}</h3>
                 <span className="mr-rank-number">{rankNum}</span>
