@@ -244,7 +244,9 @@
   .nav-left {
     order: 2;
     gap: 0.5rem;
-    flex: 0 0 auto;
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
   }
 
   .mobile-menu-toggle {
@@ -342,7 +344,7 @@
   }
 
   .logo-image {
-    height: 52px;
+    height: 40px;
   }
 
   .nav-logo {
@@ -389,7 +391,7 @@
   }
 
   .logo-image {
-    height: 45px;
+    height: 36px;
   }
 
   .nav-link {
