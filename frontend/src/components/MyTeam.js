@@ -572,7 +572,7 @@ const MyTeam = () => {
                                     <img
                                       src={`/${getRankImage(member.memberRank || 'agent')}`}
                                       alt={getRankName(member.memberRank || 'agent', language)}
-                                      style={{ width: '35px', height: '35px', objectFit: 'contain' }}
+                                      style={{ width: '55px', height: '55px', objectFit: 'contain' }}
                                       title={getRankName(member.memberRank || 'agent', language)}
                                     />
                                     <span>{member.name}</span>
@@ -622,7 +622,7 @@ const MyTeam = () => {
                         <img
                           src={`/${getRankImage(member.memberRank || 'agent')}`}
                           alt={getRankName(member.memberRank || 'agent', language)}
-                          style={{ width: '35px', height: '35px', objectFit: 'contain' }}
+                          style={{ width: '55px', height: '55px', objectFit: 'contain' }}
                           title={getRankName(member.memberRank || 'agent', language)}
                         />
                         <span>{member.name}</span>
