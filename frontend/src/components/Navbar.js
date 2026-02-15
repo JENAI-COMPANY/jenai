@@ -211,13 +211,13 @@ const Navbar = () => {
               )}
 
               <li className="nav-item">
-                <Link to="/favorites" className="nav-link favorites-link">
+                <Link to="/favorites" className="nav-link favorites-link" onClick={closeMobileMenu}>
                   ❤️ {language === 'ar' ? 'المفضلة' : 'Favorites'}
                 </Link>
               </li>
 
               <li className="nav-item">
-                <Link to="/cart" className="nav-link">
+                <Link to="/cart" className="nav-link" onClick={closeMobileMenu}>
                   {t('cart')} ({getCartCount()})
                 </Link>
               </li>
@@ -227,13 +227,13 @@ const Navbar = () => {
               </li>
 
               <li className="nav-item">
-                <button onClick={logout} className="nav-button">{t('logout')}</button>
+                <button onClick={() => { logout(); closeMobileMenu(); }} className="nav-button">{t('logout')}</button>
               </li>
             </>
           ) : (
             <>
               <li className="nav-item">
-                <Link to="/cart" className="nav-link">
+                <Link to="/cart" className="nav-link" onClick={closeMobileMenu}>
                   {t('cart')} ({getCartCount()})
                 </Link>
               </li>
@@ -241,7 +241,7 @@ const Navbar = () => {
                 <LanguageSwitcher />
               </li>
               <li className="nav-item">
-                <Link to="/login" className="nav-button">{t('login')}</Link>
+                <Link to="/login" className="nav-button" onClick={closeMobileMenu}>{t('login')}</Link>
               </li>
             </>
           )}
