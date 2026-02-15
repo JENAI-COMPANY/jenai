@@ -190,7 +190,8 @@ const Footer = () => {
       {/* Social Media with Logo */}
       <div className="footer-social">
         <div className="footer-logo-container">
-          <img src="/logo2.png" alt="Jenai" className="footer-logo" />
+          <span className="footer-dev-credit">developed by</span>
+          <img src="/logo2.png" alt="msdev" className="footer-logo" />
         </div>
         <div className="social-content">
           <h4 className="social-title">
