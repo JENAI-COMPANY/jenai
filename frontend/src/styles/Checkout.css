@@ -381,6 +381,24 @@
   .checkout-container {
     padding: 1.5rem 1rem;
     margin: 1rem auto;
+    overflow: hidden;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .toggle-label,
+  .payment-option {
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .toggle-text,
+  .payment-label {
+    word-break: break-word;
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
   }
 
   .checkout-container h2 {

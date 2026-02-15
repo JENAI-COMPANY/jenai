@@ -489,6 +489,20 @@
     border-radius: 12px;
   }
 
+  .favorite-btn {
+    top: 8px;
+    right: auto;
+    left: 8px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .badges-container {
+    left: auto;
+    right: 8px;
+  }
+
   .product-image {
     height: 180px;
   }

@@ -371,6 +371,7 @@
   .auth-box {
     padding: 2rem 1.5rem;
     max-width: 100%;
+    overflow: hidden;
   }
 
   .auth-box h2 {
@@ -379,6 +380,26 @@
 
   .account-option {
     padding: 1.25rem;
+    transform: none !important;
+  }
+
+  .account-option:hover {
+    transform: none !important;
+  }
+
+  .account-option.selected {
+    transform: none !important;
+  }
+
+  .account-type-options {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .option-content {
+    overflow: hidden;
+    min-width: 0;
+    word-break: break-word;
   }
 
   .option-content h4 {
@@ -410,12 +431,18 @@
   }
 
   .password-toggle-btn {
-    right: 0.25rem;
-    font-size: 1.75rem;
-    padding: 0.75rem;
-    min-width: 50px;
-    min-height: 50px;
+    right: 0.5rem;
+    left: auto;
+    font-size: 1.2rem;
+    padding: 0.3rem;
+    min-width: 32px;
+    min-height: 32px;
+    width: 32px;
+    height: 32px;
     opacity: 0.7;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .submit-btn {
