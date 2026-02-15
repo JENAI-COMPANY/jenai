@@ -61,7 +61,8 @@ const UserManagement = () => {
       });
       console.log('Users response:', response.data);
       console.log('First user with region:', response.data.users?.find(u => u.region));
-      setUsers(response.data.users || []);
+      const hiddenRoles = ['category_admin', 'sales_employee', 'admin_secretary'];
+      setUsers((response.data.users || []).filter(u => !hiddenRoles.includes(u.role)));
       setLoading(false);
     } catch (err) {
       console.error('Error fetching users:', err);
