@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import TermsAndConditions from '../components/TermsAndConditions';
 import gsap from 'gsap';
 import '../styles/Auth.css';
+import { countryCodes } from '../utils/countryCodes';
 
 const Register = () => {
   const { t, language } = useLanguage();
@@ -351,24 +352,11 @@ const Register = () => {
                 onChange={handleChange}
                 style={{ width: '120px', fontSize: '14px' }}
               >
-                <option value="+20">🇪🇬 +20</option>
-                <option value="+966">🇸🇦 +966</option>
-                <option value="+971">🇦🇪 +971</option>
-                <option value="+965">🇰🇼 +965</option>
-                <option value="+974">🇶🇦 +974</option>
-                <option value="+973">🇧🇭 +973</option>
-                <option value="+968">🇴🇲 +968</option>
-                <option value="+962">🇯🇴 +962</option>
-                <option value="+961">🇱🇧 +961</option>
-                <option value="+970">🇵🇸 +970</option>
-                <option value="+963">🇸🇾 +963</option>
-                <option value="+964">🇮🇶 +964</option>
-                <option value="+967">🇾🇪 +967</option>
-                <option value="+218">🇱🇾 +218</option>
-                <option value="+216">🇹🇳 +216</option>
-                <option value="+213">🇩🇿 +213</option>
-                <option value="+212">🇲🇦 +212</option>
-                <option value="+249">🇸🇩 +249</option>
+                {countryCodes.map((item) => (
+                  <option key={item.code + item.country} value={item.code}>
+                    {item.code} - {item.countryAr}
+                  </option>
+                ))}
               </select>
               <input
                 type="tel"
