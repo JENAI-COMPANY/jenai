@@ -283,7 +283,7 @@ const OrderManagement = () => {
                     ${item.selectedSize ? `<br/><small style="color: #666;">📏 ${isArabic ? 'النمرة:' : 'Size:'} ${item.selectedSize}</small>` : ''}
                   </td>
                   <td style="text-align: center;">${item.quantity}</td>
-                  <td>$${item.price?.toFixed(2)}</td>
+                  <td>₪${item.price?.toFixed(2)}</td>
                   <td style="text-align: center;">${item.points || 0} ${isArabic ? 'نقطة' : 'pts'}</td>
                 </tr>
               `).join('') || ''}
@@ -293,13 +293,13 @@ const OrderManagement = () => {
 
         <div class="section">
           <h3>${isArabic ? 'ملخص الطلب' : 'Order Summary'}</h3>
-          <p><strong>${isArabic ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> $${order.itemsPrice?.toFixed(2)}</p>
-          <p><strong>${isArabic ? 'الشحن:' : 'Shipping:'}</strong> $${order.shippingPrice?.toFixed(2)}</p>
-          <p><strong>${isArabic ? 'الضريبة:' : 'Tax:'}</strong> $${order.taxPrice?.toFixed(2)}</p>
-          ${order.discountAmount > 0 ? `<p><strong>${isArabic ? 'الخصم:' : 'Discount:'}</strong> -$${order.discountAmount?.toFixed(2)}</p>` : ''}
+          <p><strong>${isArabic ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ₪${order.itemsPrice?.toFixed(2)}</p>
+          <p><strong>${isArabic ? 'الشحن:' : 'Shipping:'}</strong> ₪${order.shippingPrice?.toFixed(2)}</p>
+          <p><strong>${isArabic ? 'الضريبة:' : 'Tax:'}</strong> ₪${order.taxPrice?.toFixed(2)}</p>
+          ${order.discountAmount > 0 ? `<p><strong>${isArabic ? 'الخصم:' : 'Discount:'}</strong> -₪${order.discountAmount?.toFixed(2)}</p>` : ''}
           <p class="total">
             <strong>${isArabic ? 'الإجمالي:' : 'Total:'}</strong>
-            <span class="total-amount">$${order.totalPrice?.toFixed(2)}</span>
+            <span class="total-amount">₪${order.totalPrice?.toFixed(2)}</span>
           </p>
           ${order.totalPoints ? `<p style="color: #10b981; font-weight: bold; margin-top: 8px;"><strong>${isArabic ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> ${order.totalPoints}</p>` : ''}
         </div>
@@ -311,7 +311,7 @@ const OrderManagement = () => {
               <p><strong>${isArabic ? 'المواصفات:' : 'Specifications:'}</strong> ${order.customOrderDetails.specifications}</p>
             ` : ''}
             ${order.customOrderDetails.confirmedPrice ? `
-              <p><strong>${isArabic ? 'السعر المؤكد:' : 'Confirmed Price:'}</strong> $${order.customOrderDetails.confirmedPrice.toFixed(2)}</p>
+              <p><strong>${isArabic ? 'السعر المؤكد:' : 'Confirmed Price:'}</strong> ₪${order.customOrderDetails.confirmedPrice.toFixed(2)}</p>
             ` : ''}
             ${order.customOrderDetails.adminResponse ? `
               <p><strong>${isArabic ? 'رد الإدارة:' : 'Admin Response:'}</strong> ${order.customOrderDetails.adminResponse}</p>
@@ -603,7 +603,7 @@ const OrderManagement = () => {
                       </span>
                     )}
                   </td>
-                  <td className="om-price">${order.totalPrice?.toFixed(2)}</td>
+                  <td className="om-price">₪{order.totalPrice?.toFixed(2)}</td>
                   <td>
                     <select
                       className={`om-status-badge ${getStatusBadgeClass(order.status)}`}
@@ -728,7 +728,7 @@ const OrderManagement = () => {
                           )}
                         </td>
                         <td>{item.quantity}</td>
-                        <td>${item.price?.toFixed(2)}</td>
+                        <td>₪{item.price?.toFixed(2)}</td>
                         <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
                       </tr>
                     ))}
@@ -738,13 +738,13 @@ const OrderManagement = () => {
 
               <div className="om-detail-section">
                 <h4>{language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}</h4>
-                <p><strong>{language === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ${selectedOrder.itemsPrice?.toFixed(2)}</p>
-                <p><strong>{language === 'ar' ? 'الشحن:' : 'Shipping:'}</strong> ${selectedOrder.shippingPrice?.toFixed(2)}</p>
-                <p><strong>{language === 'ar' ? 'الضريبة:' : 'Tax:'}</strong> ${selectedOrder.taxPrice?.toFixed(2)}</p>
+                <p><strong>{language === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ₪{selectedOrder.itemsPrice?.toFixed(2)}</p>
+                <p><strong>{language === 'ar' ? 'الشحن:' : 'Shipping:'}</strong> ₪{selectedOrder.shippingPrice?.toFixed(2)}</p>
+                <p><strong>{language === 'ar' ? 'الضريبة:' : 'Tax:'}</strong> ₪{selectedOrder.taxPrice?.toFixed(2)}</p>
                 {selectedOrder.discountAmount > 0 && (
-                  <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -${selectedOrder.discountAmount?.toFixed(2)}</p>
+                  <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -₪{selectedOrder.discountAmount?.toFixed(2)}</p>
                 )}
-                <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ${selectedOrder.totalPrice?.toFixed(2)}</p>
+                <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
                 {selectedOrder.totalPoints && (
                   <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
                     <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {selectedOrder.totalPoints}
@@ -784,7 +784,7 @@ const OrderManagement = () => {
                   {selectedOrder.customOrderDetails.confirmedPrice && (
                     <div className="om-custom-field">
                       <strong>{language === 'ar' ? '💰 السعر المؤكد:' : '💰 Confirmed Price:'}</strong>
-                      <p className="om-confirmed-price">${selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
+                      <p className="om-confirmed-price">₪{selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
                     </div>
                   )}
 
@@ -986,14 +986,14 @@ const OrderManagement = () => {
                           </div>
                           <div className="om-product-subtotal">
                             <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
-                            <span className="om-subtotal-value">${(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="om-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                     <div className="om-total-display">
                       <span className="om-total-label">{language === 'ar' ? 'الإجمالي الجديد:' : 'New Total:'}</span>
-                      <span className="om-total-value">${calculateNewTotal().toFixed(2)}</span>
+                      <span className="om-total-value">₪{calculateNewTotal().toFixed(2)}</span>
                     </div>
                     <div className="om-edit-note">
                       <small>ℹ️ {language === 'ar'

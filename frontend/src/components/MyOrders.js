@@ -286,9 +286,9 @@ const MyOrders = () => {
       return [
         itemName,
         item.quantity.toString(),
-        `$${item.price?.toFixed(2)}`,
+        `₪${item.price?.toFixed(2)}`,
         `${item.points || 0} ${isArabic ? 'pts' : 'نقطة'}`,
-        `$${(item.quantity * item.price)?.toFixed(2)}`
+        `₪${(item.quantity * item.price)?.toFixed(2)}`
       ];
     }) || [];
 
@@ -315,20 +315,20 @@ const MyOrders = () => {
     const summaryX = 150;
 
     doc.text(`${isArabic ? 'Subtotal' : 'المجموع الفرعي'}:`, summaryX, yPos, { align: 'right' });
-    doc.text(`$${order.itemsPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    doc.text(`₪${order.itemsPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
     yPos += 6;
 
     doc.text(`${isArabic ? 'Shipping' : 'الشحن'}:`, summaryX, yPos, { align: 'right' });
-    doc.text(`$${order.shippingPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    doc.text(`₪${order.shippingPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
     yPos += 6;
 
     doc.text(`${isArabic ? 'Tax' : 'الضريبة'}:`, summaryX, yPos, { align: 'right' });
-    doc.text(`$${order.taxPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    doc.text(`₪${order.taxPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
     yPos += 6;
 
     if (order.discountAmount > 0) {
       doc.text(`${isArabic ? 'Discount' : 'الخصم'}:`, summaryX, yPos, { align: 'right' });
-      doc.text(`-$${order.discountAmount?.toFixed(2)}`, 195, yPos, { align: 'right' });
+      doc.text(`-₪${order.discountAmount?.toFixed(2)}`, 195, yPos, { align: 'right' });
       yPos += 6;
     }
 
@@ -336,7 +336,7 @@ const MyOrders = () => {
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.text(`${isArabic ? 'Total' : 'الإجمالي'}:`, summaryX, yPos, { align: 'right' });
-    doc.text(`$${order.totalPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
+    doc.text(`₪${order.totalPrice?.toFixed(2)}`, 195, yPos, { align: 'right' });
 
     // ملاحظات
     if (order.notes) {
@@ -404,7 +404,7 @@ const MyOrders = () => {
                 </div>
                 <div className="mo-info-row">
                   <span className="mo-label">{language === 'ar' ? 'الإجمالي:' : 'Total:'}</span>
-                  <span className="mo-value mo-price">${order.totalPrice?.toFixed(2)}</span>
+                  <span className="mo-value mo-price">₪{order.totalPrice?.toFixed(2)}</span>
                 </div>
                 <div className="mo-info-row">
                   <span className="mo-label">{language === 'ar' ? 'المنتجات:' : 'Items:'}</span>
@@ -533,7 +533,7 @@ const MyOrders = () => {
                           )}
                         </td>
                         <td>{item.quantity}</td>
-                        <td>${item.price?.toFixed(2)}</td>
+                        <td>₪{item.price?.toFixed(2)}</td>
                         <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
                       </tr>
                     ))}
@@ -543,13 +543,13 @@ const MyOrders = () => {
 
               <div className="mo-detail-section">
                 <h4>{language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}</h4>
-                <p><strong>{language === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ${selectedOrder.itemsPrice?.toFixed(2)}</p>
-                <p><strong>{language === 'ar' ? 'الشحن:' : 'Shipping:'}</strong> ${selectedOrder.shippingPrice?.toFixed(2)}</p>
-                <p><strong>{language === 'ar' ? 'الضريبة:' : 'Tax:'}</strong> ${selectedOrder.taxPrice?.toFixed(2)}</p>
+                <p><strong>{language === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ₪{selectedOrder.itemsPrice?.toFixed(2)}</p>
+                <p><strong>{language === 'ar' ? 'الشحن:' : 'Shipping:'}</strong> ₪{selectedOrder.shippingPrice?.toFixed(2)}</p>
+                <p><strong>{language === 'ar' ? 'الضريبة:' : 'Tax:'}</strong> ₪{selectedOrder.taxPrice?.toFixed(2)}</p>
                 {selectedOrder.discountAmount > 0 && (
-                  <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -${selectedOrder.discountAmount?.toFixed(2)}</p>
+                  <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -₪{selectedOrder.discountAmount?.toFixed(2)}</p>
                 )}
-                <p className="mo-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ${selectedOrder.totalPrice?.toFixed(2)}</p>
+                <p className="mo-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
               </div>
 
               {/* قسم الطلب المخصص */}
@@ -591,7 +591,7 @@ const MyOrders = () => {
                   {selectedOrder.customOrderDetails.confirmedPrice && (
                     <div className="mo-custom-field">
                       <strong>{language === 'ar' ? '💰 السعر المؤكد:' : '💰 Confirmed Price:'}</strong>
-                      <p className="mo-confirmed-price">${selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
+                      <p className="mo-confirmed-price">₪{selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
                     </div>
                   )}
 
@@ -834,14 +834,14 @@ const MyOrders = () => {
                           </div>
                           <div className="mo-product-subtotal">
                             <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
-                            <span className="mo-subtotal-value">${(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="mo-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                     <div className="mo-total-display">
                       <span className="mo-total-label">{language === 'ar' ? 'الإجمالي الجديد:' : 'New Total:'}</span>
-                      <span className="mo-total-value">${calculateNewTotal().toFixed(2)}</span>
+                      <span className="mo-total-value">₪{calculateNewTotal().toFixed(2)}</span>
                     </div>
                     <div className="mo-edit-note">
                       <small>ℹ️ {language === 'ar'
