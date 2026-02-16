@@ -16,6 +16,24 @@
   margin: 0;
 }
 
+.pm-print-btn {
+  background: linear-gradient(135deg, #22513e 0%, #1a3d2e 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(34, 81, 62, 0.3);
+}
+
+.pm-print-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 .pm-add-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

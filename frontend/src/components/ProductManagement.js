@@ -63,6 +63,84 @@ const ProductManagement = () => {
   const [newColor, setNewColor] = useState('');
   const [newSize, setNewSize] = useState('');
 
+  const handlePrint = () => {
+    const filtered = products.filter(product => {
+      if (stockFilter === 'inStock' && product.stock <= 0) return false;
+      if (stockFilter === 'outOfStock' && product.stock > 0) return false;
+      if (categoryFilter !== 'all' && product.category !== categoryFilter) return false;
+      return true;
+    });
+
+    const categoryLabel = categoryFilter === 'all'
+      ? (language === 'ar' ? 'كل الأقسام' : 'All Categories')
+      : categoryFilter;
+
+    const stockLabel = stockFilter === 'all'
+      ? (language === 'ar' ? 'الكل' : 'All')
+      : stockFilter === 'inStock'
+        ? (language === 'ar' ? 'متوفر' : 'In Stock')
+        : (language === 'ar' ? 'نفذ' : 'Out of Stock');
+
+    const rows = filtered.map((p, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${p.name || '-'}</td>
+        <td>${p.category || '-'}</td>
+        <td>₪${p.customerPrice?.toFixed(2) || p.price?.toFixed(2) || '0.00'}</td>
+        <td>₪${p.subscriberPrice?.toFixed(2) || p.price?.toFixed(2) || '0.00'}</td>
+        <td>${p.stock ?? '-'}</td>
+        <td>${p.isActive ? '✅ نشط' : '❌ غير نشط'}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8" />
+        <title>قائمة المنتجات</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+          h2 { color: #22513e; }
+          .info { color: #555; margin-bottom: 12px; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; }
+          th { background: #22513e; color: white; padding: 8px 10px; }
+          td { border: 1px solid #ddd; padding: 7px 10px; font-size: 13px; }
+          tr:nth-child(even) td { background: #f5f5f5; }
+          @media print { button { display: none; } }
+        </style>
+      </head>
+      <body>
+        <h2>🛒 قائمة المنتجات - جيناي</h2>
+        <div class="info">
+          القسم: <strong>${categoryLabel}</strong> &nbsp;|&nbsp;
+          الحالة: <strong>${stockLabel}</strong> &nbsp;|&nbsp;
+          العدد: <strong>${filtered.length}</strong> منتج
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>اسم المنتج</th>
+              <th>الفئة</th>
+              <th>سعر الزبون</th>
+              <th>سعر العضو</th>
+              <th>المخزون</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
@@ -606,6 +684,10 @@ const ProductManagement = () => {
               ))}
             </select>
           )}
+
+          <button className="pm-print-btn" onClick={handlePrint} title={language === 'ar' ? 'طباعة القائمة الحالية' : 'Print current list'}>
+            🖨️ {language === 'ar' ? 'طباعة' : 'Print'}
+          </button>
 
           <button className="pm-add-btn" onClick={() => setShowAddForm(true)}>
             + {language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product'}
