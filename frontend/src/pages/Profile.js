@@ -19,6 +19,7 @@ import CategoryManagement from '../components/CategoryManagement';
 import MyTeam from '../components/MyTeam';
 import ReviewManagement from '../components/ReviewManagement';
 import StaffManagement from '../components/StaffManagement';
+import AcademyManagement from '../components/AcademyManagement';
 import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Profile.css';
 
@@ -463,8 +464,8 @@ const Profile = () => {
 
           {user.role === 'super_admin' ? (
             <button
-              className="tab-btn"
-              onClick={() => { window.location.href = '/admin?tab=academy'; }}
+              className={`tab-btn ${activeTab === 'academy' ? 'active' : ''}`}
+              onClick={() => setActiveTab('academy')}
             >
               <span className="tab-icon">🎓</span>
               <span className="tab-label">{language === 'ar' ? 'الأكاديمية' : 'Academy'}</span>
@@ -774,6 +775,13 @@ const Profile = () => {
           {activeTab === 'staff' && user.role === 'super_admin' && (
             <div className="tab-panel">
               <StaffManagement />
+            </div>
+          )}
+
+          {/* Academy Management Tab - For Super Admin */}
+          {activeTab === 'academy' && user.role === 'super_admin' && (
+            <div className="tab-panel">
+              <AcademyManagement />
             </div>
           )}
 

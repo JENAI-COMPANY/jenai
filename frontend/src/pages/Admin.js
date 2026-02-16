@@ -660,8 +660,6 @@ const Admin = () => {
 
   return (
     <div className="admin-container">
-      <h2>لوحة التحكم</h2>
-
       <div className="admin-tabs">
         {user?.role !== 'sales_employee' && user?.role !== 'admin_secretary' && (
           <button
@@ -1219,7 +1217,7 @@ const Admin = () => {
             </div>
           )}
 
-          activeTab === "suppliers" && isSuperAdmin && (
+          {activeTab === "suppliers" && isSuperAdmin && (
             <div>
               <div className="tab-header">
                 <h3>إدارة الموردين</h3>
