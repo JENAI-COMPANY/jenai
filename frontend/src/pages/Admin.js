@@ -142,10 +142,17 @@ const Admin = () => {
   // استخدام قائمة الدول من الملف المشترك
   const countries = allCountries;
 
-  // Set default tab based on role
+  // Set default tab based on role or URL param
   useEffect(() => {
-    if (user?.role === 'sales_employee') setActiveTab('orders');
-    else if (user?.role === 'admin_secretary') setActiveTab('members');
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    } else if (user?.role === 'sales_employee') {
+      setActiveTab('orders');
+    } else if (user?.role === 'admin_secretary') {
+      setActiveTab('members');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
 
