@@ -382,7 +382,7 @@ const ProductDetail = () => {
             {/* Weight */}
             {product.weight && (
               <div className="weight-info" style={{ margin: '10px 0', color: '#666', fontSize: '14px' }}>
-                ⚖️ {language === 'ar' ? 'الوزن:' : 'Weight:'} {product.weight} {language === 'ar' ? 'كغم' : 'kg'}
+                ⚖️ {language === 'ar' ? 'الوزن:' : 'Weight:'} {product.weight}
               </div>
             )}
 

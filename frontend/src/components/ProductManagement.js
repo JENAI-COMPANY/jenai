@@ -1037,10 +1037,9 @@ const ProductManagement = () => {
                 </div>
 
                 <div className="pm-form-group">
-                  <label>{language === 'ar' ? 'الوزن (كغم)' : 'Weight (kg)'}</label>
+                  <label>{language === 'ar' ? 'الوزن' : 'Weight'}</label>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={formData.weight}
                     onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                     placeholder={language === 'ar' ? 'اختياري' : 'Optional'}
