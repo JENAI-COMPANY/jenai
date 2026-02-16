@@ -119,10 +119,19 @@
   background-color: #2980b9;
 }
 
+.data-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table th,
@@ -529,11 +538,21 @@
 
   .data-table {
     font-size: 0.9rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    min-width: unset;
   }
 
   .data-table th,
   .data-table td {
     padding: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .data-table tbody tr {
+    white-space: normal;
   }
 
   .action-buttons {
