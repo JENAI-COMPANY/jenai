@@ -1,162 +1,292 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import '../styles/Academy.css';
 
 const Academy = () => {
   const { language } = useLanguage();
-  const [courses, setCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [filter, setFilter] = useState('all');
+  const { user } = useContext(AuthContext);
+  const [videos, setVideos] = useState([]);
+  const [progress, setProgress] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [answers, setAnswers] = useState({});
+  const [quizResult, setQuizResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchCourses();
+    fetchData();
   }, []);
 
-  const fetchCourses = async () => {
+  const fetchData = async () => {
     try {
-      const res = await axios.get('/api/academy/courses');
-      setCourses(res.data.courses);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      // Mock data
-      setCourses([
-        {
-          _id: '1',
-          title: 'Introduction to Cooperative Marketing',
-          titleAr: 'مقدمة في التسويق التعاوني',
-          description: 'Learn the basics of cooperative marketing',
-          descriptionAr: 'تعلم أساسيات التسويق التعاوني',
-          level: 'beginner',
-          duration: 30,
-          points: 10,
-          isFree: true,
-          thumbnail: 'https://via.placeholder.com/400x250'
-        },
-        {
-          _id: '2',
-          title: 'Building Your Team',
-          titleAr: 'بناء فريقك',
-          description: 'Strategies for recruiting and managing your team',
-          descriptionAr: 'استراتيجيات لتوظيف وإدارة فريقك',
-          level: 'intermediate',
-          duration: 45,
-          points: 15,
-          isFree: true,
-          thumbnail: 'https://via.placeholder.com/400x250'
-        },
-        {
-          _id: '3',
-          title: 'Advanced Sales Techniques',
-          titleAr: 'تقنيات المبيعات المتقدمة',
-          description: 'Master advanced selling strategies',
-          descriptionAr: 'إتقان استراتيجيات البيع المتقدمة',
-          level: 'advanced',
-          duration: 60,
-          points: 20,
-          isFree: false,
-          price: 29.99,
-          thumbnail: 'https://via.placeholder.com/400x250'
-        }
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const [videosRes, progressRes] = await Promise.all([
+        axios.get('/api/academy/videos', { headers }),
+        axios.get('/api/academy/progress', { headers })
       ]);
+
+      setVideos(videosRes.data.videos || []);
+
+      const progressMap = {};
+      (progressRes.data.progress || []).forEach(p => {
+        progressMap[p.video] = p;
+      });
+      setProgress(progressMap);
+    } catch (error) {
+      console.error('Error fetching academy data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredCourses = courses.filter(course => {
-    if (filter === 'all') return true;
-    return course.level === filter;
-  });
-
-  const getLevelBadge = (level) => {
-    const badges = {
-      beginner: { text: language === 'ar' ? 'مبتدئ' : 'Beginner', color: '#27ae60' },
-      intermediate: { text: language === 'ar' ? 'متوسط' : 'Intermediate', color: '#f39c12' },
-      advanced: { text: language === 'ar' ? 'متقدم' : 'Advanced', color: '#e74c3c' }
-    };
-    return badges[level] || badges.beginner;
+  const isVideoUnlocked = (video, index) => {
+    if (index === 0) return true;
+    const prevVideo = videos[index - 1];
+    return progress[prevVideo._id]?.quizPassed === true;
   };
+
+  const handleOpenVideo = (video) => {
+    setActiveVideo(video);
+    setShowQuiz(false);
+    setAnswers({});
+    setQuizResult(null);
+  };
+
+  const handleStartQuiz = () => {
+    setShowQuiz(true);
+    setAnswers({});
+    setQuizResult(null);
+  };
+
+  const handleAnswerChange = (questionIndex, answerIndex) => {
+    setAnswers(prev => ({ ...prev, [questionIndex]: answerIndex }));
+  };
+
+  const handleSubmitQuiz = async () => {
+    if (!activeVideo) return;
+    const questions = activeVideo.quiz?.questions || [];
+    if (Object.keys(answers).length < questions.length) {
+      alert(language === 'ar' ? 'يرجى الإجابة على جميع الأسئلة' : 'Please answer all questions');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const answersArray = questions.map((_, i) => answers[i]);
+      const res = await axios.post(
+        `/api/academy/videos/${activeVideo._id}/quiz`,
+        { answers: answersArray },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setQuizResult(res.data);
+      if (res.data.passed) {
+        setProgress(prev => ({
+          ...prev,
+          [activeVideo._id]: { quizPassed: true, quizScore: res.data.score }
+        }));
+      } else {
+        setProgress(prev => ({
+          ...prev,
+          [activeVideo._id]: { ...prev[activeVideo._id], quizScore: res.data.score }
+        }));
+      }
+    } catch (error) {
+      alert(language === 'ar' ? 'حدث خطأ أثناء التسليم' : 'Error submitting quiz');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getVideoStatus = (video, index) => {
+    if (progress[video._id]?.quizPassed) return 'completed';
+    if (isVideoUnlocked(video, index)) return 'unlocked';
+    return 'locked';
+  };
+
+  if (loading) {
+    return (
+      <div className="academy-page">
+        <div className="academy-loading">
+          <div className="academy-spinner"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="academy-page">
       <div className="academy-hero">
         <h1>🎓 {language === 'ar' ? 'أكاديمية جيناي' : 'Jenai Academy'}</h1>
-        <p>{language === 'ar' ? 'طور مهاراتك واكسب النقاط' : 'Develop Your Skills and Earn Points'}</p>
+        <p>{language === 'ar' ? 'تعلم وطور مهاراتك' : 'Learn and Develop Your Skills'}</p>
       </div>
 
       <div className="academy-container">
-        <div className="filter-section">
-          <button
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            {language === 'ar' ? 'الكل' : 'All'}
-          </button>
-          <button
-            className={`filter-btn ${filter === 'beginner' ? 'active' : ''}`}
-            onClick={() => setFilter('beginner')}
-          >
-            {language === 'ar' ? 'مبتدئ' : 'Beginner'}
-          </button>
-          <button
-            className={`filter-btn ${filter === 'intermediate' ? 'active' : ''}`}
-            onClick={() => setFilter('intermediate')}
-          >
-            {language === 'ar' ? 'متوسط' : 'Intermediate'}
-          </button>
-          <button
-            className={`filter-btn ${filter === 'advanced' ? 'active' : ''}`}
-            onClick={() => setFilter('advanced')}
-          >
-            {language === 'ar' ? 'متقدم' : 'Advanced'}
-          </button>
-        </div>
-
-        <div className="courses-grid">
-          {filteredCourses.map(course => {
-            const badge = getLevelBadge(course.level);
-            return (
-              <div key={course._id} className="course-card">
-                <div className="course-thumbnail">
-                  <img src={course.thumbnail} alt={language === 'ar' ? course.titleAr : course.title} />
-                  <div className="level-badge" style={{ background: badge.color }}>
-                    {badge.text}
+        {videos.length === 0 ? (
+          <div className="academy-empty">
+            <p>🎬 {language === 'ar' ? 'لا توجد فيديوهات متاحة حالياً' : 'No videos available yet'}</p>
+          </div>
+        ) : (
+          <div className="academy-layout">
+            <div className="videos-list">
+              <h2 className="videos-list-title">
+                {language === 'ar' ? 'الفيديوهات' : 'Videos'}
+              </h2>
+              {videos.map((video, index) => {
+                const status = getVideoStatus(video, index);
+                return (
+                  <div
+                    key={video._id}
+                    className={`video-item ${status} ${activeVideo?._id === video._id ? 'active' : ''}`}
+                    onClick={() => status !== 'locked' && handleOpenVideo(video)}
+                  >
+                    <div className="video-item-number">{index + 1}</div>
+                    <div className="video-item-info">
+                      <span className="video-item-title">{video.titleAr}</span>
+                      <span className="video-item-status">
+                        {status === 'completed' && ('✅ ' + (language === 'ar' ? 'مكتمل' : 'Completed'))}
+                        {status === 'unlocked' && ('▶️ ' + (language === 'ar' ? 'ابدأ' : 'Start'))}
+                        {status === 'locked' && ('🔒 ' + (language === 'ar' ? 'مقفل' : 'Locked'))}
+                      </span>
+                    </div>
+                    {progress[video._id]?.quizScore > 0 && (
+                      <div className="video-score">{progress[video._id].quizScore}%</div>
+                    )}
                   </div>
-                  {!course.isFree && (
-                    <div className="price-badge">${course.price}</div>
+                );
+              })}
+            </div>
+
+            <div className="video-content">
+              {!activeVideo ? (
+                <div className="video-placeholder-msg">
+                  <p>👈 {language === 'ar' ? 'اختر فيديو من القائمة للبدء' : 'Select a video from the list to start'}</p>
+                </div>
+              ) : (
+                <>
+                  <h2 className="video-title">{activeVideo.titleAr}</h2>
+                  {activeVideo.descriptionAr && (
+                    <p className="video-description">{activeVideo.descriptionAr}</p>
                   )}
-                </div>
-                <div className="course-content">
-                  <h3>{language === 'ar' ? course.titleAr : course.title}</h3>
-                  <p>{language === 'ar' ? course.descriptionAr : course.description}</p>
-                  <div className="course-meta">
-                    <span className="duration">⏱️ {course.duration} {language === 'ar' ? 'دقيقة' : 'min'}</span>
-                    <span className="points">🎯 {course.points} {language === 'ar' ? 'نقطة' : 'pts'}</span>
-                  </div>
-                  <button className="start-btn" onClick={() => setSelectedCourse(course)}>
-                    {course.isFree
-                      ? (language === 'ar' ? 'ابدأ الآن' : 'Start Now')
-                      : (language === 'ar' ? 'شراء الدورة' : 'Buy Course')
-                    }
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {selectedCourse && (
-        <div className="course-modal" onClick={() => setSelectedCourse(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal" onClick={() => setSelectedCourse(null)}>×</button>
-            <h2>{language === 'ar' ? selectedCourse.titleAr : selectedCourse.title}</h2>
-            <p>{language === 'ar' ? selectedCourse.descriptionAr : selectedCourse.description}</p>
-            <div className="video-placeholder">
-              <p>📹 {language === 'ar' ? 'الفيديو سيتم عرضه هنا' : 'Video will be displayed here'}</p>
+                  {activeVideo.videoUrl ? (
+                    <div className="video-player-wrapper">
+                      <video
+                        key={activeVideo._id}
+                        className="video-player"
+                        controls
+                        controlsList="nodownload"
+                      >
+                        <source src={activeVideo.videoUrl} />
+                        {language === 'ar' ? 'متصفحك لا يدعم تشغيل الفيديو' : 'Your browser does not support video.'}
+                      </video>
+                    </div>
+                  ) : (
+                    <div className="video-no-file">
+                      <p>⚠️ {language === 'ar' ? 'لم يتم رفع الفيديو بعد' : 'Video not uploaded yet'}</p>
+                    </div>
+                  )}
+
+                  {activeVideo.quiz?.questions?.length > 0 && (
+                    <div className="quiz-section">
+                      {!showQuiz && !progress[activeVideo._id]?.quizPassed && (
+                        <button className="start-quiz-btn" onClick={handleStartQuiz}>
+                          📝 {language === 'ar' ? 'ابدأ الامتحان' : 'Start Quiz'}
+                        </button>
+                      )}
+
+                      {progress[activeVideo._id]?.quizPassed && (
+                        <div className="quiz-passed-banner">
+                          ✅ {language === 'ar'
+                            ? `اجتزت الامتحان بنجاح - ${progress[activeVideo._id].quizScore}%`
+                            : `Quiz Passed - ${progress[activeVideo._id].quizScore}%`}
+                        </div>
+                      )}
+
+                      {showQuiz && !quizResult && (
+                        <div className="quiz-form">
+                          <h3 className="quiz-title">
+                            📝 {language === 'ar' ? 'الامتحان' : 'Quiz'}
+                            <span className="quiz-passing-info">
+                              ({language === 'ar' ? 'درجة النجاح' : 'Passing'}: {activeVideo.quiz.passingScore}%)
+                            </span>
+                          </h3>
+                          {activeVideo.quiz.questions.map((q, qi) => (
+                            <div key={q._id || qi} className="quiz-question">
+                              <p className="question-text">{qi + 1}. {q.questionAr}</p>
+                              <div className="question-options">
+                                {q.type === 'truefalse' ? (
+                                  <>
+                                    <label className={`option-label ${answers[qi] === 0 ? 'selected' : ''}`}>
+                                      <input type="radio" name={`q${qi}`} onChange={() => handleAnswerChange(qi, 0)} />
+                                      ✔ {language === 'ar' ? 'صح' : 'True'}
+                                    </label>
+                                    <label className={`option-label ${answers[qi] === 1 ? 'selected' : ''}`}>
+                                      <input type="radio" name={`q${qi}`} onChange={() => handleAnswerChange(qi, 1)} />
+                                      ✖ {language === 'ar' ? 'خطأ' : 'False'}
+                                    </label>
+                                  </>
+                                ) : (
+                                  q.options.map((opt, oi) => (
+                                    <label key={oi} className={`option-label ${answers[qi] === oi ? 'selected' : ''}`}>
+                                      <input type="radio" name={`q${qi}`} onChange={() => handleAnswerChange(qi, oi)} />
+                                      {opt}
+                                    </label>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            className="submit-quiz-btn"
+                            onClick={handleSubmitQuiz}
+                            disabled={submitting}
+                          >
+                            {submitting ? '...' : (language === 'ar' ? 'تسليم الإجابات' : 'Submit')}
+                          </button>
+                        </div>
+                      )}
+
+                      {quizResult && (
+                        <div className={`quiz-result ${quizResult.passed ? 'passed' : 'failed'}`}>
+                          <div className="result-icon">{quizResult.passed ? '🎉' : '😔'}</div>
+                          <div className="result-score">
+                            {quizResult.score}% ({quizResult.correct}/{quizResult.total})
+                          </div>
+                          <div className="result-message">
+                            {quizResult.passed
+                              ? (language === 'ar' ? 'أحسنت! اجتزت الامتحان' : 'Congratulations! You passed!')
+                              : (language === 'ar'
+                                ? `لم تجتز. درجة النجاح ${quizResult.passingScore}%`
+                                : `Failed. Passing score is ${quizResult.passingScore}%`)}
+                          </div>
+                          {!quizResult.passed && (
+                            <button
+                              className="retry-quiz-btn"
+                              onClick={() => { setShowQuiz(true); setAnswers({}); setQuizResult(null); }}
+                            >
+                              🔄 {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+                            </button>
+                          )}
+                          {quizResult.passed && (
+                            <p className="next-video-hint">
+                              ▶️ {language === 'ar' ? 'يمكنك الآن الانتقال للفيديو التالي' : 'You can now proceed to the next video'}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
