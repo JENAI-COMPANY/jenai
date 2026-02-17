@@ -236,15 +236,17 @@
     flex-wrap: wrap;
     gap: 0;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     position: relative;
     direction: ltr;
   }
 
   .nav-left {
-    order: 2;
-    margin-left: auto;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
   }
@@ -253,7 +255,6 @@
     display: flex !important;
     align-items: center;
     justify-content: center;
-    order: 1;
     flex: 0 0 44px;
     width: 44px;
     height: 44px;
