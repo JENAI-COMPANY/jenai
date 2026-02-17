@@ -244,11 +244,9 @@
 
   .nav-left {
     order: 2;
-    flex: 0 0 auto;
+    margin-left: auto;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    direction: ltr;
   }
 
   .mobile-menu-toggle {
