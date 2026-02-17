@@ -198,6 +198,51 @@ const distributeGenerationPointsOnly = async (member, points) => {
   }
 };
 
+// ══════════════════════════════════════════════════════════════
+// توزيع النقاط التراكمية فقط على الأعضاء العلويين (5 أجيال)
+// تُستخدم عند تعديل النقاط التراكمية (points) مباشرة من لوحة الأدمن
+// لا تُضاف نقاط أداء شخصي ولا عمولات، فقط التراكمي
+// ══════════════════════════════════════════════════════════════
+const distributeCumulativePointsToUpline = async (member, pointsDiff) => {
+  try {
+    if (!pointsDiff || pointsDiff === 0) return;
+
+    let currentMemberId = member.referredBy || member.sponsorId;
+    let generationLevel = 0;
+
+    if (!currentMemberId) {
+      console.log('⚠️ لا يوجد راعي لهذا العضو - لن يتم توزيع النقاط التراكمية');
+      return;
+    }
+
+    console.log(`📊 توزيع ${pointsDiff} نقطة تراكمية من ${member.name} على الأعضاء العلويين`);
+
+    while (currentMemberId && generationLevel < 5) {
+      const currentMember = await User.findById(currentMemberId);
+
+      if (!currentMember || currentMember.role !== 'member') break;
+
+      const oldPoints = currentMember.points || 0;
+      currentMember.points = oldPoints + pointsDiff;
+      await currentMember.save();
+
+      console.log(`  └─ ${currentMember.name} (جيل ${generationLevel + 1}): ${oldPoints} → ${currentMember.points}`);
+
+      // تحديث الرتبة تلقائياً
+      try {
+        await updateMemberRank(currentMember._id, User);
+      } catch (e) {}
+
+      currentMemberId = currentMember.referredBy || currentMember.sponsorId;
+      generationLevel++;
+    }
+
+    console.log(`✅ تم توزيع النقاط التراكمية على ${generationLevel} جيل`);
+  } catch (error) {
+    console.error('❌ خطأ في توزيع النقاط التراكمية:', error);
+  }
+};
+
 // @route   GET /api/admin/rewards
 // @desc    Get rewards history (Super Admin)
 // @access  Private/SuperAdmin
@@ -444,6 +489,9 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     // Update other allowed fields
     const allowedUpdates = ['name', 'username', 'phone', 'countryCode', 'country', 'city', 'role', 'address', 'points', 'monthlyPoints', 'totalCommission', 'availableCommission', 'region', 'supplier', 'bonusPoints', 'compensationPoints', 'profitPoints', 'isActive', 'managedCategories'];
 
+    // حفظ القيمة القديمة للنقاط التراكمية قبل التعديل
+    const oldCumulativePoints = user.points || 0;
+
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
         if (field === 'region' && req.body[field] === '') {
@@ -494,6 +542,16 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     }
 
     await user.save();
+
+    // توزيع الفرق في النقاط التراكمية على الأعضاء العلويين
+    if (req.body.points !== undefined && user.role === 'member') {
+      const newCumulativePoints = parseInt(req.body.points) || 0;
+      const cumulativeDiff = newCumulativePoints - oldCumulativePoints;
+      if (cumulativeDiff !== 0) {
+        console.log(`📊 فرق النقاط التراكمية: ${cumulativeDiff} - سيتم التوزيع على الأعضاء العلويين`);
+        await distributeCumulativePointsToUpline(user, cumulativeDiff);
+      }
+    }
 
     // ══════════════════════════════════════════════════════════════
     // معالجة نقاط المكافأة والتعويض والنقاط الشهرية (إعادة ضبط مباشر للقيمة المُرسلة)
