@@ -15,6 +15,8 @@ const Login = () => {
   const navigate = useNavigate();
   const boxRef = useRef(null);
   const formRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const toggleBtnRef = useRef(null);
 
   useEffect(() => {
     // Animate the auth box on mount
@@ -24,12 +26,36 @@ const Login = () => {
       { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' }
     );
 
-    // Animate form fields
+    // Animate form fields, then clear transforms to fix absolute positioning on mobile
     gsap.fromTo(
       formRef.current.children,
       { opacity: 0, x: -30 },
-      { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, delay: 0.3, ease: 'power2.out' }
+      {
+        opacity: 1, x: 0, duration: 0.5, stagger: 0.1, delay: 0.3, ease: 'power2.out',
+        onComplete: () => {
+          gsap.set(formRef.current.children, { clearProps: 'transform,x,y' });
+          positionToggleBtn();
+        }
+      }
     );
+
+    const positionToggleBtn = () => {
+      const input = passwordInputRef.current;
+      const btn = toggleBtnRef.current;
+      if (!input || !btn) return;
+      const parent = input.parentElement;
+      const parentWidth = parent.offsetWidth;
+      const btnW = 28;
+      const btnH = 28;
+      btn.style.position = 'absolute';
+      btn.style.top = (input.offsetTop + input.offsetHeight / 2 - btnH / 2) + 'px';
+      btn.style.left = (parentWidth - btnW - 10) + 'px';
+      btn.style.right = 'auto';
+      btn.style.transform = 'none';
+    };
+
+    window.addEventListener('resize', positionToggleBtn);
+    return () => window.removeEventListener('resize', positionToggleBtn);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -38,7 +64,6 @@ const Login = () => {
 
     const result = await login(username, password);
     if (result.success) {
-      // Check if there's a return URL stored
       const returnUrl = localStorage.getItem('returnUrl');
       if (returnUrl) {
         localStorage.removeItem('returnUrl');
@@ -67,24 +92,25 @@ const Login = () => {
               required
             />
           </div>
-          <div className="form-group">
+          <div className="form-group password-group">
             <label>{t('password')}</label>
-            <div className="password-input-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder={t('password')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
-            </div>
+            <input
+              ref={passwordInputRef}
+              type={showPassword ? "text" : "password"}
+              placeholder={t('password')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="password-input"
+            />
+            <button
+              ref={toggleBtnRef}
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
           </div>
           <button type="submit" className="submit-btn">{t('loginButton')}</button>
         </form>
