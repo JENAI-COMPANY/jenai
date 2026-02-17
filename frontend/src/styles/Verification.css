@@ -1,0 +1,673 @@
+/* ===== VERIFICATION MODAL ===== */
+.verification-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.verification-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.verification-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.verification-modal-header h2 {
+  font-size: 1.4rem;
+  color: #2c3e50;
+  font-weight: 800;
+}
+
+.verification-close-btn {
+  background: #f1f3f5;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.verification-close-btn:hover {
+  background: #e9ecef;
+}
+
+.verification-modal-desc {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.verification-error {
+  background: #fdecea;
+  color: #e74c3c;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.verification-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.verification-field label {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.verification-field input[type="text"],
+.verification-field input[type="date"] {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  background: #f8f9fa;
+}
+
+.verification-field input:focus {
+  outline: none;
+  border-color: #c5a869;
+  background: white;
+}
+
+.verification-radio-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.verification-radio-label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: border-color 0.2s, background 0.2s;
+  flex: 1;
+}
+
+.verification-radio-label:has(input:checked) {
+  border-color: #c5a869;
+  background: #faf6ee;
+}
+
+.verification-upload-label {
+  display: block;
+  cursor: pointer;
+}
+
+.verification-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  border: 2px dashed #c5a869;
+  border-radius: 12px;
+  background: #faf6ee;
+  transition: background 0.2s;
+}
+
+.verification-upload-area:hover {
+  background: #f5edd8;
+}
+
+.verification-upload-icon {
+  font-size: 2rem;
+}
+
+.verification-upload-area span {
+  color: #c5a869;
+  font-weight: 600;
+}
+
+.verification-upload-area small {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+}
+
+.verification-image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.verification-image-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 2px solid #e1e8ed;
+}
+
+.verification-change-image-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.verification-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.verification-submit-btn {
+  flex: 1;
+  padding: 1rem;
+  background: #c5a869;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.verification-submit-btn:hover:not(:disabled) {
+  background: #b89858;
+}
+
+.verification-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.verification-cancel-btn {
+  padding: 1rem 1.5rem;
+  background: #f1f3f5;
+  color: #2c3e50;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.verification-cancel-btn:hover {
+  background: #e9ecef;
+}
+
+/* ===== VERIFICATION BADGE IN PROFILE ===== */
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.verification-badge-pending {
+  background: linear-gradient(135deg, #f39c12, #f5a623);
+}
+
+.verification-badge-rejected {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.verification-section {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 14px;
+  background: #f8f9fa;
+}
+
+.verification-section h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+}
+
+.verification-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.verification-status-card p {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.verify-account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #c5a869, #b89858);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(197, 168, 105, 0.3);
+}
+
+.verify-account-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(197, 168, 105, 0.4);
+}
+
+.verification-approved-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.verification-approved-info p {
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.verification-reject-reason {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #fdecea;
+  border-radius: 8px;
+  color: #e74c3c;
+  font-size: 0.875rem;
+  border-left: 3px solid #e74c3c;
+}
+
+/* ===== VERIFICATION MANAGEMENT (SUPER ADMIN) ===== */
+.verification-management {
+  padding: 1rem 0;
+}
+
+.vm-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.vm-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.vm-filter-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.vm-filter-btn {
+  padding: 0.6rem 1.25rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.vm-filter-btn.active.vm-status-pending {
+  background: #fff3cd;
+  border-color: #f39c12;
+  color: #b7770d;
+}
+
+.vm-filter-btn.active.vm-status-approved {
+  background: #d4edda;
+  border-color: #27ae60;
+  color: #155724;
+}
+
+.vm-filter-btn.active.vm-status-rejected {
+  background: #fdecea;
+  border-color: #e74c3c;
+  color: #c0392b;
+}
+
+.vm-loading, .vm-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+.vm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vm-card {
+  background: white;
+  border: 2px solid #e1e8ed;
+  border-radius: 14px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vm-card:hover {
+  border-color: #c5a869;
+  box-shadow: 0 4px 16px rgba(197, 168, 105, 0.2);
+  transform: translateY(-2px);
+}
+
+.vm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.vm-user-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #2c3e50;
+}
+
+.vm-status-badge {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.vm-badge-pending {
+  background: #fff3cd;
+  color: #b7770d;
+}
+
+.vm-badge-approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.vm-badge-rejected {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.vm-card-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.vm-card-info span {
+  background: #f8f9fa;
+  padding: 0.25rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #2c3e50;
+}
+
+.vm-reject-note {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fdecea;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #e74c3c;
+}
+
+/* Detail Modal */
+.vm-detail-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.vm-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f1f3f5;
+}
+
+.vm-detail-header h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #2c3e50;
+}
+
+.vm-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.vm-detail-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.vm-detail-section h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #c5a869;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vm-detail-section p {
+  font-size: 0.9rem;
+  color: #2c3e50;
+  margin-bottom: 0.4rem;
+  line-height: 1.5;
+}
+
+.vm-id-image {
+  width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 2px solid #e1e8ed;
+  cursor: pointer;
+  margin-bottom: 0.4rem;
+  transition: opacity 0.2s;
+}
+
+.vm-id-image:hover {
+  opacity: 0.9;
+}
+
+.vm-rejected-section {
+  background: #fdecea;
+  border: 1px solid #e74c3c;
+}
+
+.vm-rejected-section h4 {
+  color: #e74c3c;
+}
+
+.vm-detail-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #f1f3f5;
+}
+
+.vm-approve-btn {
+  flex: 1;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vm-approve-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+}
+
+.vm-reject-btn {
+  flex: 1;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vm-reject-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.vm-approve-btn:disabled,
+.vm-reject-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Reject Note Modal */
+.vm-reject-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.vm-reject-modal h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.vm-reject-modal textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  resize: vertical;
+  margin-bottom: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.vm-reject-modal textarea:focus {
+  outline: none;
+  border-color: #e74c3c;
+}
+
+.vm-reject-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Verified badge in user list */
+.user-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .verification-modal,
+  .vm-detail-modal,
+  .vm-reject-modal {
+    padding: 1.5rem 1rem;
+  }
+
+  .verification-radio-group {
+    flex-direction: column;
+  }
+
+  .vm-detail-actions {
+    flex-direction: column;
+  }
+
+  .vm-filter-tabs {
+    gap: 0.5rem;
+  }
+
+  .vm-filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}

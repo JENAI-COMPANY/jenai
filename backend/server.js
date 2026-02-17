@@ -61,6 +61,7 @@ app.use('/api/permissions', require('./routes/permissionsRoutes'));
 app.use('/api/team', require('./routes/teamRoutes'));
 app.use('/api/favorites', require('./routes/favoriteRoutes'));
 app.use('/api/news', require('./routes/newsRoutes'));
+app.use('/api/verifications', require('./routes/verificationRoutes'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

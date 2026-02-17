@@ -20,8 +20,11 @@ import MyTeam from '../components/MyTeam';
 import ReviewManagement from '../components/ReviewManagement';
 import StaffManagement from '../components/StaffManagement';
 import AcademyManagement from '../components/AcademyManagement';
+import VerificationModal from '../components/VerificationModal';
+import VerificationManagement from '../components/VerificationManagement';
 import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Profile.css';
+import '../styles/Verification.css';
 
 const Profile = () => {
   const { user, fetchUser } = useContext(AuthContext);
@@ -57,6 +60,10 @@ const Profile = () => {
   const [expectedProfit, setExpectedProfit] = useState(null);
   const [loadingExpectedProfit, setLoadingExpectedProfit] = useState(false);
 
+  // Verification state
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [myVerification, setMyVerification] = useState(null);
+
   // Fetch fresh user data when component mounts
   useEffect(() => {
     if (fetchUser) {
@@ -64,6 +71,17 @@ const Profile = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch my verification status for members
+  useEffect(() => {
+    if (user?.role === 'member') {
+      const token = localStorage.getItem('token');
+      axios.get('/api/verifications/my', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => { if (res.data.success) setMyVerification(res.data.verification); })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
 
   // Fetch profit periods when earnings tab is active and user is a member
   useEffect(() => {
@@ -291,6 +309,16 @@ const Profile = () => {
             >
               <span className="tab-icon">👥</span>
               <span className="tab-label">{language === 'ar' ? 'إدارة المستخدمين' : 'Users'}</span>
+            </button>
+          )}
+
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'verifications' ? 'active' : ''}`}
+              onClick={() => setActiveTab('verifications')}
+            >
+              <span className="tab-icon">🪪</span>
+              <span className="tab-label">{language === 'ar' ? 'التوثيقات' : 'Verifications'}</span>
             </button>
           )}
 
@@ -673,6 +701,52 @@ const Profile = () => {
             </div>
           )}
 
+          {/* Verification Section for Members */}
+          {user.role === 'member' && (
+            <div className="verification-section">
+              <h4>🪪 {language === 'ar' ? 'توثيق الحساب' : 'Account Verification'}</h4>
+              {user.isVerified ? (
+                <div className="verification-status-card">
+                  <span className="verification-badge">✓ {language === 'ar' ? 'حساب موثق' : 'Verified Account'}</span>
+                  {myVerification && (
+                    <div className="verification-approved-info">
+                      <p><strong>{language === 'ar' ? 'الاسم الثلاثي:' : 'Full Name:'}</strong> {myVerification.fullName}</p>
+                      <p><strong>{language === 'ar' ? 'نوع الوثيقة:' : 'Document:'}</strong> {myVerification.idType === 'national_id' ? (language === 'ar' ? 'هوية' : 'National ID') : (language === 'ar' ? 'جواز' : 'Passport')}</p>
+                    </div>
+                  )}
+                </div>
+              ) : myVerification?.status === 'pending' ? (
+                <div className="verification-status-card">
+                  <span className="verification-badge verification-badge-pending">⏳ {language === 'ar' ? 'طلب قيد المراجعة' : 'Pending Review'}</span>
+                  <p style={{color:'#7f8c8d', fontSize:'0.875rem', marginTop:'0.5rem'}}>
+                    {language === 'ar' ? 'سيتم مراجعة طلبك من قبل الإدارة' : 'Your request is being reviewed by admin'}
+                  </p>
+                </div>
+              ) : myVerification?.status === 'rejected' ? (
+                <div className="verification-status-card">
+                  <span className="verification-badge verification-badge-rejected">✕ {language === 'ar' ? 'مرفوض' : 'Rejected'}</span>
+                  {myVerification.adminNote && (
+                    <div className="verification-reject-reason">
+                      <strong>{language === 'ar' ? 'سبب الرفض:' : 'Reason:'}</strong> {myVerification.adminNote}
+                    </div>
+                  )}
+                  <button className="verify-account-btn" onClick={() => setShowVerificationModal(true)}>
+                    🔄 {language === 'ar' ? 'إعادة تقديم طلب التوثيق' : 'Re-submit Verification'}
+                  </button>
+                </div>
+              ) : (
+                <div className="verification-status-card">
+                  <p style={{color:'#7f8c8d', fontSize:'0.875rem'}}>
+                    {language === 'ar' ? 'وثّق حسابك للحصول على علامة الموثق' : 'Verify your account to get the verified badge'}
+                  </p>
+                  <button className="verify-account-btn" onClick={() => setShowVerificationModal(true)}>
+                    🪪 {language === 'ar' ? 'توثيق الحساب' : 'Verify Account'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Warning message - only show for non-admin users */}
           {user.role !== 'super_admin' && user.role !== 'regional_admin' && (
             <div className="info-note">
@@ -698,6 +772,13 @@ const Profile = () => {
           {activeTab === 'users' && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'admin_secretary') && (
             <div className="tab-panel">
               <UserManagement />
+            </div>
+          )}
+
+          {/* Verifications Tab - Super Admin Only */}
+          {activeTab === 'verifications' && user.role === 'super_admin' && (
+            <div className="tab-panel">
+              <VerificationManagement language={language} />
             </div>
           )}
 
@@ -1139,6 +1220,23 @@ const Profile = () => {
         </div>
       </div>
     </div>
+
+    {/* Verification Modal */}
+    {showVerificationModal && (
+      <VerificationModal
+        language={language}
+        onClose={() => setShowVerificationModal(false)}
+        onSuccess={() => {
+          setShowVerificationModal(false);
+          const token = localStorage.getItem('token');
+          axios.get('/api/verifications/my', { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => { if (res.data.success) setMyVerification(res.data.verification); })
+            .catch(() => {});
+          setMessage(language === 'ar' ? 'تم إرسال طلب التوثيق بنجاح!' : 'Verification request submitted!');
+          setTimeout(() => setMessage(''), 3000);
+        }}
+      />
+    )}
   );
 };
 

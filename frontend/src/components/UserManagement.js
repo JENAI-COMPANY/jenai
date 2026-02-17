@@ -5,6 +5,7 @@ import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import '../styles/UserManagement.css';
+import '../styles/Verification.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
 
 const UserManagement = () => {
@@ -696,7 +697,12 @@ const UserManagement = () => {
             {filteredUsers.map(user => (
               <tr key={user._id}>
                 <td className="um-code">{user.subscriberCode || '-'}</td>
-                <td>{user.name}</td>
+                <td>
+                  {user.name}
+                  {user.isVerified && (
+                    <span className="user-verified-badge" title={language === 'ar' ? 'حساب موثق' : 'Verified Account'}>✓ {language === 'ar' ? 'موثق' : 'Verified'}</span>
+                  )}
+                </td>
                 <td className="um-username">{user.username}</td>
                 <td>{user.phone}</td>
                 <td>
