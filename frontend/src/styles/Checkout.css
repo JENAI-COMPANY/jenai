@@ -81,7 +81,8 @@
 }
 
 .toggle-label {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
@@ -90,6 +91,9 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .toggle-label:hover {
@@ -201,14 +205,18 @@
 }
 
 .payment-option {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
   gap: 0.75rem;
   padding: 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .payment-option:hover {
@@ -230,7 +238,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .payment-description {
@@ -397,7 +407,6 @@
   .payment-label {
     word-break: break-word;
     overflow: hidden;
-    flex: 1;
     min-width: 0;
   }
 
