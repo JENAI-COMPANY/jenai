@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { CartContext } from '../context/CartContext';
@@ -28,6 +28,7 @@ const ProductDetail = () => {
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+  const touchStartX = useRef(null);
 
   // Deep-parse nested JSON strings (handles multiple JSON.stringify layers)
   const parseOptions = (options) => {
@@ -195,7 +196,25 @@ const ProductDetail = () => {
         <div className="product-detail-main">
           {/* Image Gallery */}
           <div className="product-images">
-            <div className="main-image">
+            <div
+              className="main-image"
+              onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+              onTouchEnd={(e) => {
+                if (touchStartX.current === null) return;
+                const diff = touchStartX.current - e.changedTouches[0].clientX;
+                const mediaList = product.media && product.media.length > 0
+                  ? product.media
+                  : (product.images || []).map(img => ({ type: 'image', url: img }));
+                if (Math.abs(diff) > 50) {
+                  if (diff > 0) {
+                    setSelectedImage(i => Math.min(i + 1, mediaList.length - 1));
+                  } else {
+                    setSelectedImage(i => Math.max(i - 1, 0));
+                  }
+                }
+                touchStartX.current = null;
+              }}
+            >
               {(() => {
                 // دعم النظام الجديد (media) والقديم (images) - مع الصور والفيديوهات
                 const mediaList = product.media && product.media.length > 0
@@ -232,6 +251,16 @@ const ProductDetail = () => {
                 : (product.images || []).map(img => ({ type: 'image', url: img }));
 
               return mediaList.length > 1 && (
+                <>
+                <div className="image-dots">
+                  {mediaList.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`image-dot ${selectedImage === index ? 'active' : ''}`}
+                      onClick={() => setSelectedImage(index)}
+                    />
+                  ))}
+                </div>
                 <div className="image-thumbnails">
                   {mediaList.map((item, index) => {
                     const mediaUrl = typeof item === 'string' ? item : item?.url;
@@ -257,6 +286,7 @@ const ProductDetail = () => {
                     );
                   })}
                 </div>
+                </>
               );
             })()}
           </div>
