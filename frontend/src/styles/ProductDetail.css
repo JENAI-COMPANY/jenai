@@ -850,6 +850,9 @@
 /* خيارات اللون والنمرة */
 .product-options-selector {
   margin-bottom: 1.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .product-options-selector label {
@@ -864,6 +867,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .option-button {
@@ -877,7 +882,11 @@
   cursor: pointer;
   transition: all 0.2s;
   min-width: 60px;
+  max-width: 100%;
   text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .option-button:hover {

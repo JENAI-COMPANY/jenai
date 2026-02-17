@@ -29,26 +29,43 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // Parse colors/sizes that may be stored as JSON strings
+  // Parse colors/sizes that may be stored in various formats
   const parseOptions = (options) => {
-    if (!options || !Array.isArray(options)) return [];
+    if (!options) return [];
+
+    // If it's a string (not array), try to parse it
+    if (typeof options === 'string') {
+      options = [options];
+    }
+
+    if (!Array.isArray(options)) return [];
+
     const result = [];
     for (const item of options) {
       if (typeof item === 'string') {
         const trimmed = item.trim();
-        if ((trimmed.startsWith('[') || trimmed.startsWith('{')) ) {
-          try {
-            const parsed = JSON.parse(trimmed.replace(/\{/g, '[').replace(/\}/g, ']'));
-            if (Array.isArray(parsed)) {
-              result.push(...parsed.filter(v => v && String(v).trim()));
-            } else {
-              if (trimmed) result.push(trimmed);
-            }
-          } catch {
-            if (trimmed) result.push(trimmed);
+        // Try JSON parse for array-like strings
+        if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+          let parsed = null;
+          // Try direct parse
+          try { parsed = JSON.parse(trimmed.replace(/\{/g, '[').replace(/\}/g, ']')); } catch {}
+          // Try after unescaping backslashes
+          if (!parsed) {
+            try { parsed = JSON.parse(trimmed.replace(/\\"/g, '"').replace(/\\\\/g, '\\')); } catch {}
           }
-        } else {
-          if (trimmed) result.push(trimmed);
+          if (parsed && Array.isArray(parsed)) {
+            result.push(...parsed.map(v => String(v).trim()).filter(Boolean));
+          } else {
+            // Fallback: extract values between quotes using regex
+            const matches = trimmed.match(/[\u0600-\u06FF\w][^"',\[\]{}\\]+/g);
+            if (matches && matches.length > 0) {
+              result.push(...matches.map(v => v.trim()).filter(v => v && v.length > 0));
+            }
+          }
+        } else if (trimmed) {
+          // Clean up escaped quotes from simple strings like \"value\"
+          const clean = trimmed.replace(/^\\?"?|\\?"?$/g, '').trim();
+          if (clean) result.push(clean);
         }
       }
     }
