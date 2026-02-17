@@ -26,6 +26,99 @@ import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Profile.css';
 import '../styles/Verification.css';
 
+// ── Rewards Panel Component ─────────────────────────────────────────
+const RewardsPanel = ({ language }) => {
+  const [rewards, setRewards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetchRewards('');
+  }, []);
+
+  const fetchRewards = async (term) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = term ? `?search=${encodeURIComponent(term)}` : '';
+      const res = await axios.get(`/api/admin/rewards${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRewards(res.data.rewards || []);
+    } catch (e) {
+      setRewards([]);
+    }
+    setLoading(false);
+  };
+
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    fetchRewards(val);
+  };
+
+  return (
+    <div className="tab-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <h3 style={{ margin: 0, color: '#ff9800' }}>🎁 {language === 'ar' ? 'سجل المكافآت' : 'Rewards Log'}</h3>
+        <input
+          type="text"
+          value={search}
+          onChange={handleSearch}
+          placeholder={language === 'ar' ? 'بحث بالاسم أو الكود أو اليوزر...' : 'Search by name, code or username...'}
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1.5px solid #ddd', minWidth: '250px', fontSize: '14px' }}
+        />
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+          {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+        </div>
+      ) : rewards.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+          {language === 'ar' ? 'لا توجد مكافآت' : 'No rewards found'}
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ background: '#fff8e1', borderBottom: '2px solid #ff9800' }}>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'العضو' : 'Member'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'كود العضوية' : 'Code'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'اليوزرنيم' : 'Username'}</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'السبب' : 'Reason'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'بواسطة' : 'By'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'التاريخ' : 'Date'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rewards.map((r, i) => (
+                <tr key={r._id} style={{ background: i % 2 === 0 ? '#fff' : '#fffdf5', borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: '600' }}>{r.user?.name || '-'}</td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#1a7a3c' }}>{r.user?.subscriberCode || '-'}</td>
+                  <td style={{ padding: '10px 12px', color: '#666' }}>@{r.user?.username || '-'}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <span style={{ background: '#ff9800', color: '#fff', borderRadius: '20px', padding: '3px 12px', fontWeight: 'bold', fontSize: '13px' }}>
+                      +{r.amount}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: '#555' }}>{r.reason || <span style={{ color: '#bbb' }}>—</span>}</td>
+                  <td style={{ padding: '10px 12px', color: '#888', fontSize: '12px' }}>{r.addedBy?.name || '-'}</td>
+                  <td style={{ padding: '10px 12px', color: '#888', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                    {new Date(r.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+// ───────────────────────────────────────────────────────────────────
+
 const Profile = () => {
   const { user, fetchUser } = useContext(AuthContext);
   const { language } = useLanguage();
@@ -320,6 +413,16 @@ const Profile = () => {
             >
               <span className="tab-icon">🪪</span>
               <span className="tab-label">{language === 'ar' ? 'التوثيقات' : 'Verifications'}</span>
+            </button>
+          )}
+
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'rewards' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rewards')}
+            >
+              <span className="tab-icon">🎁</span>
+              <span className="tab-label">{language === 'ar' ? 'المكافآت' : 'Rewards'}</span>
             </button>
           )}
 
@@ -781,6 +884,11 @@ const Profile = () => {
             <div className="tab-panel">
               <VerificationManagement language={language} />
             </div>
+          )}
+
+          {/* Rewards Tab - Super Admin Only */}
+          {activeTab === 'rewards' && user.role === 'super_admin' && (
+            <RewardsPanel language={language} />
           )}
 
           {/* Products Management Tab */}

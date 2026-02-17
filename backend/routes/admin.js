@@ -16,6 +16,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const ProfitPeriod = require('../models/ProfitPeriod');
+const Reward = require('../models/Reward');
 const { adminUpdateOrder } = require('../controllers/orderController');
 const {
   MEMBER_RANKS,
@@ -196,6 +197,35 @@ const distributeGenerationPointsOnly = async (member, points) => {
     console.error('❌ خطأ في توزيع نقاط الأجيال:', error);
   }
 };
+
+// @route   GET /api/admin/rewards
+// @desc    Get rewards history (Super Admin)
+// @access  Private/SuperAdmin
+router.get('/rewards', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { search } = req.query;
+    let rewards = await Reward.find()
+      .populate('user', 'name username subscriberCode')
+      .populate('addedBy', 'name')
+      .sort({ createdAt: -1 });
+
+    if (search && search.trim()) {
+      const term = search.trim().toLowerCase();
+      rewards = rewards.filter(r =>
+        r.user && (
+          (r.user.name || '').toLowerCase().includes(term) ||
+          (r.user.username || '').toLowerCase().includes(term) ||
+          (r.user.subscriberCode || '').toLowerCase().includes(term)
+        )
+      );
+    }
+
+    res.json({ success: true, rewards });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 // @route   GET /api/admin/users
 // @desc    Get all users (Super Admin and Regional Admin)
@@ -497,6 +527,14 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
         console.log(`📊 تحديث النقاط التراكمية: من ${oldUserPoints} إلى ${user.points}`);
 
         await user.save();
+
+        // حفظ سجل المكافأة
+        await Reward.create({
+          user: user._id,
+          addedBy: req.user._id,
+          amount: bonusPointsToAdd,
+          reason: req.body.bonusPointsReason || ''
+        });
 
         // توزيع النقاط على الأعضاء العلويين
         console.log('✅ توزيع نقاط المكافأة على الأعضاء العلويين');

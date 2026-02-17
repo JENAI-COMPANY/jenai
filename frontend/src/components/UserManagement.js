@@ -341,6 +341,7 @@ const UserManagement = () => {
       // Include bonus/compensation points if they're being added
       if (editingUser.bonusPoints && editingUser.bonusPoints > 0) {
         updateData.bonusPoints = editingUser.bonusPoints;
+        updateData.bonusPointsReason = editingUser.bonusPointsReason || '';
       }
       if (editingUser.compensationPoints && editingUser.compensationPoints > 0) {
         updateData.compensationPoints = editingUser.compensationPoints;
@@ -982,6 +983,19 @@ const UserManagement = () => {
                             {language === 'ar'
                               ? '💰 تُضاف للنقاط والرتبة والربح وتُوزع على الأعضاء العلويين (مثل شراء منتج)'
                               : '💰 Added to points, rank & profit, distributes to upline (like purchasing a product)'}
+                          </small>
+                        </div>
+                        <div className="um-form-group">
+                          <label style={{ color: '#ff9800' }}>📝 {language === 'ar' ? 'سبب المكافأة' : 'Bonus Reason'}</label>
+                          <input
+                            type="text"
+                            placeholder={language === 'ar' ? 'أدخل سبب إضافة المكافأة' : 'Enter bonus reason'}
+                            value={editingUser.bonusPointsReason || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, bonusPointsReason: e.target.value })}
+                            style={{ borderColor: '#ff9800' }}
+                          />
+                          <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar' ? 'يُحفظ في سجل المكافآت' : 'Saved in rewards log'}
                           </small>
                         </div>
                       </div>
