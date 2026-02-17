@@ -8,7 +8,6 @@
 .product-detail-container {
   max-width: 1200px;
   margin: 0 auto;
-  overflow-x: hidden;
 }
 
 /* Breadcrumb */
@@ -122,6 +121,17 @@
   display: flex;
   gap: 10px;
   overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.image-thumbnails::-webkit-scrollbar {
+  height: 3px;
+}
+
+.image-thumbnails::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
 }
 
 .thumbnail {
@@ -133,6 +143,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  position: relative;
+  background: #1a1a1a;
 }
 
 .thumbnail:hover {
