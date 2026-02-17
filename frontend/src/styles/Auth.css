@@ -381,7 +381,6 @@
   }
 
   .option-content {
-    overflow: hidden;
     min-width: 0;
     word-break: break-word;
   }

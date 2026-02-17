@@ -58,7 +58,14 @@ const Register = () => {
         gsap.fromTo(
           optionsRef.current.children,
           { opacity: 0, y: 30 },
-          { opacity: 1, y: 0, duration: 0.5, stagger: 0.15, delay: 0.2, ease: 'power3.out' }
+          {
+            opacity: 1, y: 0, duration: 0.5, stagger: 0.15, delay: 0.2, ease: 'power3.out',
+            onComplete: () => {
+              if (optionsRef.current) {
+                gsap.set(optionsRef.current.children, { clearProps: 'all' });
+              }
+            }
+          }
         );
       }
     } else if (step === 2) {
