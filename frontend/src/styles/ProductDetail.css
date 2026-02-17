@@ -87,7 +87,8 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
   box-sizing: border-box;
-  max-width: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Image Gallery */
@@ -904,8 +905,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
+  align-items: flex-start;
 }
 
 .option-button {
@@ -919,11 +921,10 @@
   cursor: pointer;
   transition: all 0.2s;
   min-width: 60px;
-  max-width: 100%;
+  width: auto;         /* prevent iOS Safari from stretching to full width */
+  flex: 0 0 auto;      /* don't grow or shrink */
   text-align: center;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .option-button:hover {
