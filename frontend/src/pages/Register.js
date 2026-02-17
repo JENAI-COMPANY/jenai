@@ -47,12 +47,12 @@ const Register = () => {
 
   useEffect(() => {
     if (step === 1) {
-      // Animate account type selection
+      // Animate account type selection - opacity only (no transforms to avoid iOS Safari layout bugs)
       gsap.fromTo(
         boxRef.current,
-        { opacity: 0, scale: 0.9 },
+        { opacity: 0 },
         {
-          opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)',
+          opacity: 1, duration: 0.5, ease: 'power3.out',
           onComplete: () => gsap.set(boxRef.current, { clearProps: 'all' })
         }
       );
@@ -60,9 +60,9 @@ const Register = () => {
       if (optionsRef.current) {
         gsap.fromTo(
           optionsRef.current.children,
-          { opacity: 0, y: 30 },
+          { opacity: 0 },
           {
-            opacity: 1, y: 0, duration: 0.5, stagger: 0.15, delay: 0.2, ease: 'power3.out',
+            opacity: 1, duration: 0.5, stagger: 0.15, delay: 0.2, ease: 'power3.out',
             onComplete: () => {
               if (optionsRef.current) {
                 gsap.set(optionsRef.current.children, { clearProps: 'all' });
@@ -72,26 +72,35 @@ const Register = () => {
         );
       }
     } else if (step === 2) {
-      // Animate form
+      // Animate form - opacity only
       gsap.fromTo(
         boxRef.current,
-        { opacity: 0, x: 50 },
-        { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out' }
+        { opacity: 0 },
+        {
+          opacity: 1, duration: 0.5, ease: 'power3.out',
+          onComplete: () => gsap.set(boxRef.current, { clearProps: 'all' })
+        }
       );
 
       if (formRef.current) {
         gsap.fromTo(
           formRef.current.children,
-          { opacity: 0, x: -20 },
-          { opacity: 1, x: 0, duration: 0.4, stagger: 0.08, delay: 0.2, ease: 'power2.out' }
+          { opacity: 0 },
+          {
+            opacity: 1, duration: 0.4, stagger: 0.08, delay: 0.2, ease: 'power2.out',
+            onComplete: () => gsap.set(formRef.current.children, { clearProps: 'all' })
+          }
         );
       }
     } else if (step === 3) {
-      // Animate terms page
+      // Animate terms page - opacity only
       gsap.fromTo(
         boxRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }
+        { opacity: 0 },
+        {
+          opacity: 1, duration: 0.5, ease: 'power3.out',
+          onComplete: () => gsap.set(boxRef.current, { clearProps: 'all' })
+        }
       );
     }
   }, [step]);
