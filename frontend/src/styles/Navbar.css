@@ -147,6 +147,12 @@
   display: none;
 }
 
+/* ===== MOBILE DROPDOWN WRAPPER ===== */
+/* On desktop: transparent wrapper so children participate in flex normally */
+.mobile-dropdown {
+  display: contents;
+}
+
 /* ===== DROPDOWN STYLES ===== */
 .dropdown {
   position: relative;
@@ -230,23 +236,24 @@
 @media (max-width: 768px) {
   .navbar {
     padding: 0.5rem 1rem;
+    overflow: visible;
   }
 
   .nav-container {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0;
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
-    position: relative;
     direction: ltr;
+    overflow: visible;
   }
 
   .nav-left {
     position: absolute;
     right: 1rem;
-    top: 0;
-    height: 44px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
   }
@@ -279,27 +286,38 @@
     display: block;
   }
 
-  /* Mobile Menu Container */
-  .nav-center {
-    order: 3;
-    width: 100%;
+  /* Mobile Dropdown - slides below the navbar */
+  .mobile-dropdown {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #22513e;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.4s ease, padding 0.4s ease;
-    padding: 0;
+    transition: max-height 0.4s ease;
+    z-index: 999;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     direction: rtl;
   }
 
-  .nav-center.mobile-open {
+  .mobile-dropdown.mobile-open {
     max-height: 80vh;
-    padding: 1rem 0;
     overflow-y: auto;
+    padding: 0.75rem 0;
+  }
+
+  /* Nav links inside dropdown */
+  .nav-center {
+    width: 100%;
   }
 
   .nav-main-links {
     flex-direction: column;
     width: 100%;
-    gap: 0.5rem;
+    gap: 0.25rem;
+    padding: 0 0.5rem;
   }
 
   .nav-main-links .nav-item {
@@ -316,21 +334,18 @@
   }
 
   .nav-main-links .nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
   }
 
-  /* Right Menu on Mobile */
+  /* Auth/cart items inside dropdown */
   .nav-menu {
-    display: none;
-  }
-
-  .nav-center.mobile-open ~ .nav-menu {
     display: flex;
-    order: 4;
-    width: 100%;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    width: 100%;
+    gap: 0.25rem;
+    padding: 0.5rem 0.5rem 0.25rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
   }
 
   .nav-menu .nav-item {
@@ -354,7 +369,7 @@
     font-size: 1rem;
   }
 
-  /* Mobile Dropdown */
+  /* Mobile Dropdown items (products sub-menu) */
   .dropdown-menu {
     position: static;
     box-shadow: none;
@@ -445,20 +460,20 @@
 
 /* ===== SMOOTH SCROLLING ===== */
 @media (max-width: 768px) {
-  .nav-center.mobile-open {
+  .mobile-dropdown.mobile-open {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
   }
 
-  .nav-center.mobile-open::-webkit-scrollbar {
+  .mobile-dropdown.mobile-open::-webkit-scrollbar {
     width: 4px;
   }
 
-  .nav-center.mobile-open::-webkit-scrollbar-track {
+  .mobile-dropdown.mobile-open::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .nav-center.mobile-open::-webkit-scrollbar-thumb {
+  .mobile-dropdown.mobile-open::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
     border-radius: 4px;
   }

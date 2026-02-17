@@ -87,7 +87,8 @@ const Navbar = () => {
           {mobileMenuOpen ? '✕' : '☰'}
         </button>
 
-        <div className={`nav-center ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+        <div className={`mobile-dropdown ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+        <div className="nav-center">
           <ul className="nav-main-links">
             <li className="nav-item">
               <Link to="/" className="nav-link" onClick={closeMobileMenu}>{t('home')}</Link>
@@ -246,6 +247,7 @@ const Navbar = () => {
             </>
           )}
         </ul>
+        </div>
       </div>
     </nav>
   );
