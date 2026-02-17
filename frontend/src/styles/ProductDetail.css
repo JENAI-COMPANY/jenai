@@ -2,12 +2,15 @@
   min-height: 100vh;
   padding: 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  overflow-x: hidden;
+  /* Use clip instead of hidden: clips overflow without blocking nested touch-scroll */
+  overflow-x: clip;
 }
 
 .product-detail-container {
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Breadcrumb */
@@ -170,7 +173,7 @@
   gap: 20px;
   min-width: 0;
   width: 100%;
-  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .product-title-row {
@@ -303,7 +306,7 @@
   border-radius: 10px;
   color: white;
   box-sizing: border-box;
-  max-width: 100%;
+  width: 100%;
 }
 
 .subscriber-pricing,
@@ -799,6 +802,7 @@
 @media (max-width: 968px) {
   .product-detail-main {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .main-image {
@@ -820,16 +824,37 @@
   .add-to-cart-button {
     width: 100%;
   }
+
+  .price-section {
+    width: 100%;
+  }
 }
 
 @media (max-width: 600px) {
   .product-detail-page {
-    padding: 8px;
+    padding: 6px;
+  }
+
+  .product-detail-container {
+    width: 100%;
   }
 
   .product-detail-main {
-    padding: 12px;
-    gap: 20px;
+    padding: 10px;
+    gap: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    width: 100%;
+  }
+
+  .product-info-section {
+    width: 100%;
+  }
+
+  .price-section {
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
   }
 
   .main-image {
@@ -863,9 +888,8 @@
 /* خيارات اللون والنمرة */
 .product-options-selector {
   margin-bottom: 1.5rem;
-  max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .product-options-selector label {
