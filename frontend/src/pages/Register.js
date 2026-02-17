@@ -51,7 +51,10 @@ const Register = () => {
       gsap.fromTo(
         boxRef.current,
         { opacity: 0, scale: 0.9 },
-        { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
+        {
+          opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)',
+          onComplete: () => gsap.set(boxRef.current, { clearProps: 'all' })
+        }
       );
 
       if (optionsRef.current) {

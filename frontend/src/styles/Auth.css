@@ -4,6 +4,7 @@
   align-items: center;
   min-height: 75vh;
   padding: 2rem;
+  touch-action: pan-y;
 }
 
 .auth-box {
