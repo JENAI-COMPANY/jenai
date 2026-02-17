@@ -245,8 +245,8 @@
   .nav-left {
     position: absolute;
     right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    height: 44px;
     display: flex;
     align-items: center;
   }
