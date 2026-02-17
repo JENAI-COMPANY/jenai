@@ -417,7 +417,7 @@ userSchema.statics.generateSubscriberCode = async function(country, city) {
       }
     }
 
-    const firstChar = text.charAt(0);
+    const firstChar = text.trim().charAt(0);  // trim to avoid leading spaces
     return arabicToEnglish[firstChar] || (firstChar ? firstChar.toUpperCase() : 'X');
   };
 
