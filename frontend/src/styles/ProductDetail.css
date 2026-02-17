@@ -445,9 +445,16 @@
 /* Purchase Section */
 .purchase-section {
   display: flex;
+  flex-direction: column;
   gap: 15px;
   padding-top: 20px;
   border-top: 1px solid #eee;
+}
+
+.purchase-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
 }
 
 .quantity-selector {
@@ -783,7 +790,7 @@
     font-size: 28px;
   }
 
-  .purchase-section {
+  .purchase-row {
     flex-direction: column;
   }
 

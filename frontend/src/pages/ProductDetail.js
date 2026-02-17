@@ -29,6 +29,32 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
+  // Parse colors/sizes that may be stored as JSON strings
+  const parseOptions = (options) => {
+    if (!options || !Array.isArray(options)) return [];
+    const result = [];
+    for (const item of options) {
+      if (typeof item === 'string') {
+        const trimmed = item.trim();
+        if ((trimmed.startsWith('[') || trimmed.startsWith('{')) ) {
+          try {
+            const parsed = JSON.parse(trimmed.replace(/\{/g, '[').replace(/\}/g, ']'));
+            if (Array.isArray(parsed)) {
+              result.push(...parsed.filter(v => v && String(v).trim()));
+            } else {
+              if (trimmed) result.push(trimmed);
+            }
+          } catch {
+            if (trimmed) result.push(trimmed);
+          }
+        } else {
+          if (trimmed) result.push(trimmed);
+        }
+      }
+    }
+    return result;
+  };
+
   const fetchProduct = useCallback(async () => {
     try {
       setLoading(true);
@@ -418,79 +444,87 @@ const ProductDetail = () => {
             {/* Quantity and Add to Cart */}
             <div className="purchase-section">
               {/* خيارات اللون */}
-              {product.hasColorOptions && product.colors && product.colors.length > 0 && (
-                <div className="product-options-selector">
-                  <label>{language === 'ar' ? '🎨 اللون:' : '🎨 Color:'}</label>
-                  <div className="options-buttons">
-                    {product.colors.map((color, index) => (
-                      <button
-                        key={index}
-                        className={`option-button ${selectedColor === color ? 'selected' : ''}`}
-                        onClick={() => setSelectedColor(color)}
-                      >
-                        {color}
-                      </button>
-                    ))}
+              {product.hasColorOptions && product.colors && product.colors.length > 0 && (() => {
+                const colors = parseOptions(product.colors);
+                return colors.length > 0 ? (
+                  <div className="product-options-selector">
+                    <label>{language === 'ar' ? '🎨 اللون:' : '🎨 Color:'}</label>
+                    <div className="options-buttons">
+                      {colors.map((color, index) => (
+                        <button
+                          key={index}
+                          className={`option-button ${selectedColor === color ? 'selected' : ''}`}
+                          onClick={() => setSelectedColor(color)}
+                        >
+                          {color}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null;
+              })()}
 
               {/* خيارات النمرة/المقاس */}
-              {product.hasSizeOptions && product.sizes && product.sizes.length > 0 && (
-                <div className="product-options-selector">
-                  <label>{language === 'ar' ? '📏 النمرة/المقاس:' : '📏 Size:'}</label>
-                  <div className="options-buttons">
-                    {product.sizes.map((size, index) => (
-                      <button
-                        key={index}
-                        className={`option-button ${selectedSize === size ? 'selected' : ''}`}
-                        onClick={() => setSelectedSize(size)}
-                      >
-                        {size}
-                      </button>
-                    ))}
+              {product.hasSizeOptions && product.sizes && product.sizes.length > 0 && (() => {
+                const sizes = parseOptions(product.sizes);
+                return sizes.length > 0 ? (
+                  <div className="product-options-selector">
+                    <label>{language === 'ar' ? '📏 النمرة/المقاس:' : '📏 Size:'}</label>
+                    <div className="options-buttons">
+                      {sizes.map((size, index) => (
+                        <button
+                          key={index}
+                          className={`option-button ${selectedSize === size ? 'selected' : ''}`}
+                          onClick={() => setSelectedSize(size)}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              <div className="purchase-row">
+                <div className="quantity-selector">
+                  <label>{language === 'ar' ? 'الكمية:' : 'Quantity:'}</label>
+                  <div className="quantity-controls">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      min="1"
+                      max={product.stock}
+                    />
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      disabled={quantity >= product.stock}
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
-              )}
 
-              <div className="quantity-selector">
-                <label>{language === 'ar' ? 'الكمية:' : 'Quantity:'}</label>
-                <div className="quantity-controls">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    min="1"
-                    max={product.stock}
-                  />
-                  <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    disabled={quantity >= product.stock}
-                  >
-                    +
-                  </button>
-                </div>
+                <button
+                  className="add-to-cart-button"
+                  onClick={handleAddToCart}
+                  disabled={product.stock <= 0}
+                >
+                  {product.stock <= 0
+                    ? language === 'ar'
+                      ? 'نفذت الكمية'
+                      : 'Out of Stock'
+                    : language === 'ar'
+                    ? 'إضافة إلى السلة'
+                    : 'Add to Cart'}
+                </button>
               </div>
-
-              <button
-                className="add-to-cart-button"
-                onClick={handleAddToCart}
-                disabled={product.stock <= 0}
-              >
-                {product.stock <= 0
-                  ? language === 'ar'
-                    ? 'نفذت الكمية'
-                    : 'Out of Stock'
-                  : language === 'ar'
-                  ? 'إضافة إلى السلة'
-                  : 'Add to Cart'}
-              </button>
 
               {/* Create Order for User - Super Admin + Sales Employee Only */}
               {(isSuperAdmin || isSalesEmployee) && (
