@@ -42,7 +42,8 @@
 
 .favorite-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
 }
 
 .favorite-btn.active {
@@ -136,34 +137,8 @@
   }
 }
 
-.favorite-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
-  color: #95a5a6;
-  cursor: pointer;
-  z-index: 11;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.favorite-btn:hover {
-  transform: scale(1.1);
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
 .favorite-btn.active {
   color: #e74c3c;
-  animation: heartbeat 0.5s ease;
 }
 
 @keyframes heartbeat {
@@ -495,12 +470,17 @@
     left: 8px;
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     font-size: 16px;
+    line-height: 1;
+    overflow: hidden;
   }
 
   .badges-container {
-    left: auto;
+    left: 52px;
     right: 8px;
+    justify-content: flex-end;
   }
 
   .product-image {
