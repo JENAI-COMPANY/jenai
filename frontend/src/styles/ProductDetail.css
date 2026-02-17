@@ -84,9 +84,8 @@
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
-  overflow: hidden;
   box-sizing: border-box;
-  width: 100%;
+  max-width: 100%;
 }
 
 /* Image Gallery */
@@ -158,7 +157,7 @@
   flex-direction: column;
   gap: 20px;
   min-width: 0;
-  overflow: hidden;
+  max-width: 100%;
 }
 
 .product-title-row {
@@ -291,8 +290,7 @@
   border-radius: 10px;
   color: white;
   box-sizing: border-box;
-  width: 100%;
-  overflow: hidden;
+  max-width: 100%;
 }
 
 .subscriber-pricing,
@@ -465,6 +463,8 @@
   display: flex;
   gap: 15px;
   align-items: flex-end;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .quantity-selector {
