@@ -2,11 +2,13 @@
   min-height: 100vh;
   padding: 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  overflow-x: hidden;
 }
 
 .product-detail-container {
   max-width: 1200px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 /* Breadcrumb */
@@ -82,6 +84,9 @@
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Image Gallery */
@@ -152,6 +157,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .product-title-row {
@@ -283,6 +290,9 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 10px;
   color: white;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 }
 
 .subscriber-pricing,
@@ -801,11 +811,12 @@
 
 @media (max-width: 600px) {
   .product-detail-page {
-    padding: 10px;
+    padding: 8px;
   }
 
   .product-detail-main {
-    padding: 15px;
+    padding: 12px;
+    gap: 20px;
   }
 
   .main-image {
