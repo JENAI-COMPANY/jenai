@@ -278,6 +278,14 @@ exports.createProduct = async (req, res) => {
       }
     });
 
+    // Normalize colors and sizes: multer may send a string if only one value
+    if (productData.colors && !Array.isArray(productData.colors)) {
+      productData.colors = [productData.colors];
+    }
+    if (productData.sizes && !Array.isArray(productData.sizes)) {
+      productData.sizes = [productData.sizes];
+    }
+
     // Parse JSON strings from FormData
     if (typeof productData.customerDiscount === 'string') {
       try {
@@ -373,6 +381,14 @@ exports.updateProduct = async (req, res) => {
         delete productData[key];
       }
     });
+
+    // Normalize colors and sizes: multer may send a string if only one value
+    if (productData.colors && !Array.isArray(productData.colors)) {
+      productData.colors = [productData.colors];
+    }
+    if (productData.sizes && !Array.isArray(productData.sizes)) {
+      productData.sizes = [productData.sizes];
+    }
 
     // Parse JSON strings from FormData
     if (typeof productData.customerDiscount === 'string') {

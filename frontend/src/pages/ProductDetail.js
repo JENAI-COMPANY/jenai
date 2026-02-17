@@ -29,44 +29,23 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // Parse colors/sizes that may be stored in various formats
+  // Deep-parse nested JSON strings (handles multiple JSON.stringify layers)
   const parseOptions = (options) => {
     if (!options) return [];
-
-    // If it's a string (not array), try to parse it
-    if (typeof options === 'string') {
-      options = [options];
-    }
-
-    if (!Array.isArray(options)) return [];
-
+    const current = Array.isArray(options) ? options : [options];
     const result = [];
-    for (const item of options) {
-      if (typeof item === 'string') {
-        const trimmed = item.trim();
-        // Try JSON parse for array-like strings
-        if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-          let parsed = null;
-          // Try direct parse
-          try { parsed = JSON.parse(trimmed.replace(/\{/g, '[').replace(/\}/g, ']')); } catch {}
-          // Try after unescaping backslashes
-          if (!parsed) {
-            try { parsed = JSON.parse(trimmed.replace(/\\"/g, '"').replace(/\\\\/g, '\\')); } catch {}
-          }
-          if (parsed && Array.isArray(parsed)) {
-            result.push(...parsed.map(v => String(v).trim()).filter(Boolean));
-          } else {
-            // Fallback: extract values between quotes using regex
-            const matches = trimmed.match(/[\u0600-\u06FF\w][^"',\[\]{}\\]+/g);
-            if (matches && matches.length > 0) {
-              result.push(...matches.map(v => v.trim()).filter(v => v && v.length > 0));
-            }
-          }
-        } else if (trimmed) {
-          // Clean up escaped quotes from simple strings like \"value\"
-          const clean = trimmed.replace(/^\\?"?|\\?"?$/g, '').trim();
-          if (clean) result.push(clean);
-        }
+    for (const item of current) {
+      let val = item;
+      for (let i = 0; i < 10; i++) {
+        if (typeof val !== 'string') break;
+        const trimmed = val.trim();
+        if (!trimmed.startsWith('[') && !trimmed.startsWith('"') && !trimmed.startsWith('{')) break;
+        try { val = JSON.parse(trimmed); } catch { break; }
+      }
+      if (Array.isArray(val)) {
+        result.push(...parseOptions(val));
+      } else if (typeof val === 'string' && val.trim()) {
+        result.push(val.trim());
       }
     }
     return result;

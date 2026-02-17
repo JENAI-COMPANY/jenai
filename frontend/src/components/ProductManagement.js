@@ -4,6 +4,30 @@ import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/ProductManagement.css';
 
+// Deep-parse nested JSON strings (fixes multiple JSON.stringify calls issue)
+const deepParseOptions = (options) => {
+  if (!options) return [];
+  let current = Array.isArray(options) ? options : [options];
+  // Flatten and deep-parse all items
+  const result = [];
+  for (const item of current) {
+    let val = item;
+    // Keep parsing as long as we get a string that looks like JSON
+    for (let i = 0; i < 10; i++) {
+      if (typeof val !== 'string') break;
+      const trimmed = val.trim();
+      if (!trimmed.startsWith('[') && !trimmed.startsWith('"') && !trimmed.startsWith('{')) break;
+      try { val = JSON.parse(trimmed); } catch { break; }
+    }
+    if (Array.isArray(val)) {
+      result.push(...deepParseOptions(val));
+    } else if (typeof val === 'string' && val.trim()) {
+      result.push(val.trim());
+    }
+  }
+  return result;
+};
+
 const ProductManagement = () => {
   const { language } = useLanguage();
   const { user } = useContext(AuthContext);
@@ -450,11 +474,11 @@ const ProductManagement = () => {
       formDataToSend.append('customerDiscount', JSON.stringify(formData.customerDiscount));
       formDataToSend.append('subscriberDiscount', JSON.stringify(formData.subscriberDiscount));
 
-      // إضافة خيارات اللون والنمرة
+      // إضافة خيارات اللون والنمرة - كل قيمة على حدى بدون JSON.stringify
       formDataToSend.append('hasColorOptions', formData.hasColorOptions);
-      formDataToSend.append('colors', JSON.stringify(formData.colors));
+      formData.colors.forEach(c => formDataToSend.append('colors', c));
       formDataToSend.append('hasSizeOptions', formData.hasSizeOptions);
-      formDataToSend.append('sizes', JSON.stringify(formData.sizes));
+      formData.sizes.forEach(s => formDataToSend.append('sizes', s));
 
       // Append media files
       mediaFiles.forEach((file) => {
@@ -532,9 +556,9 @@ const ProductManagement = () => {
         discountedPrice: ''
       },
       hasColorOptions: product.hasColorOptions || false,
-      colors: product.colors || [],
+      colors: deepParseOptions(product.colors || []),
       hasSizeOptions: product.hasSizeOptions || false,
-      sizes: product.sizes || [],
+      sizes: deepParseOptions(product.sizes || []),
       mediaToDelete: [] // قائمة فارغة عند بدء التعديل
     });
 
