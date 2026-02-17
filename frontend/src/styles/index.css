@@ -40,7 +40,8 @@ body {
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.6;
-  overflow-x: hidden;
+  /* clip: prevents horizontal overflow without blocking nested touch-scroll on iOS */
+  overflow-x: clip;
 }
 
 code {
