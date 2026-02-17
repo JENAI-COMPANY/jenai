@@ -152,6 +152,7 @@
   overflow-x: auto;
   padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
 }
 
 .image-thumbnails::-webkit-scrollbar {
@@ -616,6 +617,7 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  touch-action: pan-x pan-y;
 }
 
 .tab-headers::-webkit-scrollbar {
