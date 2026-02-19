@@ -594,18 +594,10 @@ const Profile = () => {
             <span className="tab-label">{language === 'ar' ? 'الأمان' : 'Security'}</span>
           </button>
 
-          {user.role === 'super_admin' ? (
+          {user.role === 'super_admin' && (
             <button
               className={`tab-btn ${activeTab === 'academy' ? 'active' : ''}`}
               onClick={() => setActiveTab('academy')}
-            >
-              <span className="tab-icon">🎓</span>
-              <span className="tab-label">{language === 'ar' ? 'الأكاديمية' : 'Academy'}</span>
-            </button>
-          ) : (user.role === 'member' || user.role === 'subscriber') && (
-            <button
-              className={`tab-btn ${activeTab === 'academy' ? 'active' : ''}`}
-              onClick={() => { window.location.href = '/academy'; }}
             >
               <span className="tab-icon">🎓</span>
               <span className="tab-label">{language === 'ar' ? 'الأكاديمية' : 'Academy'}</span>
