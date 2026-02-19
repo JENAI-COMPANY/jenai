@@ -673,7 +673,7 @@ const MyTeam = () => {
 
                 <div className="info-item">
                   <span className="info-label">
-                    {language === 'ar' ? 'من أحاله:' : 'Referred By:'}
+                    {language === 'ar' ? 'اسم الراعي:' : 'Sponsor Name:'}
                   </span>
                   <span className="info-value">
                     {selectedMember.sponsorId?.name || (language === 'ar' ? 'غير محدد' : 'Not specified')}
@@ -682,7 +682,7 @@ const MyTeam = () => {
 
                 <div className="info-item">
                   <span className="info-label">
-                    {language === 'ar' ? 'كود من أحاله:' : "Referrer's Code:"}
+                    {language === 'ar' ? 'كود الراعي:' : 'Sponsor Code:'}
                   </span>
                   <span className="info-value">
                     {selectedMember.sponsorCode || (language === 'ar' ? 'غير محدد' : 'Not specified')}
@@ -721,13 +721,6 @@ const MyTeam = () => {
                       {getRankName(selectedMember.memberRank || 'agent', language)}
                     </span>
                   </div>
-                </div>
-
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'المدينة:' : 'City:'}
-                  </span>
-                  <span className="info-value">{selectedMember.city || '-'}</span>
                 </div>
 
                 <div className="info-item points-item">
