@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllUsers, updateUser } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/Admin.css';
 
 const MembersManagement = () => {
@@ -8,6 +9,7 @@ const MembersManagement = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [editForm, setEditForm] = useState({
     sponsorCode: '',
     isActive: true
@@ -126,6 +128,24 @@ const MembersManagement = () => {
         </div>
       )}
 
+      {/* Search Field */}
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder={language === 'ar' ? 'بحث بالاسم، اسم المستخدم أو كود العضو...' : 'Search by name, username or code...'}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '2px solid #e1e8ed',
+            borderRadius: '8px',
+            fontSize: '15px',
+            outline: 'none'
+          }}
+        />
+      </div>
+
       {loading ? (
         <div className="loading">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
       ) : (
@@ -136,6 +156,7 @@ const MembersManagement = () => {
               <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
               <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
               <th>{language === 'ar' ? 'كود العضو' : 'Member Code'}</th>
+              <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
               <th>{language === 'ar' ? 'الدولة' : 'Country'}</th>
               <th>{language === 'ar' ? 'المدينة' : 'City'}</th>
               <th>{language === 'ar' ? 'الراعي' : 'Sponsor'}</th>
@@ -145,11 +166,34 @@ const MembersManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {members.map((member) => (
+            {members
+              .filter(member => {
+                const searchLower = searchTerm.toLowerCase();
+                return member.name.toLowerCase().includes(searchLower) ||
+                       member.username.toLowerCase().includes(searchLower) ||
+                       (member.subscriberCode || '').toLowerCase().includes(searchLower);
+              })
+              .map((member) => (
               <tr key={member._id}>
                 <td>{member.name}</td>
                 <td>{member.username}</td>
                 <td><strong>{member.subscriberCode || '-'}</strong></td>
+                <td>
+                  {member.memberRank ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <img
+                        src={`/${getRankImage(member.memberRank)}`}
+                        alt={getRankName(member.memberRank, language)}
+                        style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                      />
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#555' }}>
+                        {getRankName(member.memberRank, language)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#999', fontSize: '12px' }}>-</span>
+                  )}
+                </td>
                 <td>{member.country || '-'}</td>
                 <td>{member.city || '-'}</td>
                 <td>{member.sponsorId?.name || (language === 'ar' ? 'لا يوجد' : 'None')}</td>
