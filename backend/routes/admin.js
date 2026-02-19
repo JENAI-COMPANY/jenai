@@ -617,9 +617,9 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
 
         await user.save();
 
-        // ملاحظة: نقاط التعويض تُضاف للنقاط التراكمية فقط
-        // لا تُضاف لنقاط الأداء الشخصي (monthlyPoints)
-        // لا توزع على الأعضاء العلويين
+        // توزيع نقاط التعويض على الأعضاء العلويين (تراكمي فقط، بدون أرباح)
+        console.log('✅ توزيع نقاط التعويض على الأعضاء العلويين (تراكمي فقط)');
+        await distributeCumulativePointsToUpline(user, compensationPointsToAdd);
       }
     }
 
