@@ -554,6 +554,7 @@ const MyTeam = () => {
                               <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
                               <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
                               <th>{language === 'ar' ? 'كود العضو' : 'Member Code'}</th>
+                              <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
                               <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
                               <th>{language === 'ar' ? 'المدينة' : 'City'}</th>
                               <th>{language === 'ar' ? 'تاريخ الانضمام' : 'Joined Date'}</th>
@@ -567,19 +568,21 @@ const MyTeam = () => {
                                 className="clickable-row"
                               >
                                 <td>{index + 1}</td>
-                                <td className="member-name">
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <td className="member-name">{member.name}</td>
+                                <td className="member-username">@{member.username}</td>
+                                <td className="member-code">{member.subscriberCode || '-'}</td>
+                                <td className="member-rank">
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                                     <img
                                       src={`/${getRankImage(member.memberRank || 'agent')}`}
                                       alt={getRankName(member.memberRank || 'agent', language)}
-                                      style={{ width: '55px', height: '55px', objectFit: 'contain' }}
-                                      title={getRankName(member.memberRank || 'agent', language)}
+                                      style={{ width: '50px', height: '50px', objectFit: 'contain' }}
                                     />
-                                    <span>{member.name}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#555' }}>
+                                      {getRankName(member.memberRank || 'agent', language)}
+                                    </span>
                                   </div>
                                 </td>
-                                <td className="member-username">@{member.username}</td>
-                                <td className="member-code">{member.subscriberCode || '-'}</td>
                                 <td className="member-points">
                                   <span className="points-badge">⭐ {member.monthlyPoints || 0}</span>
                                 </td>
@@ -604,6 +607,7 @@ const MyTeam = () => {
                   <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
                   <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
                   <th>{language === 'ar' ? 'كود العضو' : 'Member Code'}</th>
+                  <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
                   <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
                   <th>{language === 'ar' ? 'المدينة' : 'City'}</th>
                   <th>{language === 'ar' ? 'تاريخ الانضمام' : 'Joined Date'}</th>
@@ -617,19 +621,21 @@ const MyTeam = () => {
                     className="clickable-row"
                   >
                     <td>{index + 1}</td>
-                    <td className="member-name">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <td className="member-name">{member.name}</td>
+                    <td className="member-username">@{member.username}</td>
+                    <td className="member-code">{member.subscriberCode || '-'}</td>
+                    <td className="member-rank">
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                         <img
                           src={`/${getRankImage(member.memberRank || 'agent')}`}
                           alt={getRankName(member.memberRank || 'agent', language)}
-                          style={{ width: '55px', height: '55px', objectFit: 'contain' }}
-                          title={getRankName(member.memberRank || 'agent', language)}
+                          style={{ width: '50px', height: '50px', objectFit: 'contain' }}
                         />
-                        <span>{member.name}</span>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#555' }}>
+                          {getRankName(member.memberRank || 'agent', language)}
+                        </span>
                       </div>
                     </td>
-                    <td className="member-username">@{member.username}</td>
-                    <td className="member-code">{member.subscriberCode || '-'}</td>
                     <td className="member-points">
                       <span className="points-badge">⭐ {member.points || 0}</span>
                     </td>
