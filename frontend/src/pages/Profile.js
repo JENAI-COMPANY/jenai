@@ -602,7 +602,7 @@ const Profile = () => {
               <span className="tab-icon">🎓</span>
               <span className="tab-label">{language === 'ar' ? 'الأكاديمية' : 'Academy'}</span>
             </button>
-          ) : (
+          ) : (user.role === 'member' || user.role === 'subscriber') && (
             <button
               className={`tab-btn ${activeTab === 'academy' ? 'active' : ''}`}
               onClick={() => { window.location.href = '/academy'; }}
