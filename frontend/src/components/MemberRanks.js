@@ -13,6 +13,7 @@ const MemberRanks = () => {
   const [message, setMessage] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
   const [downlineData, setDownlineData] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -165,6 +166,25 @@ const MemberRanks = () => {
       {/* Members List */}
       <div className="mr-members-section">
         <h3>{language === 'ar' ? 'جميع الأعضاء' : 'All Members'}</h3>
+
+        {/* Search Field */}
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="text"
+            placeholder={language === 'ar' ? 'بحث بالاسم، اسم المستخدم أو كود الإحالة...' : 'Search by name, username or code...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '2px solid #e1e8ed',
+              borderRadius: '8px',
+              fontSize: '15px',
+              outline: 'none'
+            }}
+          />
+        </div>
+
         <div className="mr-table-wrapper">
           <table className="mr-table">
             <thead>
@@ -179,7 +199,14 @@ const MemberRanks = () => {
               </tr>
             </thead>
             <tbody>
-              {members.map(member => (
+              {members
+                .filter(member => {
+                  const searchLower = searchTerm.toLowerCase();
+                  return member.name.toLowerCase().includes(searchLower) ||
+                         member.username.toLowerCase().includes(searchLower) ||
+                         (member.subscriberCode || '').toLowerCase().includes(searchLower);
+                })
+                .map(member => (
                 <tr key={member._id}>
                   <td>{member.name}</td>
                   <td>{member.username}</td>

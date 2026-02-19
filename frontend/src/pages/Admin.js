@@ -27,6 +27,7 @@ import ReviewManagement from '../components/ReviewManagement';
 import StaffManagement from '../components/StaffManagement';
 import '../styles/Admin.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
+import { getRankImage, getRankName } from '../utils/rankHelpers';
 
 const Admin = () => {
   const { user, isSuperAdmin, isCategoryAdmin } = useContext(AuthContext);
@@ -47,6 +48,7 @@ const Admin = () => {
   const [editingBook, setEditingBook] = useState(null);
   const [categoryAdmins, setCategoryAdmins] = useState([]);
   const [showCategoryAdminForm, setShowCategoryAdminForm] = useState(false);
+  const [membersSearchTerm, setMembersSearchTerm] = useState('');
 
   // Academy state
   const [academyVideos, setAcademyVideos] = useState([]);
@@ -989,6 +991,24 @@ const Admin = () => {
                 </button>
               </div>
 
+              {/* Search Field */}
+              <div style={{ marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  placeholder="بحث بالاسم، اسم المستخدم أو كود العضو..."
+                  value={membersSearchTerm}
+                  onChange={(e) => setMembersSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '2px solid #e1e8ed',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
               {/* Member Creation Form */}
               {showMemberForm && (
                 <form onSubmit={handleCreateMember} className="product-form" autoComplete="off">
@@ -1180,6 +1200,7 @@ const Admin = () => {
                     <th>الاسم</th>
                     <th>اسم المستخدم</th>
                     <th>كود العضو</th>
+                    <th>الرتبة</th>
                     <th>الدولة</th>
                     <th>المدينة</th>
                     <th>الراعي</th>
@@ -1190,11 +1211,34 @@ const Admin = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {members.map((member) => (
+                  {members
+                    .filter(member => {
+                      const searchLower = membersSearchTerm.toLowerCase();
+                      return member.name.toLowerCase().includes(searchLower) ||
+                             member.username.toLowerCase().includes(searchLower) ||
+                             (member.subscriberCode || '').toLowerCase().includes(searchLower);
+                    })
+                    .map((member) => (
                     <tr key={member._id}>
                       <td>{member.name}</td>
                       <td>{member.username}</td>
                       <td><strong>{member.subscriberCode}</strong></td>
+                      <td>
+                        {member.memberRank ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <img
+                              src={`/${getRankImage(member.memberRank)}`}
+                              alt={getRankName(member.memberRank, 'ar')}
+                              style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                            />
+                            <span style={{ fontSize: '11px', fontWeight: '600', color: '#555' }}>
+                              {getRankName(member.memberRank, 'ar')}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#999', fontSize: '12px' }}>-</span>
+                        )}
+                      </td>
                       <td>{member.country || '-'}</td>
                       <td>{member.city || '-'}</td>
                       <td>{member.sponsorId?.name || 'لا يوجد'}</td>
