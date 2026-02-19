@@ -756,36 +756,72 @@ const Profile = () => {
                 </div>
               )}
 
-              {/* Referral Section for Members */}
+              {/* Referral Links for Members */}
               {user.role === 'member' && user.subscriberCode && (
                 <div className="referral-section">
                   <h4 className="referral-title">
-                    🔗 {language === 'ar' ? 'رابط الإحالة الخاص بك' : 'Your Referral Link'}
+                    🔗 {language === 'ar' ? 'روابط الإحالة الخاصة بك' : 'Your Referral Links'}
                   </h4>
-                  <div className="referral-box">
+
+                  {/* Shopping Referral Link */}
+                  <div className="referral-box" style={{ marginBottom: '16px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#2196F3', fontSize: '14px', fontWeight: '600' }}>
+                      🛒 {language === 'ar' ? 'رابط إحالة للتسوق' : 'Shopping Referral Link'}
+                    </h5>
                     <div className="referral-link-container">
                       <input
                         type="text"
                         readOnly
-                        value={`https://jenai-4u.com/register?ref=${user.subscriberCode}`}
+                        value={`https://jenai-4u.com/register?ref=${user.subscriberCode}&type=customer`}
                         className="referral-link-input"
                       />
                       <button
                         className="copy-link-btn"
                         onClick={() => {
-                          const link = `https://jenai-4u.com/register?ref=${user.subscriberCode}`;
+                          const link = `https://jenai-4u.com/register?ref=${user.subscriberCode}&type=customer`;
                           navigator.clipboard.writeText(link);
-                          setMessage(language === 'ar' ? 'تم نسخ الرابط!' : 'Link copied!');
+                          setMessage(language === 'ar' ? 'تم نسخ رابط التسوق!' : 'Shopping link copied!');
                           setTimeout(() => setMessage(''), 2000);
                         }}
                       >
-                        📋 {language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
+                        📋 {language === 'ar' ? 'نسخ' : 'Copy'}
                       </button>
                     </div>
-                    <p className="referral-hint">
+                    <p className="referral-hint" style={{ fontSize: '12px', margin: '6px 0 0 0' }}>
                       {language === 'ar'
-                        ? 'شارك هذا الرابط مع أصدقائك للانضمام تحت إحالتك'
-                        : 'Share this link with friends to join under your referral'}
+                        ? 'للعملاء الراغبين بالتسوق فقط'
+                        : 'For customers who want to shop only'}
+                    </p>
+                  </div>
+
+                  {/* Member Referral Link */}
+                  <div className="referral-box">
+                    <h5 style={{ margin: '0 0 10px 0', color: '#4CAF50', fontSize: '14px', fontWeight: '600' }}>
+                      👥 {language === 'ar' ? 'رابط إحالة عضو' : 'Member Referral Link'}
+                    </h5>
+                    <div className="referral-link-container">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`https://jenai-4u.com/register?ref=${user.subscriberCode}&type=member`}
+                        className="referral-link-input"
+                      />
+                      <button
+                        className="copy-link-btn"
+                        onClick={() => {
+                          const link = `https://jenai-4u.com/register?ref=${user.subscriberCode}&type=member`;
+                          navigator.clipboard.writeText(link);
+                          setMessage(language === 'ar' ? 'تم نسخ رابط العضوية!' : 'Member link copied!');
+                          setTimeout(() => setMessage(''), 2000);
+                        }}
+                      >
+                        📋 {language === 'ar' ? 'نسخ' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className="referral-hint" style={{ fontSize: '12px', margin: '6px 0 0 0' }}>
+                      {language === 'ar'
+                        ? 'للأشخاص الراغبين بالانضمام كأعضاء في الشبكة'
+                        : 'For people who want to join as network members'}
                     </p>
                   </div>
                 </div>

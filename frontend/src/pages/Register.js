@@ -11,9 +11,15 @@ const Register = () => {
   const { t, language } = useLanguage();
   const [searchParams] = useSearchParams();
   const refCode = searchParams.get('ref');
-  const [step, setStep] = useState(1);
-  const [selectedRole, setSelectedRole] = useState(refCode ? 'member' : '');
+  const refType = searchParams.get('type'); // 'customer' or 'member'
+
+  // If both ref and type are in URL, skip account type selection and lock the role
+  const hasDirectLink = refCode && refType && (refType === 'customer' || refType === 'member');
+
+  const [step, setStep] = useState(hasDirectLink ? 2 : 1);
+  const [selectedRole, setSelectedRole] = useState(hasDirectLink ? refType : (refCode ? 'member' : ''));
   const [isRefCodeLocked, setIsRefCodeLocked] = useState(false);
+  const [isRoleLocked, setIsRoleLocked] = useState(hasDirectLink);
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -32,15 +38,23 @@ const Register = () => {
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Lock referral code if it came from URL
+  // Lock referral code and role if they came from URL
   useEffect(() => {
     if (refCode) {
       setFormData(prev => ({ ...prev, sponsorId: refCode }));
       setIsRefCodeLocked(true);
-      setSelectedRole('member');
+
+      // If type is specified in URL, use it; otherwise default to 'member' for backward compatibility
+      if (refType && (refType === 'customer' || refType === 'member')) {
+        setSelectedRole(refType);
+        setIsRoleLocked(true);
+      } else {
+        setSelectedRole('member');
+      }
+
       checkReferralCode(refCode);
     }
-  }, [refCode]);
+  }, [refCode, refType]);
   const boxRef = useRef(null);
   const optionsRef = useRef(null);
   const formRef = useRef(null);
@@ -256,7 +270,8 @@ const Register = () => {
   const handleBack = () => {
     if (step === 3) {
       setStep(2);
-    } else {
+    } else if (!isRoleLocked) {
+      // Only allow going back to step 1 if role is not locked from referral link
       setStep(1);
     }
     setError('');
@@ -326,9 +341,11 @@ const Register = () => {
     return (
       <div className="auth-container">
         <div className="auth-box" ref={boxRef}>
-        <button onClick={handleBack} className="back-btn">
-          ← {t('backButton')}
-        </button>
+        {!isRoleLocked && (
+          <button onClick={handleBack} className="back-btn">
+            ← {t('backButton')}
+          </button>
+        )}
         <h2>{t('registerTitle')}</h2>
         <p className="step-subtitle">
           {selectedRole === 'customer'
