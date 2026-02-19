@@ -7,6 +7,7 @@ import autoTable from 'jspdf-autotable';
 import '../styles/UserManagement.css';
 import '../styles/Verification.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
+import { getRankImage, getRankName } from '../utils/rankHelpers';
 
 const UserManagement = () => {
   const { language } = useLanguage();
@@ -44,6 +45,7 @@ const UserManagement = () => {
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState(null);
   const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkSearchTerm, setNetworkSearchTerm] = useState('');
   const [editCurrentSponsorName, setEditCurrentSponsorName] = useState('');
   const [editNewSponsorName, setEditNewSponsorName] = useState('');
   const [editPassword, setEditPassword] = useState({ newPassword: '', confirmPassword: '', showNew: false, showConfirm: false });
@@ -688,6 +690,7 @@ const UserManagement = () => {
               <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
               <th>{language === 'ar' ? 'الهاتف' : 'Phone'}</th>
               <th>{language === 'ar' ? 'المنطقة' : 'Region'}</th>
+              <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
               <th>{language === 'ar' ? 'الدور' : 'Role'}</th>
               <th>{language === 'ar' ? 'الحالة' : 'Status'}</th>
               <th>{language === 'ar' ? 'تاريخ التسجيل' : 'Registered'}</th>
@@ -717,6 +720,22 @@ const UserManagement = () => {
                     <span className="um-region-unassigned">
                       {language === 'ar' ? 'غير مصنف' : 'Unassigned'}
                     </span>
+                  )}
+                </td>
+                <td>
+                  {user.role === 'member' && user.memberRank ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <img
+                        src={`/${getRankImage(user.memberRank)}`}
+                        alt={getRankName(user.memberRank, language)}
+                        style={{ width: '30px', height: '30px', objectFit: 'contain' }}
+                      />
+                      <span style={{ fontSize: '12px', fontWeight: '600' }}>
+                        {getRankName(user.memberRank, language)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#999', fontSize: '12px' }}>-</span>
                   )}
                 </td>
                 <td>
@@ -1425,6 +1444,7 @@ const UserManagement = () => {
         <div className="um-modal-overlay" onClick={() => {
           setShowNetworkModal(false);
           setSelectedNetwork(null);
+          setNetworkSearchTerm('');
         }}>
           <div className="um-modal um-modal-network" onClick={(e) => e.stopPropagation()}>
             <div className="um-modal-header">
@@ -1432,6 +1452,7 @@ const UserManagement = () => {
               <button className="um-modal-close" onClick={() => {
                 setShowNetworkModal(false);
                 setSelectedNetwork(null);
+                setNetworkSearchTerm('');
               }}>✕</button>
             </div>
             <div className="um-modal-body">
@@ -1442,6 +1463,24 @@ const UserManagement = () => {
                 </div>
               ) : selectedNetwork.levels && (
                 <>
+                  {/* Search Input */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <input
+                      type="text"
+                      placeholder={language === 'ar' ? 'بحث بالاسم، اليوزر أو الكود...' : 'Search by name, username or code...'}
+                      value={networkSearchTerm}
+                      onChange={(e) => setNetworkSearchTerm(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        border: '2px solid #e1e8ed',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
                   {/* Member Summary */}
                   <div className="um-network-summary">
                     <div className="um-summary-item">
@@ -1463,7 +1502,15 @@ const UserManagement = () => {
                     {[1, 2, 3, 4, 5].map(level => {
                       const levelKey = `level${level}`;
                       const levelMembers = selectedNetwork.levels[levelKey] || [];
-                      const levelCount = selectedNetwork.stats?.levelCounts?.[levelKey] || 0;
+
+                      // Filter members by search term
+                      const filteredLevelMembers = levelMembers.filter(member =>
+                        member.name.toLowerCase().includes(networkSearchTerm.toLowerCase()) ||
+                        member.username.toLowerCase().includes(networkSearchTerm.toLowerCase()) ||
+                        (member.subscriberCode || '').toLowerCase().includes(networkSearchTerm.toLowerCase())
+                      );
+
+                      const levelCount = filteredLevelMembers.length;
 
                       return (
                         <div key={level} className="um-network-level">
@@ -1475,9 +1522,9 @@ const UserManagement = () => {
                               {levelCount} {language === 'ar' ? 'عضو' : 'member'}
                             </span>
                           </div>
-                          {levelMembers.length > 0 ? (
+                          {filteredLevelMembers.length > 0 ? (
                             <div className="um-level-members">
-                              {levelMembers.map(member => (
+                              {filteredLevelMembers.map(member => (
                                 <div key={member._id} className="um-member-card">
                                   <div className="um-member-info">
                                     <strong>{member.name}</strong>
@@ -1487,6 +1534,18 @@ const UserManagement = () => {
                                     <span className="um-member-code">{member.subscriberCode}</span>
                                     <span className="um-member-points">{member.monthlyPoints || 0} {language === 'ar' ? 'نقطة' : 'pts'}</span>
                                   </div>
+                                  {member.memberRank && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', padding: '4px 8px', background: '#f8f9fa', borderRadius: '6px' }}>
+                                      <img
+                                        src={`/${getRankImage(member.memberRank)}`}
+                                        alt={getRankName(member.memberRank, language)}
+                                        style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+                                      />
+                                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#555' }}>
+                                        {getRankName(member.memberRank, language)}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
