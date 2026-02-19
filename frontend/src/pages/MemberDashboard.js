@@ -309,29 +309,59 @@ const MemberDashboard = () => {
         {/* Referral Link Tab */}
         {activeTab === 'referral' && (
           <div className="referral-tab">
-            <div className="referral-box">
-              <h3>{language === 'ar' ? 'رابط الإحالة الخاص بك' : 'Your Referral Link'}</h3>
+            {/* Shopping Referral Link */}
+            <div className="referral-box" style={{ marginBottom: '16px' }}>
+              <h3>{language === 'ar' ? '🛒 رابط إحالة للتسوق' : '🛒 Shopping Referral Link'}</h3>
               <div className="referral-link-container">
                 <input
                   type="text"
-                  value={`https://jenai.com/ref/${user?.subscriberId || 'YOURCODE'}`}
+                  value={`https://jenai-4u.com/register?ref=${user?.subscriberCode || 'YOURCODE'}&type=customer`}
                   readOnly
                   className="referral-input"
                 />
                 <button
                   className="copy-btn"
                   onClick={() => {
-                    navigator.clipboard.writeText(`https://jenai.com/ref/${user?.subscriberId}`);
+                    navigator.clipboard.writeText(`https://jenai-4u.com/register?ref=${user?.subscriberCode}&type=customer`);
                     alert(language === 'ar' ? 'تم النسخ!' : 'Copied!');
                   }}
                 >
                   📋 {language === 'ar' ? 'نسخ' : 'Copy'}
                 </button>
               </div>
-              <p className="referral-stats">
-                {language === 'ar' ? 'عدد الإحالات:' : 'Total Referrals:'} <strong>{user?.referralCount || 0}</strong>
+              <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
+                {language === 'ar' ? 'للزبائن - التسوق فقط' : 'For Customers - Shopping Only'}
               </p>
             </div>
+
+            {/* Member Referral Link */}
+            <div className="referral-box">
+              <h3>{language === 'ar' ? '👥 رابط إحالة عضو' : '👥 Member Referral Link'}</h3>
+              <div className="referral-link-container">
+                <input
+                  type="text"
+                  value={`https://jenai-4u.com/register?ref=${user?.subscriberCode || 'YOURCODE'}&type=member`}
+                  readOnly
+                  className="referral-input"
+                />
+                <button
+                  className="copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://jenai-4u.com/register?ref=${user?.subscriberCode}&type=member`);
+                    alert(language === 'ar' ? 'تم النسخ!' : 'Copied!');
+                  }}
+                >
+                  📋 {language === 'ar' ? 'نسخ' : 'Copy'}
+                </button>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
+                {language === 'ar' ? 'للأعضاء - الانضمام إلى الشبكة' : 'For Members - Join Network'}
+              </p>
+            </div>
+
+            <p className="referral-stats" style={{ marginTop: '16px' }}>
+              {language === 'ar' ? 'عدد الإحالات:' : 'Total Referrals:'} <strong>{user?.referralCount || 0}</strong>
+            </p>
 
             <div className="share-options">
               <h3>{language === 'ar' ? 'مشاركة عبر' : 'Share via'}</h3>
