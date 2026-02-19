@@ -15,10 +15,10 @@ exports.getMyTeam = async (req, res) => {
     const getTeamMembers = async (sponsorCode, level, maxLevel = 5) => {
       if (level > maxLevel) return [];
 
-      // Find all users who were referred by this sponsor
+      // Find all users who were referred by this sponsor (members only, exclude customers)
       const members = await User.find({
         sponsorCode: sponsorCode,
-        role: { $in: ['member', 'subscriber', 'customer'] }
+        role: { $in: ['member', 'subscriber'] }
       })
         .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive')
         .lean();
@@ -120,9 +120,10 @@ exports.getDirectReferrals = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Find direct referrals (members only, exclude customers)
     const directReferrals = await User.find({
       sponsorCode: user.subscriberCode,
-      role: { $in: ['member', 'subscriber', 'customer'] }
+      role: { $in: ['member', 'subscriber'] }
     })
       .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive')
       .sort({ createdAt: -1 })
