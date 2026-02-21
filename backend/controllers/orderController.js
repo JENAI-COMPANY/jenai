@@ -153,9 +153,14 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    // Populate order with product details including images
+    const populatedOrder = await Order.findById(order._id)
+      .populate('user', 'name email username')
+      .populate('orderItems.product', 'name nameAr images price points');
+
     res.status(201).json({
       success: true,
-      order
+      order: populatedOrder
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
