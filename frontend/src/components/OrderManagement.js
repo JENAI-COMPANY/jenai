@@ -268,6 +268,7 @@ const OrderManagement = () => {
           <table>
             <thead>
               <tr>
+                <th>${isArabic ? 'الصورة' : 'Image'}</th>
                 <th>${isArabic ? 'المنتج' : 'Product'}</th>
                 <th style="text-align: center;">${isArabic ? 'الكمية' : 'Quantity'}</th>
                 <th>${isArabic ? 'السعر' : 'Price'}</th>
@@ -277,6 +278,12 @@ const OrderManagement = () => {
             <tbody>
               ${order.orderItems?.map(item => `
                 <tr>
+                  <td style="text-align: center;">
+                    ${item.product?.images?.[0]
+                      ? `<img src="${window.location.origin}/${item.product.images[0]}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />`
+                      : `<div style="width: 50px; height: 50px; background-color: #f0f0f0; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px;">📦</div>`
+                    }
+                  </td>
                   <td>
                     ${item.name}
                     ${item.selectedColor ? `<br/><small style="color: #666;">🎨 ${isArabic ? 'اللون:' : 'Color:'} ${item.selectedColor}</small>` : ''}
@@ -705,6 +712,7 @@ const OrderManagement = () => {
                 <table className="om-products-table">
                   <thead>
                     <tr>
+                      <th>{language === 'ar' ? 'الصورة' : 'Image'}</th>
                       <th>{language === 'ar' ? 'المنتج' : 'Product'}</th>
                       <th>{language === 'ar' ? 'الكمية' : 'Qty'}</th>
                       <th>{language === 'ar' ? 'السعر' : 'Price'}</th>
@@ -714,6 +722,34 @@ const OrderManagement = () => {
                   <tbody>
                     {selectedOrder.orderItems?.map((item, index) => (
                       <tr key={index}>
+                        <td>
+                          {item.product?.images?.[0] ? (
+                            <img
+                              src={`/${item.product.images[0]}`}
+                              alt={item.name}
+                              style={{
+                                width: '60px',
+                                height: '60px',
+                                objectFit: 'cover',
+                                borderRadius: '6px',
+                                border: '1px solid #e1e8ed'
+                              }}
+                            />
+                          ) : (
+                            <div style={{
+                              width: '60px',
+                              height: '60px',
+                              backgroundColor: '#f0f0f0',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '24px'
+                            }}>
+                              📦
+                            </div>
+                          )}
+                        </td>
                         <td>
                           {item.name}
                           {item.selectedColor && (
