@@ -280,7 +280,7 @@ const OrderManagement = () => {
                 <tr>
                   <td style="text-align: center;">
                     ${item.product?.images?.[0]
-                      ? `<img src="${window.location.origin}/${item.product.images[0]}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />`
+                      ? `<img src="${window.location.origin}/${item.product.images[0]}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; background-color: #f5f5f5;" onerror="this.style.display='none'; this.nextSibling.style.display='inline-flex';" /><div style="width: 50px; height: 50px; background-color: #f0f0f0; border-radius: 4px; display: none; align-items: center; justify-content: center; font-size: 20px;">📦</div>`
                       : `<div style="width: 50px; height: 50px; background-color: #f0f0f0; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px;">📦</div>`
                     }
                   </td>
@@ -727,28 +727,33 @@ const OrderManagement = () => {
                             <img
                               src={`/${item.product.images[0]}`}
                               alt={item.name}
+                              loading="eager"
                               style={{
                                 width: '60px',
                                 height: '60px',
                                 objectFit: 'cover',
                                 borderRadius: '6px',
-                                border: '1px solid #e1e8ed'
+                                border: '1px solid #e1e8ed',
+                                backgroundColor: '#f5f5f5'
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
                               }}
                             />
-                          ) : (
-                            <div style={{
-                              width: '60px',
-                              height: '60px',
-                              backgroundColor: '#f0f0f0',
-                              borderRadius: '6px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '24px'
-                            }}>
-                              📦
-                            </div>
-                          )}
+                          ) : null}
+                          <div style={{
+                            width: '60px',
+                            height: '60px',
+                            backgroundColor: '#f0f0f0',
+                            borderRadius: '6px',
+                            display: item.product?.images?.[0] ? 'none' : 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '24px'
+                          }}>
+                            📦
+                          </div>
                         </td>
                         <td>
                           {item.name}
