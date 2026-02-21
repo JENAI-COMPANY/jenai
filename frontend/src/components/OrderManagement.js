@@ -280,7 +280,7 @@ const OrderManagement = () => {
                 <tr>
                   <td style="text-align: center;">
                     ${item.product?.images?.[0]
-                      ? `<img src="${window.location.origin}/${item.product.images[0]}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; background-color: #f5f5f5;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2250%22 rx=%224%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E';" />`
+                      ? `<img src="${window.location.origin}${item.product.images[0]}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; background-color: #f5f5f5;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2250%22 rx=%224%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E';" />`
                       : `<div style="width: 50px; height: 50px; background-color: #f0f0f0; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px;">📦</div>`
                     }
                   </td>
@@ -720,18 +720,12 @@ const OrderManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedOrder.orderItems?.map((item, index) => {
-                      console.log('🖼️ Product item:', item.name);
-                      console.log('📦 Product object:', item.product);
-                      console.log('🎨 Images array:', item.product?.images);
-                      console.log('🖼️ First image:', item.product?.images?.[0]);
-
-                      return (
+                    {selectedOrder.orderItems?.map((item, index) => (
                       <tr key={index}>
                         <td>
                           {item.product?.images?.[0] ? (
                             <img
-                              src={`/${item.product.images[0]}`}
+                              src={item.product.images[0]}
                               alt={item.name}
                               loading="eager"
                               style={{
@@ -743,7 +737,6 @@ const OrderManagement = () => {
                                 backgroundColor: '#f5f5f5'
                               }}
                               onError={(e) => {
-                                console.error('❌ Image failed to load:', e.target.src);
                                 e.target.onerror = null;
                                 e.target.style.display = 'none';
                                 const placeholder = document.createElement('div');
@@ -784,8 +777,7 @@ const OrderManagement = () => {
                         <td>₪{item.price?.toFixed(2)}</td>
                         <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
                       </tr>
-                      );
-                    })}
+                    ))}
                   </tbody>
                 </table>
               </div>
