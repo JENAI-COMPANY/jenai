@@ -720,7 +720,13 @@ const OrderManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedOrder.orderItems?.map((item, index) => (
+                    {selectedOrder.orderItems?.map((item, index) => {
+                      console.log('🖼️ Product item:', item.name);
+                      console.log('📦 Product object:', item.product);
+                      console.log('🎨 Images array:', item.product?.images);
+                      console.log('🖼️ First image:', item.product?.images?.[0]);
+
+                      return (
                       <tr key={index}>
                         <td>
                           {item.product?.images?.[0] ? (
@@ -737,6 +743,7 @@ const OrderManagement = () => {
                                 backgroundColor: '#f5f5f5'
                               }}
                               onError={(e) => {
+                                console.error('❌ Image failed to load:', e.target.src);
                                 e.target.onerror = null;
                                 e.target.style.display = 'none';
                                 const placeholder = document.createElement('div');
@@ -777,7 +784,8 @@ const OrderManagement = () => {
                         <td>₪{item.price?.toFixed(2)}</td>
                         <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
