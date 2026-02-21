@@ -1746,7 +1746,7 @@ router.get('/orders', protect, isAdmin, canViewOrders, async (req, res) => {
 
     let orders = await Order.find(query)
       .populate('user', 'username name')
-      .populate('orderItems.product', 'name price category')
+      .populate('orderItems.product', 'name price category images')
       .sort('-createdAt');
 
     // For category_admin: Filter out orders that contain products from other categories
@@ -1808,7 +1808,7 @@ router.put('/orders/:id/status', protect, isAdmin, canManageOrders, async (req, 
     }
 
     const order = await Order.findById(req.params.id)
-      .populate('orderItems.product', 'category');
+      .populate('orderItems.product', 'category images');
 
     if (!order) {
       return res.status(404).json({
@@ -3305,7 +3305,7 @@ router.post('/create-order-for-user', protect, authorize('super_admin', 'sales_e
     // Populate order details
     const populatedOrder = await Order.findById(order._id)
       .populate('user', 'name username phone subscriberCode')
-      .populate('orderItems.product', 'name nameAr');
+      .populate('orderItems.product', 'name nameAr images');
 
     res.status(201).json({
       success: true,
