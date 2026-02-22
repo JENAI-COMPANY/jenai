@@ -594,9 +594,9 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
           reason: req.body.bonusPointsReason || ''
         });
 
-        // توزيع النقاط على الأعضاء العلويين
-        console.log('✅ توزيع نقاط المكافأة على الأعضاء العلويين');
-        await distributeGenerationPointsOnly(user, bonusPointsToAdd);
+        // نقاط المكافأة لا تُوزع على الأعضاء العلويين
+        // تُضاف فقط للعضو نفسه
+        console.log('✅ نقاط المكافأة أُضيفت للعضو فقط (بدون توزيع على الأعضاء العلويين)');
       }
     }
 
