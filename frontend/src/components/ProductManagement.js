@@ -172,8 +172,8 @@ const ProductManagement = () => {
       fetchRegions();
       fetchSuppliers();
     }
-    // regional_admin يحتاج أيضاً لمعلومات المناطق لعرض اسم منطقته
-    if (user && user.role === 'regional_admin') {
+    // regional_admin و category_admin يحتاجان أيضاً لمعلومات المناطق
+    if (user && (user.role === 'regional_admin' || user.role === 'category_admin')) {
       fetchRegions();
     }
   }, []);
@@ -455,8 +455,8 @@ const ProductManagement = () => {
       formDataToSend.append('isNewArrival', formData.isNewArrival);
       formDataToSend.append('isOffer', formData.isOffer);
 
-      // إضافة المنطقة (فقط لـ super_admin)
-      if (user && user.role === 'super_admin' && formData.region) {
+      // إضافة المنطقة (لـ super_admin و category_admin)
+      if (user && (user.role === 'super_admin' || user.role === 'category_admin') && formData.region) {
         formDataToSend.append('region', formData.region);
       }
 
@@ -842,13 +842,13 @@ const ProductManagement = () => {
                   />
                 </div>
 
-                {/* حقل المنطقة - للـ super_admin و regional_admin */}
-                {user && (user.role === 'super_admin' || user.role === 'regional_admin') && (
+                {/* حقل المنطقة - للـ super_admin و regional_admin و category_admin */}
+                {user && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'category_admin') && (
                   <div className="pm-form-group">
                     <label>{language === 'ar' ? 'المنطقة' : 'Region'}</label>
 
-                    {/* super_admin: يختار المنطقة */}
-                    {user.role === 'super_admin' ? (
+                    {/* super_admin و category_admin: يختاران المنطقة */}
+                    {(user.role === 'super_admin' || user.role === 'category_admin') ? (
                       <div className="pm-category-input">
                         <select
                           value={showAddRegion ? '' : formData.region}

@@ -270,8 +270,8 @@ exports.createProduct = async (req, res) => {
       }
       productData.region = req.user.region;
       productData.isGlobal = false;
-    } else if (req.user.role === 'super_admin') {
-      // super_admin يختار المنطقة أو يجعلها عامة للجميع
+    } else if (req.user.role === 'super_admin' || req.user.role === 'category_admin') {
+      // super_admin و category_admin يختاران المنطقة أو يجعلانها عامة للجميع
       if (productData.region && productData.region !== 'all') {
         // منتج لمنطقة محددة
         productData.isGlobal = false;
@@ -360,8 +360,8 @@ exports.updateProduct = async (req, res) => {
       // regional_admin لا يمكنه تغيير المنطقة
       // نحذف حقل المنطقة من البيانات المرسلة لتجنب تغييرها
       delete productData.region;
-    } else if (req.user.role === 'super_admin' && productData.region) {
-      // super_admin يمكنه تغيير المنطقة
+    } else if ((req.user.role === 'super_admin' || req.user.role === 'category_admin') && productData.region) {
+      // super_admin و category_admin يمكنهما تغيير المنطقة
       if (productData.region === 'all') {
         productData.region = null;
         productData.isGlobal = true;
