@@ -10,6 +10,7 @@ const MembersManagement = () => {
   const [loading, setLoading] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [rankFilter, setRankFilter] = useState('');
   const [editForm, setEditForm] = useState({
     sponsorCode: '',
     isActive: true
@@ -128,15 +129,16 @@ const MembersManagement = () => {
         </div>
       )}
 
-      {/* Search Field */}
-      <div style={{ marginBottom: '20px' }}>
+      {/* Search & Filter */}
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         <input
           type="text"
           placeholder={language === 'ar' ? 'بحث بالاسم، اسم المستخدم أو كود العضو...' : 'Search by name, username or code...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
-            width: '100%',
+            flex: 1,
+            minWidth: '200px',
             padding: '12px 16px',
             border: '2px solid #e1e8ed',
             borderRadius: '8px',
@@ -144,6 +146,30 @@ const MembersManagement = () => {
             outline: 'none'
           }}
         />
+        <select
+          value={rankFilter}
+          onChange={(e) => setRankFilter(e.target.value)}
+          style={{
+            padding: '12px 16px',
+            border: '2px solid #e1e8ed',
+            borderRadius: '8px',
+            fontSize: '15px',
+            outline: 'none',
+            minWidth: '180px',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="">{language === 'ar' ? 'كل الرتب' : 'All Ranks'}</option>
+          <option value="agent">{language === 'ar' ? 'وكيل' : 'Agent'}</option>
+          <option value="bronze">{language === 'ar' ? 'برونزي' : 'Bronze'}</option>
+          <option value="silver">{language === 'ar' ? 'فضي' : 'Silver'}</option>
+          <option value="gold">{language === 'ar' ? 'ذهبي' : 'Gold'}</option>
+          <option value="ruby">{language === 'ar' ? 'ياقوتي' : 'Ruby'}</option>
+          <option value="diamond">{language === 'ar' ? 'ماسي' : 'Diamond'}</option>
+          <option value="double_diamond">{language === 'ar' ? 'ماسي مزدوج' : 'Double Diamond'}</option>
+          <option value="regional_ambassador">{language === 'ar' ? 'سفير إقليمي' : 'Regional Ambassador'}</option>
+          <option value="global_ambassador">{language === 'ar' ? 'سفير عالمي' : 'Global Ambassador'}</option>
+        </select>
       </div>
 
       {loading ? (
@@ -169,9 +195,11 @@ const MembersManagement = () => {
             {members
               .filter(member => {
                 const searchLower = searchTerm.toLowerCase();
-                return member.name.toLowerCase().includes(searchLower) ||
+                const matchesSearch = member.name.toLowerCase().includes(searchLower) ||
                        member.username.toLowerCase().includes(searchLower) ||
                        (member.subscriberCode || '').toLowerCase().includes(searchLower);
+                const matchesRank = !rankFilter || member.memberRank === rankFilter;
+                return matchesSearch && matchesRank;
               })
               .map((member) => (
               <tr key={member._id}>
