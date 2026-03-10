@@ -23,6 +23,9 @@ const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
     name: '',
+    firstName: '',
+    fatherName: '',
+    familyName: '',
     phone: '',
     countryCode: '+970',
     country: '',
@@ -193,7 +196,7 @@ const Register = () => {
     }
 
     // التحقق من جميع الحقول المطلوبة
-    if (!formData.username || !formData.name || !formData.phone) {
+    if (!formData.username || !formData.firstName || !formData.familyName || !formData.phone) {
       setError(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill in all required fields');
       return;
     }
@@ -217,7 +220,8 @@ const Register = () => {
     }
 
     // للعملاء: التسجيل مباشرة
-    const { confirmPassword, acceptedTerms, ...userData } = formData;
+    const { confirmPassword, acceptedTerms, firstName, fatherName, familyName, ...userData } = formData;
+    userData.name = [firstName, fatherName, familyName].filter(Boolean).join(' ');
     userData.role = selectedRole;
 
     const result = await register(userData);
@@ -238,7 +242,8 @@ const Register = () => {
       return;
     }
 
-    const { confirmPassword, acceptedTerms, ...userData } = formData;
+    const { confirmPassword, acceptedTerms, firstName, fatherName, familyName, ...userData } = formData;
+    userData.name = [firstName, fatherName, familyName].filter(Boolean).join(' ');
     userData.role = selectedRole;
 
     const result = await register(userData);
@@ -368,12 +373,35 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>{t('fullName')} *</label>
+            <label>{language === 'ar' ? 'الاسم الأول' : 'First Name'} *</label>
             <input
               type="text"
-              name="name"
-              placeholder={t('fullName')}
-              value={formData.name}
+              name="firstName"
+              placeholder={language === 'ar' ? 'الاسم الأول' : 'First Name'}
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>{language === 'ar' ? 'اسم الأب' : 'Father\'s Name'}</label>
+            <input
+              type="text"
+              name="fatherName"
+              placeholder={language === 'ar' ? 'اسم الأب' : 'Father\'s Name'}
+              value={formData.fatherName}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>{language === 'ar' ? 'اسم العائلة' : 'Family Name'} *</label>
+            <input
+              type="text"
+              name="familyName"
+              placeholder={language === 'ar' ? 'اسم العائلة' : 'Family Name'}
+              value={formData.familyName}
               onChange={handleChange}
               required
             />
