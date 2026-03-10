@@ -20,15 +20,6 @@ exports.calculatePeriodProfits = async (req, res) => {
       });
     }
 
-    // منع وجود أكثر من دورة غير مغلقة في نفس الوقت
-    const existingDraft = await ProfitPeriod.findOne({ status: 'draft' });
-    if (existingDraft) {
-      return res.status(400).json({
-        success: false,
-        message: `يوجد دورة محتسبة غير مغلقة (${existingDraft.periodName}). يرجى إغلاقها أولاً قبل احتساب دورة جديدة.`
-      });
-    }
-
     // توليد رقم الدورة تلقائياً (العد من 1)
     const lastPeriod = await ProfitPeriod.findOne().sort({ periodNumber: -1 });
     const periodNumber = lastPeriod ? (lastPeriod.periodNumber || 0) + 1 : 1;
@@ -379,6 +370,21 @@ exports.deleteProfitPeriod = async (req, res) => {
         success: false,
         message: 'لا يمكن حذف فترة أرباح مدفوعة'
       });
+    }
+
+    // عند حذف مسودة: إعادة تأشير الطلبيات لإمكانية إدراجها في احتساب قادم
+    if (period.status === 'draft') {
+      const endDateObj = new Date(period.endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      await Order.updateMany(
+        {
+          isDelivered: true,
+          deliveredAt: { $gte: new Date(period.startDate), $lte: endDateObj },
+          isCustomerCommissionCalculated: true
+        },
+        { $set: { isCustomerCommissionCalculated: false } }
+      );
+      console.log(`✅ تم إعادة تأشير الطلبيات ضمن فترة ${period.periodName} لإمكانية إعادة الاحتساب`);
     }
 
     await ProfitPeriod.findByIdAndDelete(req.params.id);
