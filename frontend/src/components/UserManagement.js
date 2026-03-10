@@ -2,8 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import '../styles/UserManagement.css';
 import '../styles/Verification.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
@@ -465,66 +463,89 @@ const UserManagement = () => {
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
-
-    // Add title - Always use English in PDF to avoid encoding issues
-    doc.setFontSize(18);
-    doc.text('Users Report', 14, 22);
-
-    // Add date
-    doc.setFontSize(11);
+    const isArabic = language === 'ar';
     const date = new Date().toLocaleDateString('en-US');
-    doc.text(`Date: ${date}`, 14, 30);
 
-    // Add total count
-    doc.text(`Total Users: ${filteredUsers.length}`, 14, 37);
+    const getRoleLabel = (role) => {
+      const roles = {
+        super_admin: isArabic ? 'سوبر ادمن' : 'Super Admin',
+        regional_admin: isArabic ? 'مدير منطقة' : 'Regional Admin',
+        category_admin: isArabic ? 'مدير قسم' : 'Category Admin',
+        member: isArabic ? 'عضو' : 'Member',
+        customer: isArabic ? 'زبون' : 'Customer',
+        supplier: isArabic ? 'مورد' : 'Supplier',
+        sales_employee: isArabic ? 'موظف مبيعات' : 'Sales Employee',
+        admin_secretary: isArabic ? 'سكرتير' : 'Secretary'
+      };
+      return roles[role] || role;
+    };
 
-    // Prepare table data - Always use English in PDF
-    const tableColumn = [
-      'Name',
-      'Username',
-      'Phone',
-      'Role',
-      'Registered'
-    ];
+    const rows = filteredUsers.map((user, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${user.name || '-'}</td>
+        <td>${user.username || '-'}</td>
+        <td>${user.phone || '-'}</td>
+        <td>${getRoleLabel(user.role)}</td>
+        <td>${user.country || '-'}</td>
+        <td>${user.city || '-'}</td>
+        <td>${new Date(user.createdAt).toLocaleDateString('en-US')}</td>
+      </tr>
+    `).join('');
 
-    const tableRows = filteredUsers.map(user => [
-      user.name,
-      user.username,
-      user.phone || '-',
-      user.role === 'super_admin'
-        ? 'Super Admin'
-        : user.role === 'regional_admin'
-        ? 'Regional Admin'
-        : user.role === 'subscriber'
-        ? 'Subscriber'
-        : 'Customer',
-      new Date(user.createdAt).toLocaleDateString('en-US')
-    ]);
-
-    // Generate table
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 45,
-      styles: {
-        font: 'helvetica',
-        fontSize: 10,
-        cellPadding: 3
-      },
-      headStyles: {
-        fillColor: [102, 126, 234],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      }
-    });
-
-    // Save PDF
-    doc.save(`users-report-${new Date().getTime()}.pdf`);
-    setMessage(language === 'ar' ? 'تم تصدير التقرير بنجاح!' : 'Report exported successfully!');
+    const printWindow = window.open('', '_blank');
+    const html = `
+      <!DOCTYPE html>
+      <html dir="${isArabic ? 'rtl' : 'ltr'}">
+      <head>
+        <meta charset="UTF-8">
+        <title>${isArabic ? 'تقرير المستخدمين' : 'Users Report'}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 20px; direction: ${isArabic ? 'rtl' : 'ltr'}; font-size: 11px; }
+          .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 12px; }
+          .header h1 { color: #667eea; font-size: 20px; margin-bottom: 6px; }
+          .header p { font-size: 11px; color: #555; margin: 2px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: ${isArabic ? 'right' : 'left'}; font-size: 10px; }
+          th { background-color: #667eea; color: white; }
+          tr:nth-child(even) { background-color: #f5f7fa; }
+          @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { padding: 0; font-size: 10px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${isArabic ? 'تقرير المستخدمين' : 'Users Report'}</h1>
+          <p>${isArabic ? 'التاريخ:' : 'Date:'} ${date}</p>
+          <p>${isArabic ? 'إجمالي المستخدمين:' : 'Total Users:'} ${filteredUsers.length}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>${isArabic ? 'الاسم' : 'Name'}</th>
+              <th>${isArabic ? 'اسم المستخدم' : 'Username'}</th>
+              <th>${isArabic ? 'رقم الهاتف' : 'Phone'}</th>
+              <th>${isArabic ? 'الدور' : 'Role'}</th>
+              <th>${isArabic ? 'الدولة' : 'Country'}</th>
+              <th>${isArabic ? 'المدينة' : 'City'}</th>
+              <th>${isArabic ? 'تاريخ التسجيل' : 'Registered'}</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <script>
+          window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };
+        </script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setMessage(isArabic ? 'تم تصدير التقرير بنجاح!' : 'Report exported successfully!');
     setTimeout(() => setMessage(''), 3000);
   };
 

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { getRankImage, getRankName, getRankNumber } from '../utils/rankHelpers';
 import '../styles/MyTeam.css';
 
@@ -136,109 +134,115 @@ const MyTeam = () => {
   };
 
   const exportTeamToPDF = () => {
-    const doc = new jsPDF();
-
-    // Add title
-    doc.setFontSize(18);
-    doc.text('My Team Report', 14, 20);
-
-    // Add user code
-    doc.setFontSize(12);
-    doc.text(
-      `Referral Code: ${teamData?.userCode || '-'}`,
-      14,
-      30
-    );
-
-    // Add statistics
-    doc.setFontSize(10);
-    const statsText = [
-      `Total Members: ${stats?.totalMembers || 0}`,
-      `Total Points: ${(stats?.totalPoints || 0).toLocaleString()}`,
-      `Level 1: ${stats?.levelCounts.level1 || 0}`,
-      `Level 2: ${stats?.levelCounts.level2 || 0}`,
-      `Level 3: ${stats?.levelCounts.level3 || 0}`,
-      `Level 4: ${stats?.levelCounts.level4 || 0}`,
-      `Level 5: ${stats?.levelCounts.level5 || 0}`
-    ];
-
-    doc.text(statsText, 14, 40);
-
-    let currentY = 90;
+    const isArabic = language === 'ar';
+    const date = new Date().toLocaleDateString('en-US');
 
     // Group members by level
-    const membersByLevel = {
-      1: teamMembers.filter(m => m.level === 1),
-      2: teamMembers.filter(m => m.level === 2),
-      3: teamMembers.filter(m => m.level === 3),
-      4: teamMembers.filter(m => m.level === 4),
-      5: teamMembers.filter(m => m.level === 5)
-    };
-
-    // Create a separate table for each level
+    const membersByLevel = {};
     [1, 2, 3, 4, 5].forEach(level => {
-      const levelMembers = membersByLevel[level];
-
-      if (levelMembers.length > 0) {
-        // Add level heading
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text(`Level ${level}`, 14, currentY);
-        currentY += 10;
-
-        // Prepare table data (use username instead of name to avoid Arabic)
-        const tableData = levelMembers.map((member, index) => [
-          index + 1,
-          member.username || '-', // Use username instead of name
-          member.subscriberCode || '-',
-          member.monthlyPoints || 0,
-          member.city || '-',
-          formatDate(member.createdAt)
-        ]);
-
-        // Add table
-        autoTable(doc, {
-          startY: currentY,
-          head: [[
-            '#',
-            'Username',
-            'Member Code',
-            'Points',
-            'City',
-            'Join Date'
-          ]],
-          body: tableData,
-          headStyles: {
-            fillColor: [102, 126, 234],
-            textColor: [255, 255, 255],
-            fontSize: 10,
-            halign: 'center'
-          },
-          bodyStyles: {
-            fontSize: 9,
-            halign: 'center'
-          },
-          alternateRowStyles: {
-            fillColor: [245, 247, 250]
-          },
-          margin: { top: 10 }
-        });
-
-        // Update Y position for next table
-        currentY = doc.lastAutoTable.finalY + 15;
-
-        // Add new page if needed
-        if (currentY > 250 && level < 5) {
-          doc.addPage();
-          currentY = 20;
-        }
-      }
+      membersByLevel[level] = teamMembers.filter(m => m.level === level);
     });
 
-    // Save the PDF with English filename
-    const fileName = `my_team_${teamData?.userCode || 'report'}_${new Date().toLocaleDateString('en-US').replace(/\//g, '-')}.pdf`;
+    const levelColors = {
+      1: '#4CAF50',
+      2: '#2196F3',
+      3: '#FF9800',
+      4: '#9C27B0',
+      5: '#F44336'
+    };
 
-    doc.save(fileName);
+    const levelTables = [1, 2, 3, 4, 5].map(level => {
+      const members = membersByLevel[level];
+      if (!members || members.length === 0) return '';
+      const rows = members.map((member, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${member.name || '-'}</td>
+          <td>${member.username || '-'}</td>
+          <td>${member.subscriberCode || '-'}</td>
+          <td>${member.phone || '-'}</td>
+          <td>${getRankName(member.memberRank, language)}</td>
+          <td>${member.monthlyPoints || 0}</td>
+          <td>${member.city || '-'}</td>
+          <td>${formatDate(member.createdAt)}</td>
+        </tr>
+      `).join('');
+
+      return `
+        <div class="level-section">
+          <h3 style="color: ${levelColors[level]}; border-color: ${levelColors[level]};">
+            ${isArabic ? `المستوى ${level}` : `Level ${level}`}
+            (${members.length} ${isArabic ? 'عضو' : 'members'})
+          </h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>${isArabic ? 'الاسم' : 'Name'}</th>
+                <th>${isArabic ? 'اسم المستخدم' : 'Username'}</th>
+                <th>${isArabic ? 'كود العضو' : 'Member Code'}</th>
+                <th>${isArabic ? 'رقم الهاتف' : 'Phone'}</th>
+                <th>${isArabic ? 'الرتبة' : 'Rank'}</th>
+                <th>${isArabic ? 'النقاط' : 'Points'}</th>
+                <th>${isArabic ? 'المدينة' : 'City'}</th>
+                <th>${isArabic ? 'تاريخ الانضمام' : 'Join Date'}</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+
+    const printWindow = window.open('', '_blank');
+    const html = `
+      <!DOCTYPE html>
+      <html dir="${isArabic ? 'rtl' : 'ltr'}">
+      <head>
+        <meta charset="UTF-8">
+        <title>${isArabic ? 'تقرير فريقي' : 'My Team Report'}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 20px; direction: ${isArabic ? 'rtl' : 'ltr'}; font-size: 11px; }
+          .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 12px; }
+          .header h1 { color: #667eea; font-size: 20px; margin-bottom: 6px; }
+          .header p { font-size: 11px; color: #555; margin: 2px 0; }
+          .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+          .stat-box { border: 1px solid #ddd; border-radius: 6px; padding: 8px 14px; font-size: 11px; }
+          .stat-box strong { display: block; font-size: 16px; color: #667eea; }
+          .level-section { margin-bottom: 24px; }
+          .level-section h3 { border-bottom: 2px solid; padding-bottom: 4px; margin-bottom: 8px; font-size: 13px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+          th, td { border: 1px solid #ddd; padding: 5px 7px; text-align: ${isArabic ? 'right' : 'left'}; font-size: 10px; }
+          th { background-color: #667eea; color: white; }
+          tr:nth-child(even) { background-color: #f5f7fa; }
+          @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { padding: 0; font-size: 10px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${isArabic ? 'تقرير فريقي' : 'My Team Report'}</h1>
+          <p>${isArabic ? 'كود الإحالة:' : 'Referral Code:'} ${teamData?.userCode || '-'}</p>
+          <p>${isArabic ? 'التاريخ:' : 'Date:'} ${date}</p>
+        </div>
+        ${stats ? `
+        <div class="stats">
+          <div class="stat-box"><strong>${stats.totalMembers || 0}</strong>${isArabic ? 'إجمالي الأعضاء' : 'Total Members'}</div>
+          <div class="stat-box"><strong>${(stats.totalPoints || 0).toLocaleString()}</strong>${isArabic ? 'إجمالي النقاط' : 'Total Points'}</div>
+          ${[1,2,3,4,5].map(l => `<div class="stat-box"><strong>${stats.levelCounts?.[`level${l}`] || 0}</strong>${isArabic ? `المستوى ${l}` : `Level ${l}`}</div>`).join('')}
+        </div>` : ''}
+        ${levelTables}
+        <script>
+          window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };
+        </script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   if (loading) {
