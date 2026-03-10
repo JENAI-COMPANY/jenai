@@ -101,7 +101,7 @@
 
 .main-image {
   width: 100%;
-  height: 500px;
+  aspect-ratio: 4 / 3;
   border-radius: 10px;
   overflow: hidden;
   border: 2px solid #eee;
@@ -139,7 +139,7 @@
 .main-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .main-image .no-image {
