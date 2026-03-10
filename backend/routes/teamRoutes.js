@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
-const { getMyTeam, getDirectReferrals } = require('../controllers/teamController');
+const { getMyTeam, getDirectReferrals, getMemberTeam } = require('../controllers/teamController');
 
 // Get all team members (5 levels)
 router.get('/my-team', protect, getMyTeam);
 
 // Get direct referrals only (Level 1)
 router.get('/direct-referrals', protect, getDirectReferrals);
+
+// Get a specific member's team by their subscriberCode
+router.get('/member-team/:subscriberCode', protect, getMemberTeam);
 
 module.exports = router;

@@ -110,6 +110,74 @@ exports.getMyTeam = async (req, res) => {
   }
 };
 
+// Get a specific member's team by their subscriberCode
+exports.getMemberTeam = async (req, res) => {
+  try {
+    const { subscriberCode } = req.params;
+
+    const getTeamMembers = async (sponsorCode, level, maxLevel = 5) => {
+      if (level > maxLevel) return [];
+      const members = await User.find({
+        sponsorCode,
+        role: { $in: ['member', 'subscriber'] }
+      })
+        .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive phone')
+        .lean();
+
+      let allMembers = [];
+      for (const member of members) {
+        allMembers.push({ ...member, level, directSponsor: sponsorCode });
+        if (member.subscriberCode && level < maxLevel) {
+          const subMembers = await getTeamMembers(member.subscriberCode, level + 1, maxLevel);
+          allMembers = allMembers.concat(subMembers);
+        }
+      }
+      return allMembers;
+    };
+
+    const teamMembers = await getTeamMembers(subscriberCode, 1);
+
+    const now = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    if (teamMembers.length > 0) {
+      const memberIds = teamMembers.map(m => m._id);
+      const recentOrders = await Order.aggregate([
+        { $match: { user: { $in: memberIds }, createdAt: { $gte: oneMonthAgo } } },
+        { $group: { _id: '$user', orderCount: { $sum: 1 } } }
+      ]);
+      const activeUserIds = new Set(recentOrders.map(o => o._id.toString()));
+      teamMembers.forEach(m => { m.isActiveLastMonth = activeUserIds.has(m._id.toString()); });
+    }
+
+    const stats = {
+      totalMembers: teamMembers.length,
+      totalPoints: teamMembers.reduce((sum, m) => sum + (m.monthlyPoints || 0), 0),
+      levelCounts: {
+        level1: teamMembers.filter(m => m.level === 1).length,
+        level2: teamMembers.filter(m => m.level === 2).length,
+        level3: teamMembers.filter(m => m.level === 3).length,
+        level4: teamMembers.filter(m => m.level === 4).length,
+        level5: teamMembers.filter(m => m.level === 5).length,
+      },
+      newMembersThisMonth: {
+        level1: teamMembers.filter(m => m.level === 1 && new Date(m.createdAt) >= startOfMonth).length,
+        level2: teamMembers.filter(m => m.level === 2 && new Date(m.createdAt) >= startOfMonth).length,
+        level3: teamMembers.filter(m => m.level === 3 && new Date(m.createdAt) >= startOfMonth).length,
+        level4: teamMembers.filter(m => m.level === 4 && new Date(m.createdAt) >= startOfMonth).length,
+        level5: teamMembers.filter(m => m.level === 5 && new Date(m.createdAt) >= startOfMonth).length,
+      }
+    };
+
+    res.json({ success: true, userCode: subscriberCode, stats, team: teamMembers });
+  } catch (error) {
+    console.error('Error fetching member team:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Get direct referrals only (Level 1)
 exports.getDirectReferrals = async (req, res) => {
   try {

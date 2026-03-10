@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getRankImage, getRankName, getRankNumber } from '../utils/rankHelpers';
 import '../styles/MyTeam.css';
 
 const MyTeam = () => {
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,8 +19,6 @@ const MyTeam = () => {
     4: true,
     5: true
   });
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [showMemberModal, setShowMemberModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
   // Filter states
@@ -99,38 +99,8 @@ const MyTeam = () => {
     });
   };
 
-  const handleMemberClick = async (member) => {
-    try {
-      const token = localStorage.getItem('token');
-
-      // Fetch full member details including referrer info
-      const response = await axios.get(`/api/users/${member._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const memberDetails = response.data.user;
-
-      // Calculate cumulative points
-      const cumulativePoints = (memberDetails.points || 0) +
-        (memberDetails.generation1Points || 0) +
-        (memberDetails.generation2Points || 0) +
-        (memberDetails.generation3Points || 0) +
-        (memberDetails.generation4Points || 0) +
-        (memberDetails.generation5Points || 0);
-
-      setSelectedMember({
-        ...memberDetails,
-        cumulativePoints
-      });
-      setShowMemberModal(true);
-    } catch (err) {
-      console.error('Error fetching member details:', err);
-    }
-  };
-
-  const closeMemberModal = () => {
-    setShowMemberModal(false);
-    setSelectedMember(null);
+  const handleMemberClick = (member) => {
+    navigate(`/team/member/${member._id}`);
   };
 
   const exportTeamToPDF = () => {
@@ -653,104 +623,6 @@ const MyTeam = () => {
         </div>
       )}
 
-      {/* Member Details Modal */}
-      {showMemberModal && selectedMember && (
-        <div className="member-modal-overlay" onClick={closeMemberModal}>
-          <div className="member-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={closeMemberModal}>
-              ✕
-            </button>
-
-            <div className="modal-header">
-              <h2>{language === 'ar' ? 'معلومات العضو' : 'Member Information'}</h2>
-            </div>
-
-            <div className="modal-body">
-              <div className="member-info-grid">
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'الاسم:' : 'Name:'}
-                  </span>
-                  <span className="info-value">{selectedMember.name}</span>
-                </div>
-
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'كود العضو:' : 'Member Code:'}
-                  </span>
-                  <span className="info-value">{selectedMember.subscriberCode || '-'}</span>
-                </div>
-
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'اسم الراعي:' : 'Sponsor Name:'}
-                  </span>
-                  <span className="info-value">
-                    {selectedMember.sponsorId?.name || (language === 'ar' ? 'غير محدد' : 'Not specified')}
-                  </span>
-                </div>
-
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'كود الراعي:' : 'Sponsor Code:'}
-                  </span>
-                  <span className="info-value">
-                    {selectedMember.sponsorCode || (language === 'ar' ? 'غير محدد' : 'Not specified')}
-                  </span>
-                </div>
-
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'رقم الهاتف:' : 'Phone Number:'}
-                  </span>
-                  <span className="info-value">
-                    {selectedMember.phone || (language === 'ar' ? 'غير محدد' : 'Not specified')}
-                  </span>
-                </div>
-
-                <div className="info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'المدينة:' : 'City:'}
-                  </span>
-                  <span className="info-value">
-                    {selectedMember.city || (language === 'ar' ? 'غير محدد' : 'Not specified')}
-                  </span>
-                </div>
-
-                <div className="info-item rank-info-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'الرتبة:' : 'Rank:'}
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                    <img
-                      src={`/${getRankImage(selectedMember.memberRank || 'agent')}`}
-                      alt={getRankName(selectedMember.memberRank || 'agent', language)}
-                      style={{ width: '100px', height: '100px', objectFit: 'contain' }}
-                    />
-                    <span style={{ fontSize: '1rem', fontWeight: '700', color: '#2c3e50' }}>
-                      {getRankName(selectedMember.memberRank || 'agent', language)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="info-item points-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'النقاط الشهرية:' : 'Monthly Points:'}
-                  </span>
-                  <span className="info-value points-value">⭐ {selectedMember.monthlyPoints || 0}</span>
-                </div>
-
-                <div className="info-item points-item">
-                  <span className="info-label">
-                    {language === 'ar' ? 'النقاط التراكمية:' : 'Cumulative Points:'}
-                  </span>
-                  <span className="info-value points-value">⭐ {selectedMember.cumulativePoints || 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -38,6 +38,7 @@ import Certificates from './pages/Certificates';
 import ProfitsCalculator from './components/ProfitsCalculator';
 import ProfitPeriods from './components/ProfitPeriods';
 import Favorites from './pages/Favorites';
+import MemberTeamPage from './pages/MemberTeamPage';
 import WelcomeMember from './pages/WelcomeMember';
 import './styles/App.css';
 import './styles/AdminResponsive.css';
@@ -173,6 +174,14 @@ function App() {
                   element={
                     <PrivateRoute roles={['super_admin']}>
                       <ProfitPeriods />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/team/member/:memberId"
+                  element={
+                    <PrivateRoute roles={['member', 'subscriber']}>
+                      <MemberTeamPage />
                     </PrivateRoute>
                   }
                 />

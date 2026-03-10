@@ -1,0 +1,332 @@
+.mtp-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Back Button */
+.mtp-back-btn {
+  background: none;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+.mtp-back-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Member Info Card */
+.mtp-member-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  margin-bottom: 30px;
+  border-top: 4px solid #667eea;
+}
+
+.mtp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.mtp-rank-img {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.mtp-member-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 6px 0;
+}
+
+.mtp-rank-label {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mtp-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.mtp-info-item {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mtp-info-item.points-item {
+  background: linear-gradient(135deg, #fff9e6, #fff3cc);
+  border-color: #f5c518;
+}
+
+.mtp-info-label {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mtp-info-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.mtp-info-value.code-badge {
+  background: #667eea;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  display: inline-block;
+  width: fit-content;
+}
+
+.mtp-info-value.points-val {
+  font-size: 1.1rem;
+  color: #e6a817;
+}
+
+.mtp-info-value.status-badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+.mtp-info-value.status-badge.active { background: #e8f5e9; color: #2e7d32; }
+.mtp-info-value.status-badge.suspended { background: #ffebee; color: #c62828; }
+
+/* Team Section */
+.mtp-team-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 28px;
+}
+
+.mtp-team-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #667eea;
+}
+
+/* Stats Row */
+.mtp-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mtp-stat-box {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.mtp-stat-box strong {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 2px;
+}
+
+.mtp-stat-box span {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Empty State */
+.mtp-empty {
+  text-align: center;
+  padding: 50px;
+  color: #888;
+}
+.mtp-empty span { font-size: 3rem; }
+.mtp-empty p { font-size: 1.1rem; margin-top: 10px; }
+
+/* Level Sections */
+.mtp-level-section {
+  margin-bottom: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+}
+
+.mtp-level-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #f8f9fa;
+  cursor: pointer;
+  border-left: 4px solid;
+  transition: background 0.2s;
+}
+.mtp-level-header:hover { background: #f0f0f0; }
+
+.mtp-level-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mtp-level-badge {
+  color: white;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.expand-icon {
+  transition: transform 0.2s;
+  font-size: 0.8rem;
+  color: #666;
+}
+.expand-icon.expanded { transform: rotate(180deg); }
+
+/* Table */
+.mtp-table-wrap {
+  overflow-x: auto;
+}
+
+.mtp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mtp-table th {
+  background: #667eea;
+  color: white;
+  padding: 12px 14px;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mtp-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+  color: #333;
+  text-align: right;
+}
+
+.mtp-clickable-row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mtp-clickable-row:hover { background: #f0f4ff; }
+
+.mtp-member-name { font-weight: 600; color: #2c3e50; }
+
+.mtp-code-badge {
+  background: #667eea;
+  color: white;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.mtp-rank-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.mtp-rank-cell span { font-size: 0.75rem; color: #555; font-weight: 600; }
+
+.mtp-points-badge {
+  background: #fff3cc;
+  color: #b8860b;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Loading / Error */
+.mtp-loading, .mtp-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #666;
+}
+.mtp-error button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+/* Spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e9ecef;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mtp-info-grid { grid-template-columns: 1fr 1fr; }
+  .mtp-card-header { flex-direction: column; text-align: center; }
+  .mtp-rank-img { width: 70px; height: 70px; }
+  .mtp-member-name { font-size: 1.4rem; }
+  .mtp-stats-row { gap: 8px; }
+  .mtp-stat-box { padding: 8px 12px; min-width: 80px; }
+  .mtp-stat-box strong { font-size: 1.2rem; }
+}
+
+@media (max-width: 480px) {
+  .mtp-info-grid { grid-template-columns: 1fr; }
+  .mtp-container { padding: 16px 12px; }
+}
