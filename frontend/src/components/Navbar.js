@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
@@ -17,6 +17,18 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProductsMenu, setShowProductsMenu] = useState(false);
   const [categories, setCategories] = useState([]);
+  const productsMenuTimeout = useRef(null);
+
+  const handleProductsEnter = () => {
+    clearTimeout(productsMenuTimeout.current);
+    setShowProductsMenu(true);
+  };
+
+  const handleProductsLeave = () => {
+    productsMenuTimeout.current = setTimeout(() => {
+      setShowProductsMenu(false);
+    }, 150);
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -97,8 +109,8 @@ const Navbar = () => {
             {/* Products Dropdown */}
             <li
               className="nav-item dropdown"
-              onMouseEnter={() => setShowProductsMenu(true)}
-              onMouseLeave={() => setShowProductsMenu(false)}
+              onMouseEnter={handleProductsEnter}
+              onMouseLeave={handleProductsLeave}
             >
               <span
                 className="nav-link"
@@ -110,8 +122,8 @@ const Navbar = () => {
               {showProductsMenu && (
                 <div
                   className="dropdown-menu"
-                  onMouseEnter={() => setShowProductsMenu(true)}
-                  onMouseLeave={() => setShowProductsMenu(false)}
+                  onMouseEnter={handleProductsEnter}
+                  onMouseLeave={handleProductsLeave}
                 >
                   <Link
                     to="/products-page?filter=new"
