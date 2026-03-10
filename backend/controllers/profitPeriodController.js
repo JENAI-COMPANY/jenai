@@ -20,6 +20,15 @@ exports.calculatePeriodProfits = async (req, res) => {
       });
     }
 
+    // منع وجود أكثر من دورة غير مغلقة في نفس الوقت
+    const existingDraft = await ProfitPeriod.findOne({ status: 'draft' });
+    if (existingDraft) {
+      return res.status(400).json({
+        success: false,
+        message: `يوجد دورة محتسبة غير مغلقة (${existingDraft.periodName}). يرجى إغلاقها أولاً قبل احتساب دورة جديدة.`
+      });
+    }
+
     // توليد رقم الدورة تلقائياً (العد من 1)
     const lastPeriod = await ProfitPeriod.findOne().sort({ periodNumber: -1 });
     const periodNumber = lastPeriod ? (lastPeriod.periodNumber || 0) + 1 : 1;
@@ -225,36 +234,17 @@ exports.calculatePeriodProfits = async (req, res) => {
         averageProfit
       },
       notes: notes || '',
-      status: 'finalized'
+      status: 'draft'
     });
 
     await profitPeriod.save();
 
-    // تصفير نقاط الأداء الشخصي ونقاط الأجيال بعد احتساب الأرباح
-    for (const member of members) {
-      const personalPoints = member.monthlyPoints || 0;
-      const gen1Points = member.generation1Points || 0;
-      const gen2Points = member.generation2Points || 0;
-      const gen3Points = member.generation3Points || 0;
-      const gen4Points = member.generation4Points || 0;
-      const gen5Points = member.generation5Points || 0;
-
-      // تصفير جميع النقاط المحتسبة (شخصية + أجيال)
-      member.monthlyPoints = 0;
-      member.generation1Points = 0;
-      member.generation2Points = 0;
-      member.generation3Points = 0;
-      member.generation4Points = 0;
-      member.generation5Points = 0;
-
-      await member.save();
-    }
-
-    console.log(`✅ تم تصفير نقاط الأداء الشخصي ونقاط الأجيال من ${members.length} عضو`);
+    // لا يتم تصفير النقاط الآن - يحدث فقط عند إغلاق الدورة
+    console.log(`✅ تم احتساب الأرباح للدورة ${periodName} وحفظها بحالة مسودة (في انتظار إغلاق الأدمن)`);
 
     res.status(201).json({
       success: true,
-      message: `تم احتساب الأرباح للدورة ${periodName} بنجاح وطرح النقاط المحتسبة`,
+      message: `تم احتساب الأرباح للدورة ${periodName} بنجاح. يمكنك مراجعتها والضغط على "إغلاق" لتأكيدها وتصفير نقاط الأعضاء.`,
       data: {
         periodId: profitPeriod._id,
         periodName: profitPeriod.periodName,
@@ -420,11 +410,7 @@ exports.updateProfitPeriodStatus = async (req, res) => {
       });
     }
 
-    const period = await ProfitPeriod.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const period = await ProfitPeriod.findById(req.params.id);
 
     if (!period) {
       return res.status(404).json({
@@ -433,9 +419,35 @@ exports.updateProfitPeriodStatus = async (req, res) => {
       });
     }
 
+    // عند إغلاق الدورة: تصفير نقاط جميع الأعضاء المحتسبين
+    if (status === 'paid' && period.status !== 'paid') {
+      const memberIds = period.membersProfits.map(mp => mp.memberId);
+
+      await User.updateMany(
+        { _id: { $in: memberIds } },
+        {
+          $set: {
+            monthlyPoints: 0,
+            generation1Points: 0,
+            generation2Points: 0,
+            generation3Points: 0,
+            generation4Points: 0,
+            generation5Points: 0
+          }
+        }
+      );
+
+      console.log(`✅ تم تصفير نقاط ${memberIds.length} عضو عند إغلاق الدورة ${period.periodName}`);
+    }
+
+    period.status = status;
+    await period.save();
+
     res.status(200).json({
       success: true,
-      message: 'تم تحديث حالة فترة الأرباح بنجاح',
+      message: status === 'paid'
+        ? 'تم إغلاق فترة الأرباح بنجاح وتصفير نقاط الأعضاء'
+        : 'تم تحديث حالة فترة الأرباح بنجاح',
       data: period
     });
   } catch (error) {
@@ -454,9 +466,10 @@ exports.getMyProfitPeriods = async (req, res) => {
   try {
     const memberId = req.user._id;
 
-    // الحصول على جميع فترات الأرباح التي تحتوي على بيانات هذا العضو
+    // الحصول على فترات الأرباح المغلقة فقط التي تحتوي على بيانات هذا العضو
     const periods = await ProfitPeriod.find({
-      'membersProfits.memberId': memberId
+      'membersProfits.memberId': memberId,
+      status: 'paid'
     })
       .select('periodName periodNumber startDate endDate status calculatedAt membersProfits')
       .sort({ periodNumber: -1 });
