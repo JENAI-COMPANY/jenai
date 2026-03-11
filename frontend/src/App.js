@@ -40,6 +40,7 @@ import ProfitPeriods from './components/ProfitPeriods';
 import Favorites from './pages/Favorites';
 import MemberTeamPage from './pages/MemberTeamPage';
 import WelcomeMember from './pages/WelcomeMember';
+import VerifyPage from './pages/VerifyPage';
 import './styles/App.css';
 import './styles/AdminResponsive.css';
 
@@ -85,6 +86,14 @@ function App() {
                   element={
                     <PrivateRoute>
                       <Favorites />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/verify"
+                  element={
+                    <PrivateRoute>
+                      <VerifyPage />
                     </PrivateRoute>
                   }
                 />

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
@@ -123,6 +123,15 @@ const RewardsPanel = ({ language }) => {
 const Profile = () => {
   const { user, fetchUser } = useContext(AuthContext);
   const { language } = useLanguage();
+  const navigate = useNavigate();
+
+  const openVerification = () => {
+    if (window.innerWidth <= 1024) {
+      navigate('/verify');
+    } else {
+      setShowVerificationModal(true);
+    }
+  };
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -869,7 +878,7 @@ const Profile = () => {
                       <strong>{language === 'ar' ? 'سبب الرفض:' : 'Reason:'}</strong> {myVerification.adminNote}
                     </div>
                   )}
-                  <button className="verify-account-btn" onClick={() => setShowVerificationModal(true)}>
+                  <button className="verify-account-btn" onClick={openVerification}>
                     🔄 {language === 'ar' ? 'إعادة تقديم طلب التوثيق' : 'Re-submit Verification'}
                   </button>
                 </div>
@@ -878,7 +887,7 @@ const Profile = () => {
                   <p style={{color:'#7f8c8d', fontSize:'0.875rem'}}>
                     {language === 'ar' ? 'وثّق حسابك للحصول على علامة الموثق' : 'Verify your account to get the verified badge'}
                   </p>
-                  <button className="verify-account-btn" onClick={() => setShowVerificationModal(true)}>
+                  <button className="verify-account-btn" onClick={openVerification}>
                     🪪 {language === 'ar' ? 'توثيق الحساب' : 'Verify Account'}
                   </button>
                 </div>
