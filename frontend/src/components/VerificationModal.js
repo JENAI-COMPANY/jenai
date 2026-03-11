@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import '../styles/Verification.css';
 
 const VerificationModal = ({ onClose, onSuccess, language }) => {
-  useEffect(() => {
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.documentElement.style.overflow = '';
-    };
-  }, []);
   const [formData, setFormData] = useState({
     idType: 'national_id',
     idNumber: '',

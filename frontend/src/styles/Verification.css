@@ -649,8 +649,8 @@
 
 @media (max-width: 768px) {
   .verification-overlay {
+    display: block;
     padding: 0;
-    align-items: flex-start;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -663,6 +663,7 @@
     width: 100%;
     max-width: 100%;
     box-shadow: none;
+    margin: 0;
   }
 
   .vm-detail-modal,

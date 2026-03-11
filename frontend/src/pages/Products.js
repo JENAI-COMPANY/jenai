@@ -19,6 +19,12 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const headerRef = useRef(null);
   const gridRef = useRef(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   useEffect(() => {
     fetchCategories();
@@ -74,18 +80,18 @@ const Products = () => {
 
       params.limit = 1000; // عرض جميع المنتجات بدون حد
       const data = await getProducts(params);
-      setProducts(data.products);
+      if (isMounted.current) setProducts(data.products);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
   };
 
   const fetchCategories = async () => {
     try {
       const data = await getCategories();
-      setCategories(data.categories);
+      if (isMounted.current) setCategories(data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -94,7 +100,7 @@ const Products = () => {
   const fetchRegions = async () => {
     try {
       const response = await axios.get('/api/regions');
-      if (response.data.success) {
+      if (isMounted.current && response.data.success) {
         setRegions(response.data.regions);
       }
     } catch (error) {

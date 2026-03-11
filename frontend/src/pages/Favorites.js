@@ -13,10 +13,7 @@ const Favorites = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
+    if (!isAuthenticated) return;
     const controller = new AbortController();
     const token = localStorage.getItem('token');
     setLoading(true);
@@ -29,7 +26,7 @@ const Favorites = () => {
       .catch(() => {})
       .finally(() => setLoading(false));
     return () => controller.abort();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return (
