@@ -1,13 +1,13 @@
 .profile-container {
   max-width: 100%;
   margin: 0;
-  padding: 40px 20px;
+  padding: 20px;
   background: #f5f7fa;
   min-height: 100vh;
 }
 
 .profile-header {
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .profile-header h1 {
@@ -584,22 +584,30 @@
     overflow-x: auto;
     padding: 12px;
     top: unset;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab-btn {
     flex-direction: column;
     gap: 4px;
-    padding: 10px 12px;
-    min-width: 80px;
+    padding: 10px 8px;
+    min-width: 70px;
+    flex-shrink: 0;
     text-align: center;
   }
 
   .tab-icon {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .tab-label {
-    font-size: 11px;
+    font-size: 10px;
+    white-space: nowrap;
   }
 
   .profile-container {
@@ -661,17 +669,17 @@
 
 @media (max-width: 768px) {
   .profile-container {
-    padding: 24px 16px;
+    padding: 12px 16px;
   }
 }
 
 @media (max-width: 480px) {
   .profile-container {
-    padding: 16px 12px;
+    padding: 10px 12px;
   }
 
   .profile-header {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
   }
 
   .profile-header h1 {

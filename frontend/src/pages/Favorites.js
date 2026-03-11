@@ -71,7 +71,7 @@ const Favorites = () => {
               ? 'لم تقم بإضافة أي منتجات إلى المفضلة بعد'
               : "You haven't added any products to your favorites yet"}
           </p>
-          <button className="browse-btn" onClick={() => navigate('/products')}>
+          <button className="browse-btn" onClick={() => navigate('/products-page')}>
             {language === 'ar' ? 'تصفح المنتجات' : 'Browse Products'}
           </button>
         </div>
