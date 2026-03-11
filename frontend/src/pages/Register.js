@@ -409,16 +409,15 @@ const Register = () => {
 
           <div className="form-group">
             <label>{t('phoneNumber')} *</label>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <select
                 name="countryCode"
                 value={formData.countryCode}
                 onChange={handleChange}
-                style={{ width: '110px', flexShrink: 0, fontSize: '13px' }}
               >
                 {countryCodes.map((item) => (
                   <option key={item.code + item.country} value={item.code}>
-                    {item.code}
+                    {item.code} - {item.countryAr}
                   </option>
                 ))}
               </select>
@@ -429,7 +428,6 @@ const Register = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                style={{ flex: 1, minWidth: 0 }}
               />
             </div>
           </div>
