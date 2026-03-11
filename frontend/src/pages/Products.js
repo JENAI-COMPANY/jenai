@@ -25,6 +25,7 @@ const Products = () => {
   const headerRef = useRef(null);
   const gridRef = useRef(null);
   const isMounted = useRef(true);
+  const prevProductsLength = useRef(0);
 
   useEffect(() => {
     isMounted.current = true;
@@ -51,15 +52,19 @@ const Products = () => {
   }, [searchParams, searchTerm]);
 
   useEffect(() => {
-    // Animate newly added product cards
-    if (gridRef.current && products.length > 0) {
-      const cards = gridRef.current.children;
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 30, scale: 0.9 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.05, ease: 'back.out(1.2)' }
-      );
+    // Only animate newly added cards, not existing ones
+    if (gridRef.current && products.length > prevProductsLength.current) {
+      const cards = Array.from(gridRef.current.children);
+      const newCards = cards.slice(prevProductsLength.current);
+      if (newCards.length > 0) {
+        gsap.fromTo(
+          newCards,
+          { opacity: 0, y: 30, scale: 0.9 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.05, ease: 'back.out(1.2)' }
+        );
+      }
     }
+    prevProductsLength.current = products.length;
   }, [products]);
 
   const buildParams = () => {
@@ -89,11 +94,11 @@ const Products = () => {
 
       const fetched = data.products || [];
       if (reset) {
+        prevProductsLength.current = 0;
         setProducts(fetched);
       } else {
         setProducts(prev => [...prev, ...fetched]);
       }
-      // hasMore: if returned count equals page size, there might be more
       const total = data.total || 0;
       const loaded = reset ? fetched.length : (pageNum - 1) * PAGE_SIZE + fetched.length;
       setHasMore(loaded < total);
