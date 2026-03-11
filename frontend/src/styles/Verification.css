@@ -649,11 +649,10 @@
 
 @media (max-width: 768px) {
   .verification-overlay {
-    display: block;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
     padding: 0;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .verification-modal {
@@ -663,7 +662,6 @@
     padding: 1.5rem 1rem 4rem;
     width: 100%;
     max-width: 100%;
-    min-height: 100vh;
     box-shadow: none;
   }
 

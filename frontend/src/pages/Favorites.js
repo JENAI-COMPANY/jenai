@@ -17,28 +17,19 @@ const Favorites = () => {
       navigate('/login');
       return;
     }
-    fetchFavorites();
+    const controller = new AbortController();
+    const token = localStorage.getItem('token');
+    setLoading(true);
+    fetch('/api/favorites', {
+      headers: { 'Authorization': `Bearer ${token}` },
+      signal: controller.signal
+    })
+      .then(r => r.json())
+      .then(data => { if (data.success) setFavorites(data.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    return () => controller.abort();
   }, [isAuthenticated, navigate]);
-
-  const fetchFavorites = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/favorites', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setFavorites(data.data);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (

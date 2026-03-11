@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import axios from 'axios';
 import '../styles/Verification.css';
 
@@ -65,7 +66,7 @@ const VerificationModal = ({ onClose, onSuccess, language }) => {
     }
   };
 
-  return (
+  const modal = (
     <div className="verification-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="verification-modal">
         <div className="verification-modal-header">
@@ -191,6 +192,8 @@ const VerificationModal = ({ onClose, onSuccess, language }) => {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modal, document.body);
 };
 
 export default VerificationModal;
