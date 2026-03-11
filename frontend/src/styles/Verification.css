@@ -649,19 +649,22 @@
 
 @media (max-width: 768px) {
   .verification-overlay {
-    align-items: flex-start;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     padding: 0;
   }
 
   .verification-modal {
-    max-height: 100vh;
-    max-height: 100dvh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    max-height: none;
+    overflow-y: visible;
     border-radius: 0;
-    padding: 1.5rem 1rem 3rem;
+    padding: 1.5rem 1rem 4rem;
     width: 100%;
     max-width: 100%;
+    min-height: 100vh;
+    box-shadow: none;
   }
 
   .vm-detail-modal,

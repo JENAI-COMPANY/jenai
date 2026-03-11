@@ -409,7 +409,7 @@ const Register = () => {
 
           <div className="form-group">
             <label>{t('phoneNumber')} *</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="phone-input-row">
               <select
                 name="countryCode"
                 value={formData.countryCode}
