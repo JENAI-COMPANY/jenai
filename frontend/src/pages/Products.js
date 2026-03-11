@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getProducts, getCategories } from '../services/api';
 import ProductCard from '../components/ProductCard';
@@ -7,6 +7,8 @@ import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import gsap from 'gsap';
 import '../styles/Products.css';
+
+const PAGE_SIZE = 10;
 
 const Products = () => {
   const { language, t } = useLanguage();
@@ -17,6 +19,9 @@ const Products = () => {
   const [regions, setRegions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
   const headerRef = useRef(null);
   const gridRef = useRef(null);
   const isMounted = useRef(true);
@@ -38,54 +43,74 @@ const Products = () => {
     );
   }, []);
 
+  // Reset and fetch first page when filters change
   useEffect(() => {
-    fetchProducts();
+    setPage(1);
+    setProducts([]);
+    fetchProducts(1, true);
   }, [searchParams, searchTerm]);
 
   useEffect(() => {
-    // Animate product grid when products change
+    // Animate newly added product cards
     if (gridRef.current && products.length > 0) {
       const cards = gridRef.current.children;
       gsap.fromTo(
         cards,
         { opacity: 0, y: 30, scale: 0.9 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'back.out(1.2)' }
+        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.05, ease: 'back.out(1.2)' }
       );
     }
   }, [products]);
 
-  const fetchProducts = async () => {
+  const buildParams = () => {
+    const params = {};
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) params.category = categoryParam;
+    const regionParam = searchParams.get('region');
+    if (regionParam) params.regionId = regionParam;
+    if (searchTerm) params.search = searchTerm;
+    const filterParam = searchParams.get('filter');
+    if (filterParam === 'new') params.isNewArrival = true;
+    else if (filterParam === 'offers') params.isOffer = true;
+    return params;
+  };
+
+  const fetchProducts = async (pageNum = 1, reset = false) => {
     try {
-      setLoading(true);
-      const params = {};
+      if (reset) setLoading(true);
+      else setLoadingMore(true);
 
-      // Get category from URL
-      const categoryParam = searchParams.get('category');
-      if (categoryParam) params.category = categoryParam;
+      const params = buildParams();
+      params.limit = PAGE_SIZE;
+      params.page = pageNum;
 
-      // Get region from URL
-      const regionParam = searchParams.get('region');
-      if (regionParam) params.regionId = regionParam;
-
-      // Get search term from state
-      if (searchTerm) params.search = searchTerm;
-
-      // Check for filter parameter (e.g., filter=new or filter=offers)
-      const filterParam = searchParams.get('filter');
-      if (filterParam === 'new') {
-        params.isNewArrival = true;
-      } else if (filterParam === 'offers') {
-        params.isOffer = true;
-      }
-
-      params.limit = 1000; // عرض جميع المنتجات بدون حد
       const data = await getProducts(params);
-      if (isMounted.current) setProducts(data.products);
+      if (!isMounted.current) return;
+
+      const fetched = data.products || [];
+      if (reset) {
+        setProducts(fetched);
+      } else {
+        setProducts(prev => [...prev, ...fetched]);
+      }
+      // hasMore: if returned count equals page size, there might be more
+      const total = data.total || 0;
+      const loaded = reset ? fetched.length : (pageNum - 1) * PAGE_SIZE + fetched.length;
+      setHasMore(loaded < total);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
-      if (isMounted.current) setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchProducts(nextPage, false);
   };
 
   const fetchCategories = async () => {
@@ -152,14 +177,9 @@ const Products = () => {
             value={searchParams.get('category') || ''}
             onChange={(e) => {
               const category = e.target.value;
-
-              // تحديث الـ URL مع الحفاظ على المعاملات الموجودة
               const newParams = new URLSearchParams(searchParams);
-              if (category) {
-                newParams.set('category', category);
-              } else {
-                newParams.delete('category');
-              }
+              if (category) newParams.set('category', category);
+              else newParams.delete('category');
               setSearchParams(newParams);
             }}
           >
@@ -181,14 +201,9 @@ const Products = () => {
             value={searchParams.get('region') || ''}
             onChange={(e) => {
               const region = e.target.value;
-
-              // تحديث الـ URL مع الحفاظ على المعاملات الموجودة
               const newParams = new URLSearchParams(searchParams);
-              if (region) {
-                newParams.set('region', region);
-              } else {
-                newParams.delete('region');
-              }
+              if (region) newParams.set('region', region);
+              else newParams.delete('region');
               setSearchParams(newParams);
             }}
           >
@@ -205,15 +220,31 @@ const Products = () => {
       {loading ? (
         <div className="loading"></div>
       ) : (
-        <div className="products-grid" ref={gridRef}>
-          {products.length > 0 ? (
-            products.map((product) => (
-              <ProductCard key={product.id || product._id} product={product} />
-            ))
-          ) : (
-            <div className="no-products">{t('noProducts')}</div>
+        <>
+          <div className="products-grid" ref={gridRef}>
+            {products.length > 0 ? (
+              products.map((product) => (
+                <ProductCard key={product.id || product._id} product={product} />
+              ))
+            ) : (
+              <div className="no-products">{t('noProducts')}</div>
+            )}
+          </div>
+
+          {hasMore && (
+            <div className="load-more-container">
+              <button
+                className="load-more-btn"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore
+                  ? (language === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                  : (language === 'ar' ? 'عرض المزيد' : 'Show More')}
+              </button>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Call to Action */}

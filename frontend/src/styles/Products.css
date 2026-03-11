@@ -149,6 +149,37 @@
   font-size: 1.2rem;
 }
 
+/* Load More */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0 3rem;
+}
+
+.load-more-btn {
+  padding: 0.875rem 3rem;
+  background: #c5a869;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(197, 168, 105, 0.3);
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: #b89858;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(197, 168, 105, 0.4);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Responsive Filters */
 @media (max-width: 768px) {
   .filters {
