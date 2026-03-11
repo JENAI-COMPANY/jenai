@@ -573,7 +573,13 @@
 
   .profile-layout {
     flex-direction: column !important;
+    align-items: stretch !important;
     gap: 16px;
+  }
+
+  .profile-content {
+    width: 100%;
+    min-width: 0;
   }
 
   .profile-tabs {
@@ -1381,6 +1387,15 @@
   }
 
   .link-container button {
+    width: 100%;
+  }
+
+  .referral-link-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copy-link-btn {
     width: 100%;
   }
 
