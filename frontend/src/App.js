@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -45,6 +45,44 @@ import './styles/App.css';
 import './styles/AdminResponsive.css';
 
 function App() {
+  // Fix iOS Safari horizontal scroll snap-back in admin tables
+  useEffect(() => {
+    const fixScroll = (el) => {
+      let startX = 0, startScrollLeft = 0, isScrolling = false;
+
+      el.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startScrollLeft = el.scrollLeft;
+        isScrolling = false;
+      }, { passive: true });
+
+      el.addEventListener('touchmove', (e) => {
+        const dx = startX - e.touches[0].clientX;
+        if (!isScrolling && Math.abs(dx) > 5) {
+          isScrolling = true;
+        }
+        if (isScrolling) {
+          el.scrollLeft = startScrollLeft + dx;
+        }
+      }, { passive: true });
+    };
+
+    const applyToAll = () => {
+      document.querySelectorAll('.data-table-wrapper, .um-table-wrapper, .om-table-wrapper, .pm-table-wrapper, [class*="-table-wrapper"]').forEach(el => {
+        if (!el._scrollFixed) {
+          el._scrollFixed = true;
+          fixScroll(el);
+        }
+      });
+    };
+
+    // Apply now and watch for new elements
+    applyToAll();
+    const observer = new MutationObserver(applyToAll);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
