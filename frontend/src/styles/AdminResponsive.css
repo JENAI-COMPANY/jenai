@@ -88,13 +88,13 @@
   [class*='-table-wrapper'],
   .um-table-wrapper,
   .om-table-wrapper,
-  .pm-table-wrapper {
-    overflow-x: scroll !important;
+  .pm-table-wrapper,
+  .data-table-wrapper {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
     -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-x pan-y !important;
-    overscroll-behavior-x: contain !important;
-    margin: 0 -0.5rem !important;
-    padding: 0 0.5rem !important;
+    width: 100% !important;
+    display: block !important;
   }
 
   [class*='-table'],
@@ -104,6 +104,8 @@
   table {
     min-width: 600px !important;
     font-size: 0.85rem !important;
+    max-width: none !important;
+    width: max-content !important;
   }
 
   [class*='-table'] th,
@@ -113,30 +115,7 @@
     padding: 0.5rem 0.35rem !important;
     font-size: 0.8rem !important;
     white-space: nowrap;
-  }
-
-  /* Sticky actions column - always visible on mobile */
-  [class*='-table'] th:last-child,
-  [class*='-table'] td:last-child,
-  .um-table th:last-child,
-  .um-table td:last-child,
-  .om-table th:last-child,
-  .om-table td:last-child,
-  .pm-table th:last-child,
-  .pm-table td:last-child,
-  table th:last-child,
-  table td:last-child {
-    position: sticky !important;
-    right: 0 !important;
-    background: white !important;
-    z-index: 3 !important;
-    box-shadow: -3px 0 6px rgba(0,0,0,0.08) !important;
-  }
-
-  [class*='-table'] thead th:last-child,
-  .um-table thead th:last-child,
-  table thead th:last-child {
-    background: #f8f9fa !important;
+    max-width: none !important;
   }
 
   /* Cards & Stats */
@@ -306,10 +285,6 @@
   }
 
   /* Fix Overflow Issues */
-  * {
-    max-width: 100% !important;
-  }
-
   img {
     max-width: 100% !important;
     height: auto !important;
