@@ -206,11 +206,13 @@
     padding: 1rem !important;
   }
 
-  /* Modal overlays - must stay full screen */
-  [class*='-modal-overlay'],
+  /* ===== MOBILE MODAL - FULL SCREEN APPROACH ===== */
+
+  /* Overlay: fixed fullscreen scrollable backdrop */
   .um-modal-overlay,
   .om-modal-overlay,
-  .pm-modal-overlay {
+  .pm-modal-overlay,
+  .modal-overlay {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -218,60 +220,125 @@
     bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    max-height: none !important;
     margin: 0 !important;
-    padding: 1rem !important;
+    padding: 0 !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
-    display: flex !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    z-index: 1000 !important;
+    display: block !important;
+    z-index: 9999 !important;
+    background: rgba(0,0,0,0.5) !important;
   }
 
-  /* Modal boxes inside overlays */
+  /* Modal box: full-width, full-height card - NO height limits */
   .um-modal,
+  .um-modal-large,
+  .um-modal-stats,
+  .um-modal-network,
   .om-modal,
+  .om-edit-modal,
+  .om-confirm-modal,
   .pm-modal,
   .sm-modal,
   .mo-modal,
-  [class*='-modal-large'],
-  [class*='-modal-medium'] {
-    width: 95% !important;
-    max-width: 95vw !important;
-    margin: 0 auto !important;
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     max-height: none !important;
     overflow: visible !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  [class*='-modal-header'],
+  /* Modal header: sticky at top */
   .um-modal-header,
   .om-modal-header,
-  .pm-modal-header {
+  .pm-modal-header,
+  .um-stats-header,
+  .om-edit-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: white !important;
     padding: 1rem !important;
     flex-direction: row !important;
     justify-content: space-between !important;
-    position: sticky !important;
-    top: 0 !important;
-    background: white !important;
-    z-index: 1 !important;
+    align-items: center !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    flex-shrink: 0 !important;
   }
 
-  [class*='-modal-body'],
+  /* Modal body: grows to fill space, content flows naturally */
   .um-modal-body,
   .om-modal-body,
   .pm-modal-body {
+    flex: 1 1 auto !important;
     padding: 1rem !important;
     overflow: visible !important;
     max-height: none !important;
+    height: auto !important;
   }
 
-  [class*='-modal-footer'],
+  /* Modal footer: stays at bottom */
   .um-modal-footer,
   .om-modal-footer,
   .pm-modal-footer {
     padding: 1rem !important;
     flex-direction: column-reverse !important;
+    gap: 0.5rem !important;
+    background: white !important;
+    border-top: 1px solid #e5e7eb !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ProductManagement: form inside modal (no pm-modal-body) */
+  .pm-modal form {
+    flex: 1 1 auto !important;
+    overflow: visible !important;
+    padding: 1rem !important;
+  }
+
+  .pm-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .pm-form-actions {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: white !important;
+    padding: 1rem !important;
+    border-top: 1px solid #e5e7eb !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    z-index: 5 !important;
+  }
+
+  /* MembersManagement modal (uses generic classes) */
+  .modal-content h3 {
+    position: sticky !important;
+    top: 0 !important;
+    background: white !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+    z-index: 10 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+
+  .modal-content form {
+    padding: 1rem !important;
+  }
+
+  .modal-buttons {
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 0.5rem !important;
   }
 
