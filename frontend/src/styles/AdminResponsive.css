@@ -85,15 +85,14 @@
   }
 
   /* ===== MOBILE CARD LAYOUT FOR TABLES ===== */
-  /* Convert horizontal-scroll tables to card layout on mobile */
 
   [class*='-table-wrapper'],
   .um-table-wrapper,
   .om-table-wrapper,
   .pm-table-wrapper,
   .data-table-wrapper {
-    overflow: visible !important;
     width: 100% !important;
+    padding: 0.5rem !important;
   }
 
   [class*='-table'],
@@ -104,12 +103,12 @@
   .data-table {
     display: block !important;
     width: 100% !important;
-    min-width: unset !important;
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
   }
 
-  /* Hide table header row */
+  /* Hide table header */
   [class*='-table'] thead,
   .um-table thead,
   .om-table thead,
@@ -129,7 +128,7 @@
     width: 100% !important;
   }
 
-  /* Each row becomes a card */
+  /* Each row = card */
   [class*='-table'] tbody tr,
   .um-table tbody tr,
   .om-table tbody tr,
@@ -150,25 +149,27 @@
     gap: 4px !important;
   }
 
-  /* Each cell inline */
+  /* Each cell */
   [class*='-table'] tbody td,
   .um-table tbody td,
   .om-table tbody td,
   .pm-table tbody td,
   .sm-table tbody td,
   .data-table tbody td {
-    display: inline-flex !important;
+    display: flex !important;
     align-items: center !important;
     flex: 1 1 auto !important;
-    padding: 0.3rem 0.4rem !important;
+    padding: 0.25rem 0.4rem !important;
     border: none !important;
     white-space: normal !important;
     font-size: 0.8rem !important;
-    min-width: 50px !important;
+    min-width: 0 !important;
+    max-width: 50% !important;
     box-sizing: border-box !important;
+    word-break: break-word !important;
   }
 
-  /* Action buttons: full width row at the bottom of each card */
+  /* Actions cell: full width at bottom */
   [class*='-table'] tbody td:last-child,
   .um-table tbody td:last-child,
   .om-table tbody td:last-child,
@@ -176,7 +177,7 @@
   .sm-table tbody td:last-child,
   .data-table tbody td:last-child {
     flex: 0 0 100% !important;
-    width: 100% !important;
+    max-width: 100% !important;
     justify-content: flex-end !important;
     border-top: 1px solid #f0f0f0 !important;
     padding-top: 0.5rem !important;
@@ -379,20 +380,6 @@
 
 /* Small Mobile Devices */
 @media (max-width: 480px) {
-  [class*='-table'],
-  table {
-    min-width: 500px !important;
-    font-size: 0.75rem !important;
-  }
-
-  [class*='-table'] th,
-  [class*='-table'] td,
-  table th,
-  table td {
-    padding: 0.4rem 0.25rem !important;
-    font-size: 0.7rem !important;
-  }
-
   [class*='-modal'],
   .modal {
     width: 100% !important;
