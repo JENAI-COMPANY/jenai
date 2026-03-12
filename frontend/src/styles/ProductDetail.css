@@ -842,11 +842,6 @@
     gap: 20px;
   }
 
-  .main-image {
-    height: auto;
-    aspect-ratio: unset;
-  }
-
   .product-title {
     font-size: 24px;
   }
@@ -906,11 +901,6 @@
     width: 100%;
     padding: 15px;
     border-radius: 8px;
-  }
-
-  .main-image {
-    height: auto;
-    aspect-ratio: unset;
   }
 
   .tab-content {
