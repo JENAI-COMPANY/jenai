@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllServices, createService, deleteService, getAllServiceUsage, reviewServiceUsage } from '../services/api';
+import { getAllServices, createService, updateService, deleteService, getAllServiceUsage, reviewServiceUsage } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import '../styles/Admin.css';
 
@@ -10,6 +10,8 @@ const ServicesManagement = () => {
   const [serviceUsages, setServiceUsages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [editForm, setEditForm] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedInvoiceImages, setSelectedInvoiceImages] = useState([]);
@@ -92,6 +94,51 @@ const ServicesManagement = () => {
     } catch (error) {
       console.error('Error creating service:', error);
       alert(language === 'ar' ? 'فشل إضافة الخدمة' : 'Failed to add service');
+    }
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setEditForm({
+      name: service.name || '',
+      description: service.description || '',
+      category: service.category || '',
+      ownerName: service.ownerName || '',
+      ownerPhone: service.ownerPhone || '',
+      ownerEmail: service.ownerEmail || '',
+      address: service.address || '',
+      discountPercentage: service.discountPercentage || '',
+      pointsPercentage: service.pointsPercentage || '',
+      facebook: service.socialMedia?.facebook || '',
+      instagram: service.socialMedia?.instagram || '',
+      twitter: service.socialMedia?.twitter || '',
+      website: service.socialMedia?.website || ''
+    });
+  };
+
+  const handleEditFormChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateService = async (e) => {
+    e.preventDefault();
+    try {
+      const serviceData = {
+        ...editForm,
+        socialMedia: {
+          facebook: editForm.facebook,
+          instagram: editForm.instagram,
+          twitter: editForm.twitter,
+          website: editForm.website
+        }
+      };
+      await updateService(editingService._id, serviceData);
+      setEditingService(null);
+      fetchData();
+      alert(language === 'ar' ? 'تم تحديث الخدمة بنجاح' : 'Service updated successfully');
+    } catch (error) {
+      console.error('Error updating service:', error);
+      alert(language === 'ar' ? 'فشل تحديث الخدمة' : 'Failed to update service');
     }
   };
 
@@ -353,6 +400,9 @@ const ServicesManagement = () => {
                         </span>
                       </td>
                       <td>
+                        <button onClick={() => handleEditService(service)} className="edit-btn" style={{ marginLeft: '0.5rem', marginRight: '0.5rem' }}>
+                          {language === 'ar' ? 'تعديل' : 'Edit'}
+                        </button>
                         <button onClick={() => handleDeleteService(service._id)} className="delete-btn">
                           {language === 'ar' ? 'حذف' : 'Delete'}
                         </button>
@@ -446,6 +496,65 @@ const ServicesManagement = () => {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Edit Service Modal */}
+      {editingService && (
+        <div className="modal-overlay" onClick={() => setEditingService(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '95%', maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem', borderRadius: '12px', background: 'white' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0 }}>{language === 'ar' ? 'تعديل الخدمة' : 'Edit Service'}</h3>
+              <button onClick={() => setEditingService(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <form onSubmit={handleUpdateService} className="product-form" autoComplete="off">
+              <h4>{language === 'ar' ? 'معلومات الخدمة الأساسية' : 'Basic Service Information'}</h4>
+              <div className="form-grid">
+                <input type="text" name="name" placeholder={language === 'ar' ? 'اسم الخدمة' : 'Service Name'} value={editForm.name} onChange={handleEditFormChange} required />
+                <input type="text" name="category" placeholder={language === 'ar' ? 'الفئة' : 'Category'} value={editForm.category} onChange={handleEditFormChange} required />
+              </div>
+              <textarea name="description" placeholder={language === 'ar' ? 'وصف الخدمة' : 'Service Description'} value={editForm.description} onChange={handleEditFormChange} required />
+
+              <h4>{language === 'ar' ? 'معلومات المالك' : 'Owner Information'}</h4>
+              <div className="form-grid">
+                <input type="text" name="ownerName" placeholder={language === 'ar' ? 'اسم المالك' : 'Owner Name'} value={editForm.ownerName} onChange={handleEditFormChange} required />
+                <input type="tel" name="ownerPhone" placeholder={language === 'ar' ? 'هاتف المالك' : 'Owner Phone'} value={editForm.ownerPhone} onChange={handleEditFormChange} />
+                <input type="email" name="ownerEmail" placeholder={language === 'ar' ? 'بريد المالك' : 'Owner Email'} value={editForm.ownerEmail} onChange={handleEditFormChange} />
+              </div>
+
+              <h4>{language === 'ar' ? 'العنوان' : 'Address'}</h4>
+              <textarea name="address" placeholder={language === 'ar' ? 'العنوان الكامل' : 'Full Address'} value={editForm.address} onChange={handleEditFormChange} required />
+
+              <h4>{language === 'ar' ? 'نسب الخصم والنقاط' : 'Discount & Points Percentages'}</h4>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>{language === 'ar' ? 'نسبة الخصم %' : 'Discount %'}</label>
+                  <input type="number" name="discountPercentage" value={editForm.discountPercentage} onChange={handleEditFormChange} min="0" max="100" required />
+                </div>
+                <div className="form-group">
+                  <label>{language === 'ar' ? 'نسبة النقاط %' : 'Points %'}</label>
+                  <input type="number" name="pointsPercentage" value={editForm.pointsPercentage} onChange={handleEditFormChange} min="0" max="100" required />
+                </div>
+              </div>
+
+              <h4>{language === 'ar' ? 'صفحات السوشيال ميديا' : 'Social Media Pages'}</h4>
+              <div className="form-grid">
+                <input type="url" name="facebook" placeholder="Facebook URL" value={editForm.facebook} onChange={handleEditFormChange} />
+                <input type="url" name="instagram" placeholder="Instagram URL" value={editForm.instagram} onChange={handleEditFormChange} />
+                <input type="url" name="twitter" placeholder="Twitter URL" value={editForm.twitter} onChange={handleEditFormChange} />
+                <input type="url" name="website" placeholder={language === 'ar' ? 'الموقع الإلكتروني' : 'Website URL'} value={editForm.website} onChange={handleEditFormChange} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button type="submit" className="submit-btn" style={{ flex: 1 }}>
+                  {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={() => setEditingService(null)} className="cancel-btn" style={{ flex: 1 }}>
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
