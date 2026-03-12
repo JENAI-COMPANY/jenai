@@ -13,16 +13,6 @@
   .admin-container,
   .member-ranks {
     padding: 0.5rem !important;
-    overflow: visible !important;
-  }
-
-  /* Allow card rows to be visible and scrollable */
-  .permissions-list,
-  .sm-table-container,
-  .team-table-container,
-  .level-section,
-  .profile-content {
-    overflow: visible !important;
   }
 
   /* Headers */
@@ -238,6 +228,9 @@
   .om-modal-body,
   .pm-modal-body {
     padding: 1rem !important;
+    overflow-y: auto !important;
+    max-height: calc(85vh - 120px) !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   [class*='-modal-footer'],
