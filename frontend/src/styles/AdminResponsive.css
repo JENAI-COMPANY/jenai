@@ -13,7 +13,6 @@
   .admin-container,
   .member-ranks {
     padding: 0.5rem !important;
-    overflow-x: clip !important;
   }
 
   /* Headers */
