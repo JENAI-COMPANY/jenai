@@ -182,8 +182,18 @@ export const createService = async (serviceData) => {
 };
 
 export const updateService = async (id, serviceData) => {
-  const { data } = await axios.put(`${API_URL}/services/${id}`, serviceData, {
-    headers: getAuthHeader()
+  const formData = new FormData();
+  Object.keys(serviceData).forEach(key => {
+    if (key === 'images' && serviceData[key]) {
+      Array.from(serviceData[key]).forEach(file => formData.append('images', file));
+    } else if (key === 'socialMedia' && typeof serviceData[key] === 'object') {
+      formData.append(key, JSON.stringify(serviceData[key]));
+    } else if (serviceData[key] !== undefined && serviceData[key] !== null && key !== 'images') {
+      formData.append(key, serviceData[key]);
+    }
+  });
+  const { data } = await axios.put(`${API_URL}/services/${id}`, formData, {
+    headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
   });
   return data;
 };

@@ -12,6 +12,7 @@ const ServicesManagement = () => {
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [editImages, setEditImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedInvoiceImages, setSelectedInvoiceImages] = useState([]);
@@ -99,6 +100,7 @@ const ServicesManagement = () => {
 
   const handleEditService = (service) => {
     setEditingService(service);
+    setEditImages([]);
     setEditForm({
       name: service.name || '',
       description: service.description || '',
@@ -109,6 +111,7 @@ const ServicesManagement = () => {
       address: service.address || '',
       discountPercentage: service.discountPercentage || '',
       pointsPercentage: service.pointsPercentage || '',
+      isActive: service.isActive !== false,
       facebook: service.socialMedia?.facebook || '',
       instagram: service.socialMedia?.instagram || '',
       twitter: service.socialMedia?.twitter || '',
@@ -117,7 +120,8 @@ const ServicesManagement = () => {
   };
 
   const handleEditFormChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setEditForm({ ...editForm, [name]: type === 'checkbox' ? checked : value });
   };
 
   const handleUpdateService = async (e) => {
@@ -130,7 +134,8 @@ const ServicesManagement = () => {
           instagram: editForm.instagram,
           twitter: editForm.twitter,
           website: editForm.website
-        }
+        },
+        ...(editImages.length > 0 && { images: editImages })
       };
       await updateService(editingService._id, serviceData);
       setEditingService(null);
@@ -543,6 +548,48 @@ const ServicesManagement = () => {
                 <input type="url" name="instagram" placeholder="Instagram URL" value={editForm.instagram} onChange={handleEditFormChange} />
                 <input type="url" name="twitter" placeholder="Twitter URL" value={editForm.twitter} onChange={handleEditFormChange} />
                 <input type="url" name="website" placeholder={language === 'ar' ? 'الموقع الإلكتروني' : 'Website URL'} value={editForm.website} onChange={handleEditFormChange} />
+              </div>
+
+              <h4>{language === 'ar' ? 'الحالة' : 'Status'}</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500 }}>
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={editForm.isActive}
+                    onChange={handleEditFormChange}
+                    style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+                  />
+                  {language === 'ar' ? 'الخدمة نشطة' : 'Service Active'}
+                </label>
+                <span style={{ color: editForm.isActive ? '#16a34a' : '#dc2626', fontWeight: 600, fontSize: '0.85rem' }}>
+                  {editForm.isActive ? (language === 'ar' ? '✓ نشط' : '✓ Active') : (language === 'ar' ? '✗ غير نشط' : '✗ Inactive')}
+                </span>
+              </div>
+
+              <h4>{language === 'ar' ? 'تحديث صور الخدمة' : 'Update Service Images'}</h4>
+              {editingService?.images?.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                  {editingService.images.map((img, i) => (
+                    <img key={i} src={img} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+                  ))}
+                </div>
+              )}
+              <div className="form-group">
+                <label style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                  {language === 'ar' ? 'اختر صوراً جديدة (ستستبدل الحالية)' : 'Select new images (replaces current)'}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setEditImages(Array.from(e.target.files))}
+                />
+                {editImages.length > 0 && (
+                  <p style={{ fontSize: '0.85rem', color: '#16a34a', marginTop: '0.25rem' }}>
+                    {language === 'ar' ? `تم اختيار ${editImages.length} صورة` : `${editImages.length} image(s) selected`}
+                  </p>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
