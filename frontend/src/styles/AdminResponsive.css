@@ -166,6 +166,7 @@
     width: 100% !important;
     box-sizing: border-box !important;
     gap: 4px !important;
+    touch-action: pan-y !important;
   }
 
   /* Each cell */
@@ -186,6 +187,7 @@
     max-width: 50% !important;
     box-sizing: border-box !important;
     word-break: break-word !important;
+    touch-action: pan-y !important;
   }
 
   /* Actions cell: full width at bottom */
