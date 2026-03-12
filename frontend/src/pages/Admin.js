@@ -1952,27 +1952,29 @@ const Admin = () => {
                     </div>
 
                     {/* رابط الفيديو أو رفع ملف */}
-                    <div className="form-group">
-                      <label>رابط الفيديو (URL) — أو ارفع ملفاً أدناه</label>
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        value={videoData.videoUrl || ''}
-                        onChange={e => setVideoData({ ...videoData, videoUrl: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>رفع ملف الفيديو (MP4, WebM...)</label>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files[0])} />
-                        {editingVideo && (
-                          <button type="button" className="edit-btn" disabled={!videoFile || videoUploading} onClick={() => handleUploadVideo(editingVideo._id)}>
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                      <p style={{ fontWeight: 600, color: '#15803d', marginBottom: '0.75rem' }}>🎬 رابط الفيديو أو رفع ملف</p>
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>رابط الفيديو (URL)</label>
+                        <input
+                          type="text"
+                          placeholder="https://..."
+                          value={videoData.videoUrl || ''}
+                          onChange={e => setVideoData({ ...videoData, videoUrl: e.target.value })}
+                          style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>رفع ملف فيديو (MP4, WebM...)</label>
+                        <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files[0])} style={{ display: 'block' }} />
+                        {editingVideo && videoFile && (
+                          <button type="button" className="edit-btn" style={{ marginTop: '0.5rem' }} disabled={videoUploading} onClick={() => handleUploadVideo(editingVideo._id)}>
                             {videoUploading ? (videoUploadProgress || 'جاري الرفع...') : 'رفع الآن'}
                           </button>
                         )}
+                        {!editingVideo && videoFile && <small style={{ color: '#16a34a', display: 'block', marginTop: '0.25rem' }}>✓ {videoFile.name} — سيتم الرفع عند الحفظ</small>}
+                        {editingVideo?.videoUrl && <small style={{ color: '#888', display: 'block', marginTop: '0.25rem' }}>الملف الحالي: {editingVideo.videoUrl}</small>}
                       </div>
-                      {!editingVideo && videoFile && <small style={{ color: '#16a34a' }}>✓ {videoFile.name} — سيتم الرفع تلقائياً عند الحفظ</small>}
-                      {editingVideo?.videoUrl && <small style={{ color: '#888', display: 'block', marginTop: '0.25rem' }}>الملف الحالي: {editingVideo.videoUrl}</small>}
                     </div>
 
                     {/* إضافة الأسئلة */}
