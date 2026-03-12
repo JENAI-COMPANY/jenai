@@ -13,6 +13,16 @@
   .admin-container,
   .member-ranks {
     padding: 0.5rem !important;
+    overflow: visible !important;
+  }
+
+  /* Allow card rows to be visible and scrollable */
+  .permissions-list,
+  .sm-table-container,
+  .team-table-container,
+  .level-section,
+  .profile-content {
+    overflow: visible !important;
   }
 
   /* Headers */
