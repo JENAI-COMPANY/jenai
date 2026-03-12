@@ -57,7 +57,7 @@ const Admin = () => {
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoUploadProgress, setVideoUploadProgress] = useState(null);
   const [newVideo, setNewVideo] = useState({
-    titleAr: '', title: '', descriptionAr: '', order: 0,
+    titleAr: '', title: '', descriptionAr: '', order: 0, videoUrl: '',
     quiz: { questions: [], passingScore: 60 }
   });
   const [newQuestion, setNewQuestion] = useState({ questionAr: '', type: 'mcq', options: ['', '', '', ''], correctAnswer: 0 });
@@ -603,11 +603,19 @@ const Admin = () => {
       if (editingVideo) {
         await axios.put(`/api/academy/videos/${editingVideo._id}`, videoData, { headers: getAcademyToken() });
       } else {
-        await axios.post('/api/academy/videos', videoData, { headers: getAcademyToken() });
+        const res = await axios.post('/api/academy/videos', videoData, { headers: getAcademyToken() });
+        // Upload file if selected for new video
+        if (videoFile && res.data.video?._id) {
+          const formData = new FormData();
+          formData.append('video', videoFile);
+          await axios.post(`/api/academy/videos/${res.data.video._id}/upload`, formData, {
+            headers: { ...getAcademyToken(), 'Content-Type': 'multipart/form-data' }
+          });
+        }
       }
       setShowVideoForm(false);
       setEditingVideo(null);
-      setNewVideo({ titleAr: '', title: '', descriptionAr: '', order: 0, quiz: { questions: [], passingScore: 60 } });
+      setNewVideo({ titleAr: '', title: '', descriptionAr: '', order: 0, videoUrl: '', quiz: { questions: [], passingScore: 60 } });
       setVideoFile(null);
       fetchData();
       alert('تم الحفظ بنجاح');
@@ -1943,19 +1951,29 @@ const Admin = () => {
                       </div>
                     </div>
 
-                    {/* رفع ملف الفيديو */}
-                    {editingVideo && (
-                      <div className="form-group">
-                        <label>رفع ملف الفيديو (MP4, WebM...)</label>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files[0])} />
+                    {/* رابط الفيديو أو رفع ملف */}
+                    <div className="form-group">
+                      <label>رابط الفيديو (URL) — أو ارفع ملفاً أدناه</label>
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={videoData.videoUrl || ''}
+                        onChange={e => setVideoData({ ...videoData, videoUrl: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>رفع ملف الفيديو (MP4, WebM...)</label>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files[0])} />
+                        {editingVideo && (
                           <button type="button" className="edit-btn" disabled={!videoFile || videoUploading} onClick={() => handleUploadVideo(editingVideo._id)}>
-                            {videoUploading ? (videoUploadProgress || 'جاري الرفع...') : 'رفع'}
+                            {videoUploading ? (videoUploadProgress || 'جاري الرفع...') : 'رفع الآن'}
                           </button>
-                        </div>
-                        {editingVideo.videoUrl && <small style={{ color: '#888' }}>الملف الحالي: {editingVideo.videoUrl}</small>}
+                        )}
                       </div>
-                    )}
+                      {!editingVideo && videoFile && <small style={{ color: '#16a34a' }}>✓ {videoFile.name} — سيتم الرفع تلقائياً عند الحفظ</small>}
+                      {editingVideo?.videoUrl && <small style={{ color: '#888', display: 'block', marginTop: '0.25rem' }}>الملف الحالي: {editingVideo.videoUrl}</small>}
+                    </div>
 
                     {/* إضافة الأسئلة */}
                     <div style={{ marginTop: '1rem', background: '#f9f9f9', borderRadius: '8px', padding: '1rem' }}>
