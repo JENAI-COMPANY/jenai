@@ -116,6 +116,30 @@
     white-space: nowrap;
   }
 
+  /* Sticky actions column - always visible on mobile */
+  [class*='-table'] th:last-child,
+  [class*='-table'] td:last-child,
+  .um-table th:last-child,
+  .um-table td:last-child,
+  .om-table th:last-child,
+  .om-table td:last-child,
+  .pm-table th:last-child,
+  .pm-table td:last-child,
+  table th:last-child,
+  table td:last-child {
+    position: sticky !important;
+    right: 0 !important;
+    background: white !important;
+    z-index: 3 !important;
+    box-shadow: -3px 0 6px rgba(0,0,0,0.08) !important;
+  }
+
+  [class*='-table'] thead th:last-child,
+  .um-table thead th:last-child,
+  table thead th:last-child {
+    background: #f8f9fa !important;
+  }
+
   /* Cards & Stats */
   [class*='-cards'],
   [class*='-stats'],
