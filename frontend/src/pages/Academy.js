@@ -124,6 +124,7 @@ const Academy = () => {
       <div className="academy-hero">
         <h1>🎓 {language === 'ar' ? 'أكاديمية جيناي' : 'Jenai Academy'}</h1>
         <p>{language === 'ar' ? 'تعلم وطور مهاراتك' : 'Learn and Develop Your Skills'}</p>
+      </div>
 
       <div className="academy-container">
         {videos.length === 0 ? (
