@@ -872,6 +872,19 @@
     padding: 6px;
   }
 
+  .product-title-row {
+    align-items: flex-start;
+  }
+
+  .favorite-btn-detail {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
   .product-detail-container {
     width: 100%;
   }
