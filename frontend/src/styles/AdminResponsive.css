@@ -90,8 +90,10 @@
   .um-table-wrapper,
   .om-table-wrapper,
   .pm-table-wrapper {
-    overflow-x: auto !important;
+    overflow-x: scroll !important;
     -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain !important;
     margin: 0 -0.5rem !important;
     padding: 0 0.5rem !important;
   }

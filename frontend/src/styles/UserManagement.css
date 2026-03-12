@@ -796,6 +796,8 @@
 @media (max-width: 1024px) {
   .um-table-wrapper {
     overflow-x: scroll;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
   }
 
   .um-table {
