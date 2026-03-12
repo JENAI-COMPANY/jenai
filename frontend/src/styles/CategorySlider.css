@@ -27,6 +27,7 @@
 .category-slider-container {
   overflow: hidden;
   padding: 1.5rem 0;
+  direction: ltr;
 }
 
 .category-slider {

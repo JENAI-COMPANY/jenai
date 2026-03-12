@@ -842,6 +842,17 @@
     gap: 20px;
   }
 
+  .main-image {
+    aspect-ratio: unset;
+    height: auto;
+  }
+
+  .main-image img {
+    height: auto !important;
+    width: 100% !important;
+    object-fit: contain !important;
+  }
+
   .product-title {
     font-size: 24px;
   }
