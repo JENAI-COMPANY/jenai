@@ -235,7 +235,7 @@ const ProductDetail = () => {
                       {language === 'ar' ? 'متصفحك لا يدعم تشغيل الفيديو' : 'Your browser does not support video playback'}
                     </video>
                   ) : (
-                    <img src={mediaUrl} alt={product.name} />
+                    <img src={mediaUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   )
                 ) : (
                   <div className="no-image">

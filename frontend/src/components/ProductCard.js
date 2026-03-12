@@ -129,7 +129,7 @@ const ProductCard = ({ product }) => {
 
       <div className="product-image">
         {product.images && product.images[0] ? (
-          <img src={product.images[0]} alt={product.name} />
+          <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         ) : (
           <div className="no-image">No Image</div>
         )}
