@@ -15,6 +15,21 @@
     padding: 0.5rem !important;
   }
 
+  /* Fix iOS scroll snap-back: remove overflow:hidden from all table parent containers */
+  .user-management,
+  .order-management,
+  .product-management,
+  .permissions-list,
+  .sm-table-container,
+  .team-table-container,
+  .level-section,
+  .profile-content,
+  [class*='-management'],
+  [class*='-container'],
+  [class*='-list'] {
+    overflow: visible !important;
+  }
+
   /* Headers */
   [class*='-header'],
   .um-header,
