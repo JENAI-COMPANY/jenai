@@ -464,6 +464,14 @@
     border-radius: 12px;
   }
 
+  .product-image {
+    aspect-ratio: 3 / 4;
+  }
+
+  .product-image img {
+    object-fit: contain;
+  }
+
   .favorite-btn {
     top: 8px;
     right: auto;

@@ -843,7 +843,8 @@
   }
 
   .main-image {
-    height: 400px;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 
   .product-title {
@@ -908,7 +909,8 @@
   }
 
   .main-image {
-    height: 300px;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 
   .tab-content {
