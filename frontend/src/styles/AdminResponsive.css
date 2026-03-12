@@ -15,21 +15,6 @@
     padding: 0.5rem !important;
   }
 
-  /* Fix iOS scroll snap-back: remove overflow:hidden from all table parent containers */
-  .user-management,
-  .order-management,
-  .product-management,
-  .permissions-list,
-  .sm-table-container,
-  .team-table-container,
-  .level-section,
-  .profile-content,
-  [class*='-management'],
-  [class*='-container'],
-  [class*='-list'] {
-    overflow: visible !important;
-  }
-
   /* Headers */
   [class*='-header'],
   .um-header,
@@ -99,36 +84,105 @@
     padding: 0.75rem !important;
   }
 
-  /* Tables */
+  /* ===== MOBILE CARD LAYOUT FOR TABLES ===== */
+  /* Convert horizontal-scroll tables to card layout on mobile */
+
   [class*='-table-wrapper'],
   .um-table-wrapper,
   .om-table-wrapper,
   .pm-table-wrapper,
   .data-table-wrapper {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+    overflow: visible !important;
     width: 100% !important;
   }
 
   [class*='-table'],
   .um-table,
   .om-table,
-  .pm-table {
-    min-width: 600px !important;
-    font-size: 0.85rem !important;
+  .pm-table,
+  .sm-table,
+  .data-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: unset !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
   }
 
-  [class*='-table'] th,
-  [class*='-table'] td,
-  .um-table th,
-  .um-table td,
-  .om-table th,
-  .om-table td,
-  .pm-table th,
-  .pm-table td {
-    padding: 0.5rem 0.35rem !important;
+  /* Hide table header row */
+  [class*='-table'] thead,
+  .um-table thead,
+  .om-table thead,
+  .pm-table thead,
+  .sm-table thead,
+  .data-table thead {
+    display: none !important;
+  }
+
+  [class*='-table'] tbody,
+  .um-table tbody,
+  .om-table tbody,
+  .pm-table tbody,
+  .sm-table tbody,
+  .data-table tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Each row becomes a card */
+  [class*='-table'] tbody tr,
+  .um-table tbody tr,
+  .om-table tbody tr,
+  .pm-table tbody tr,
+  .sm-table tbody tr,
+  .data-table tbody tr {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem !important;
+    background: white !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 4px !important;
+  }
+
+  /* Each cell inline */
+  [class*='-table'] tbody td,
+  .um-table tbody td,
+  .om-table tbody td,
+  .pm-table tbody td,
+  .sm-table tbody td,
+  .data-table tbody td {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    padding: 0.3rem 0.4rem !important;
+    border: none !important;
+    white-space: normal !important;
     font-size: 0.8rem !important;
-    white-space: nowrap;
+    min-width: 50px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Action buttons: full width row at the bottom of each card */
+  [class*='-table'] tbody td:last-child,
+  .um-table tbody td:last-child,
+  .om-table tbody td:last-child,
+  .pm-table tbody td:last-child,
+  .sm-table tbody td:last-child,
+  .data-table tbody td:last-child {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    justify-content: flex-end !important;
+    border-top: 1px solid #f0f0f0 !important;
+    padding-top: 0.5rem !important;
+    margin-top: 0.25rem !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
   }
 
   /* Cards & Stats */
