@@ -454,6 +454,15 @@ const ProfitCalculation = () => {
               </div>
             </div>
             <div className="summary-card">
+              <div className="summary-icon">✂️</div>
+              <div className="summary-content">
+                <div className="summary-label">{language === 'ar' ? 'إجمالي خصم الموقع 3%' : 'Total Site Deduction 3%'}</div>
+                <div className="summary-value" style={{color:'#e74c3c'}}>
+                  -₪{((displayData.membersProfits || []).reduce((sum, m) => sum + (m.profit?.websiteDevelopmentCommission || 0), 0)).toFixed(2)}
+                </div>
+              </div>
+            </div>
+            <div className="summary-card">
               <div className="summary-icon">{displayData.status === 'paid' ? '🔒' : '📊'}</div>
               <div className="summary-content">
                 <div className="summary-label">{language === 'ar' ? 'الحالة' : 'Status'}</div>
