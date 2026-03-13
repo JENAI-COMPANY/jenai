@@ -13,6 +13,17 @@ const ProfitCalculation = () => {
   const [calculating, setCalculating] = useState(false);
   const [profitData, setProfitData] = useState(null);
   const [profitPeriods, setProfitPeriods] = useState([]);
+
+  // أقدم تاريخ مسموح به = اليوم التالي لآخر فترة مغلقة
+  const minAllowedDate = profitPeriods
+    .filter(p => p.status === 'closed')
+    .reduce((latest, p) => {
+      const end = new Date(p.endDate);
+      return end > latest ? end : latest;
+    }, new Date(0));
+  const minDateStr = minAllowedDate.getTime() === new Date(0).getTime()
+    ? ''
+    : (() => { const d = new Date(minAllowedDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -308,6 +319,7 @@ const ProfitCalculation = () => {
             <input
               type="date"
               value={startDate}
+              min={minDateStr}
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
@@ -316,6 +328,7 @@ const ProfitCalculation = () => {
             <input
               type="date"
               value={endDate}
+              min={startDate || minDateStr}
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
