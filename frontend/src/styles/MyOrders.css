@@ -909,3 +909,32 @@
     font-size: 0.9rem !important;
   }
 }
+
+/* Fix: buttons in column flex container should not stretch to fill height */
+@media (max-width: 768px) {
+  .mo-modal-actions {
+    flex-direction: column !important;
+    height: auto !important;
+  }
+
+  .mo-edit-btn-large,
+  .mo-cancel-btn-large {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    width: 100% !important;
+  }
+
+  .mo-btn-primary,
+  .mo-btn-secondary,
+  .mo-btn-danger {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    width: 100% !important;
+  }
+}
