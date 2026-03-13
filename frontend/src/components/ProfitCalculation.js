@@ -98,6 +98,26 @@ const ProfitCalculation = () => {
     }
   };
 
+  const handleDeletePeriod = async (periodId) => {
+    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من إلغاء هذه الفترة؟ سيتم حذفها نهائياً.' : 'Are you sure you want to cancel this period? It will be permanently deleted.')) {
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/profit-periods/${periodId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessage(language === 'ar' ? 'تم إلغاء الفترة بنجاح' : 'Period cancelled successfully');
+      if (selectedPeriod?._id === periodId) setSelectedPeriod(null);
+      if (profitData?._id === periodId) setProfitData(null);
+      fetchProfitPeriods();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || (language === 'ar' ? 'فشل في إلغاء الفترة' : 'Failed to cancel period'));
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const handleClosePeriod = async (periodId) => {
     if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من إغلاق هذه الفترة؟ لن يمكن احتسابها مرة أخرى.' : 'Are you sure you want to close this period? It cannot be recalculated.')) {
       return;
@@ -352,9 +372,14 @@ const ProfitCalculation = () => {
                     👁️ {loading && selectedPeriod?._id === period._id ? (language === 'ar' ? 'جاري التحميل...' : 'Loading...') : (language === 'ar' ? 'عرض' : 'View')}
                   </button>
                   {period.status !== 'paid' && (
-                    <button onClick={() => handleClosePeriod(period._id)} className="close-btn">
-                      🔒 {language === 'ar' ? 'إغلاق' : 'Close'}
-                    </button>
+                    <>
+                      <button onClick={() => handleClosePeriod(period._id)} className="close-btn">
+                        🔒 {language === 'ar' ? 'إغلاق' : 'Close'}
+                      </button>
+                      <button onClick={() => handleDeletePeriod(period._id)} className="delete-btn" style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        🗑️ {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -388,9 +413,14 @@ const ProfitCalculation = () => {
                 📄 {language === 'ar' ? 'تصدير PDF' : 'Export PDF'}
               </button>
               {displayData.status !== 'paid' && (
-                <button onClick={() => handleClosePeriod(displayData._id)} className="close-period-btn">
-                  🔒 {language === 'ar' ? 'إغلاق الفترة' : 'Close Period'}
-                </button>
+                <>
+                  <button onClick={() => handleClosePeriod(displayData._id)} className="close-period-btn">
+                    🔒 {language === 'ar' ? 'إغلاق الفترة' : 'Close Period'}
+                  </button>
+                  <button onClick={() => handleDeletePeriod(displayData._id)} className="close-period-btn" style={{ background: '#ef4444', borderColor: '#ef4444' }}>
+                    🗑️ {language === 'ar' ? 'إلغاء الفترة' : 'Cancel Period'}
+                  </button>
+                </>
               )}
             </div>
           </div>
