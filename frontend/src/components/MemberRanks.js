@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import { getRankImageFromNumber, getRankNameFromNumber, getRankNumber, getRankImage, getRankName } from '../utils/rankHelpers';
 import '../styles/MemberRanks.css';
+import MobileDrawer from './MobileDrawer';
 
 const MemberRanks = () => {
   const { language } = useLanguage();
@@ -238,7 +239,75 @@ const MemberRanks = () => {
         </div>
       </div>
 
-      {/* Downline Modal */}
+      {/* Downline Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={!!(downlineData && selectedMember)}
+        onClose={() => setDownlineData(null)}
+        title={selectedMember ? `🌐 ${language === 'ar' ? 'شبكة العضو:' : 'Member Network:'} ${selectedMember.name}` : ''}
+      >
+        {downlineData && (
+          <div>
+            <div className="mr-member-summary">
+              <div className="mr-summary-item">
+                <label>{language === 'ar' ? 'الدرجة:' : 'Rank:'}</label>
+                <span className={`mr-rank-badge ${getRankBadgeClass(downlineData.member.memberRank)}`}>
+                  <img
+                    src={`/${getRankImage(downlineData.member.memberRank)}`}
+                    alt={getRankName(downlineData.member.memberRank)}
+                    style={{ width: '30px', height: '30px', objectFit: 'contain', marginLeft: '8px', verticalAlign: 'middle' }}
+                  />
+                  {getRankName(downlineData.member.memberRank)}
+                </span>
+              </div>
+              <div className="mr-summary-item">
+                <label>{language === 'ar' ? 'إجمالي الشبكة:' : 'Total Network:'}</label>
+                <span>{downlineData.statistics.totalDownline}</span>
+              </div>
+            </div>
+            <div className="mr-downline-levels">
+              {[1, 2, 3, 4, 5].map(level => {
+                const levelKey = `level${level}`;
+                const levelMembers = downlineData.downlineStructure?.[levelKey] || [];
+                return (
+                  <div key={level} className="mr-level-section">
+                    <h4>
+                      {language === 'ar' ? `المستوى ${level}` : `Level ${level}`}
+                      <span className="mr-level-badge">
+                        {levelMembers.length} {language === 'ar' ? 'عضو' : 'members'}
+                      </span>
+                    </h4>
+                    {levelMembers.length > 0 ? (
+                      <div className="mr-level-members">
+                        {levelMembers.map(member => (
+                          <div key={member._id} className="mr-level-member-card">
+                            <div className="mr-member-info">
+                              <strong>{member.name}</strong>
+                              <small>@{member.username}</small>
+                            </div>
+                            <div className="mr-member-stats">
+                              <span className={`mr-rank-badge ${getRankBadgeClass(member.memberRank)}`}>
+                                <img
+                                  src={`/${getRankImage(member.memberRank)}`}
+                                  alt={`Rank ${member.memberRank}`}
+                                  style={{ width: '25px', height: '25px', objectFit: 'contain' }}
+                                />
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mr-no-members">{language === 'ar' ? 'لا يوجد أعضاء في هذا المستوى' : 'No members in this level'}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </MobileDrawer>
+
+      {/* Downline Modal - Desktop Version */}
       {downlineData && selectedMember && (
         <div className="mr-modal-overlay" onClick={() => setDownlineData(null)}>
           <div className="mr-modal" onClick={(e) => e.stopPropagation()}>
@@ -266,12 +335,10 @@ const MemberRanks = () => {
                   <span>{downlineData.statistics.totalDownline}</span>
                 </div>
               </div>
-
               <div className="mr-downline-levels">
                 {[1, 2, 3, 4, 5].map(level => {
                   const levelKey = `level${level}`;
                   const levelMembers = downlineData.downlineStructure?.[levelKey] || [];
-
                   return (
                     <div key={level} className="mr-level-section">
                       <h4>

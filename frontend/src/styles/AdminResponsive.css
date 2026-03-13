@@ -555,7 +555,8 @@
   /* Hide desktop modals when MobileDrawer is available */
   .um-modal-overlay,
   .om-modal-overlay,
-  .pm-modal-overlay {
+  .pm-modal-overlay,
+  .mr-modal-overlay {
     display: none !important;
   }
 }
