@@ -24,8 +24,8 @@ exports.calculatePeriodProfits = async (req, res) => {
     // التحقق من عدم التداخل مع فترة مغلقة
     const overlapping = await ProfitPeriod.findOne({
       status: { $in: ['closed', 'paid'] },
-      startDate: { $lte: new Date(endDate) },
-      endDate: { $gte: new Date(startDate) }
+      startDate: { $lt: new Date(endDate) },
+      endDate: { $gt: new Date(startDate) }
     });
     if (overlapping) {
       return res.status(400).json({

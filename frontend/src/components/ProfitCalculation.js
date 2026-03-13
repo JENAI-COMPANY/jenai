@@ -14,7 +14,7 @@ const ProfitCalculation = () => {
   const [profitData, setProfitData] = useState(null);
   const [profitPeriods, setProfitPeriods] = useState([]);
 
-  // أقدم تاريخ مسموح به = اليوم التالي لآخر فترة مغلقة
+  // أقدم تاريخ مسموح به = تاريخ نهاية آخر فترة مغلقة (مسموح البداية من نفس اليوم)
   const minAllowedDate = profitPeriods
     .filter(p => p.status === 'closed' || p.status === 'paid')
     .reduce((latest, p) => {
@@ -23,7 +23,7 @@ const ProfitCalculation = () => {
     }, new Date(0));
   const minDateStr = minAllowedDate.getTime() === new Date(0).getTime()
     ? ''
-    : (() => { const d = new Date(minAllowedDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
+    : minAllowedDate.toISOString().split('T')[0];
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
