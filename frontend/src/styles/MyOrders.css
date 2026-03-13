@@ -889,3 +889,23 @@
     font-size: 1rem;
   }
 }
+
+/* Mobile: fix oversized action buttons */
+@media (max-width: 768px) {
+  .mo-edit-btn-large,
+  .mo-cancel-btn-large {
+    padding: 0.6rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .mo-modal-actions {
+    gap: 0.5rem !important;
+  }
+
+  .mo-btn-primary,
+  .mo-btn-secondary,
+  .mo-btn-danger {
+    padding: 0.65rem 1rem !important;
+    font-size: 0.9rem !important;
+  }
+}
