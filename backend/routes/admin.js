@@ -3402,4 +3402,67 @@ router.post('/create-order-for-user', protect, authorize('super_admin', 'sales_e
   }
 });
 
+// ==================== Migration: تحويل النقاط القديمة إلى PointTransaction ====================
+// يُشغَّل مرة واحدة فقط بعد رفع الكود الجديد لأول مرة
+router.post('/migrate-points', protect, adminOnly, async (req, res) => {
+  try {
+    const { migrateDate } = req.body;
+
+    if (!migrateDate) {
+      return res.status(400).json({ success: false, message: 'يرجى توفير تاريخ للنقاط القديمة (migrateDate)' });
+    }
+
+    const earnedAt = new Date(migrateDate);
+
+    // التحقق من عدم وجود migration سابقة (لمنع التكرار)
+    const existing = await PointTransaction.findOne({ sourceType: 'migration' });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'تم تشغيل المايغريشن مسبقاً' });
+    }
+
+    const members = await User.find({ role: 'member' })
+      .select('monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points');
+
+    const bulkOps = [];
+
+    for (const member of members) {
+      if ((member.monthlyPoints || 0) > 0) {
+        bulkOps.push({
+          memberId: member._id,
+          points: member.monthlyPoints,
+          type: 'personal',
+          sourceType: 'migration',
+          earnedAt
+        });
+      }
+      const genFields = ['generation1Points','generation2Points','generation3Points','generation4Points','generation5Points'];
+      const genTypes  = ['generation1','generation2','generation3','generation4','generation5'];
+      for (let i = 0; i < 5; i++) {
+        const pts = member[genFields[i]] || 0;
+        if (pts > 0) {
+          bulkOps.push({
+            memberId: member._id,
+            points: pts,
+            type: genTypes[i],
+            sourceType: 'migration',
+            earnedAt
+          });
+        }
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await PointTransaction.insertMany(bulkOps);
+    }
+
+    res.json({
+      success: true,
+      message: `تم تحويل نقاط ${members.length} عضو (${bulkOps.length} سجل) بتاريخ ${migrateDate}`
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

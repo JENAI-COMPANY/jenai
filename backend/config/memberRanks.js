@@ -6,6 +6,7 @@
  */
 
 const User = require('../models/User');
+const PointTransaction = require('../models/PointTransaction');
 
 // Mapping between rank numbers and enum values in User model
 const RANK_ENUM_MAP = {
@@ -506,95 +507,139 @@ const calculateDownlineCommission = async (User, memberId) => {
 };
 
 /**
- * دالة حساب عمولة القيادة (للأعضاء من رتبة برونزي وما فوق)
- * المعادلة: النقاط الشهرية للأعضاء في الشبكة × نسبة العمولة × 0.55
+ * دالة حساب عمولات الشبكة (فريق + قيادة) من مصدر موحد
+ * المصدر: نقاط كل عضو في الشبكة (personal + bonus) ضمن نطاق التواريخ
+ * - عمولة الفريق: نسب ثابتة (11%, 8%, 6%, 3%, 2%) بغض النظر عن الرتبة
+ * - عمولة القيادة: نسب حسب رتبة العضو، للبرونزي وما فوق فقط
  * @param {Object} User - نموذج المستخدم
  * @param {String} memberId - معرف العضو
- * @returns {Object} - تفاصيل عمولة القيادة
+ * @param {Date|String} startDate - تاريخ بداية الفترة
+ * @param {Date|String} endDate - تاريخ نهاية الفترة
+ * @returns {Object} - تفاصيل عمولة الفريق والقيادة
  */
-const calculateLeadershipCommission = async (User, memberId) => {
-  const member = await User.findById(memberId);
-
-  if (!member || member.role !== 'member') {
-    return {
-      totalCommission: 0,
-      commissionInShekel: 0,
-      breakdown: [],
-      hasLeadershipCommission: false
-    };
-  }
-
-  // تحويل الرتبة إلى رقم
-  const memberRankNumber = getRankNumber(member.memberRank);
-
-  // العضو يجب أن يكون برونزي أو أعلى (رتبة 2 فما فوق)
-  if (memberRankNumber < 2) {
-    return {
-      totalCommission: 0,
-      commissionInShekel: 0,
-      breakdown: [],
-      hasLeadershipCommission: false,
-      message: 'عمولة القيادة متاحة للأعضاء من رتبة برونزي وما فوق'
-    };
-  }
-
-  const rankConfig = getRankInfo(memberRankNumber);
-  const leadershipRates = rankConfig.leadershipCommission;
+const calculateNetworkCommissions = async (User, memberId, startDate, endDate) => {
+  const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
   const POINTS_TO_SHEKEL_RATE = 0.55;
 
-  // الحصول على هيكل الشبكة
+  const member = await User.findById(memberId);
+  if (!member || member.role !== 'member') {
+    return {
+      team: { totalCommissionPoints: 0, commissionInShekel: 0 },
+      leadership: { totalCommissionPoints: 0, commissionInShekel: 0, hasLeadershipCommission: false, breakdown: [] }
+    };
+  }
+
+  const memberRankNumber = getRankNumber(member.memberRank);
+  const rankConfig = getRankInfo(memberRankNumber);
+  const leadershipRates = rankConfig.leadershipCommission;
+  const hasLeadership = memberRankNumber >= 2;
+
+  // بناء هيكل الشبكة (5 مستويات)
   const downlineStructure = await getDownlineStructure(User, memberId);
 
-  const breakdown = [];
-  let totalCommissionPoints = 0;
+  // جمع كل IDs الأعضاء في الشبكة
+  const allDownlineIds = [];
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    for (const m of (downlineStructure[`level${lvl}`] || [])) {
+      allDownlineIds.push(m._id);
+    }
+  }
 
-  // حساب عمولة القيادة من كل مستوى حسب رتبة العضو
-  const levels = [
-    { key: 'level1', rate: leadershipRates.generation1 },
-    { key: 'level2', rate: leadershipRates.generation2 },
-    { key: 'level3', rate: leadershipRates.generation3 },
-    { key: 'level4', rate: leadershipRates.generation4 },
-    { key: 'level5', rate: leadershipRates.generation5 }
-  ];
+  if (allDownlineIds.length === 0) {
+    return {
+      team: { totalCommissionPoints: 0, commissionInShekel: 0 },
+      leadership: { totalCommissionPoints: 0, commissionInShekel: 0, hasLeadershipCommission: hasLeadership, breakdown: [] }
+    };
+  }
 
-  for (let i = 0; i < levels.length; i++) {
-    const level = levels[i];
-    const levelMembers = downlineStructure[level.key];
+  // قراءة نقاط كل عضو (personal + bonus) ضمن نطاق التواريخ - مصدر موحد
+  const endDateObj = new Date(endDate);
+  endDateObj.setHours(23, 59, 59, 999);
 
-    if (level.rate > 0 && levelMembers && levelMembers.length > 0) {
-      // جمع النقاط الشهرية لجميع أعضاء هذا المستوى
-      let levelTotalPoints = 0;
-      for (const downlineMember of levelMembers) {
-        levelTotalPoints += downlineMember.monthlyPoints || 0;
+  const pointsAgg = await PointTransaction.aggregate([
+    {
+      $match: {
+        memberId: { $in: allDownlineIds },
+        type: { $in: ['personal', 'bonus'] },
+        earnedAt: { $gte: new Date(startDate), $lte: endDateObj }
       }
+    },
+    {
+      $group: {
+        _id: '$memberId',
+        total: { $sum: '$points' }
+      }
+    }
+  ]);
 
-      if (levelTotalPoints > 0) {
-        const commissionPoints = levelTotalPoints * level.rate;
-        totalCommissionPoints += commissionPoints;
+  const memberPointsMap = {};
+  for (const t of pointsAgg) {
+    memberPointsMap[t._id.toString()] = t.total;
+  }
 
-        breakdown.push({
+  // حساب عمولتي الفريق والقيادة من نفس النقاط
+  let teamTotalPoints = 0;
+  let leadershipTotalPoints = 0;
+  const leadershipBreakdown = [];
+
+  for (let i = 0; i < 5; i++) {
+    const levelMembers = downlineStructure[`level${i + 1}`] || [];
+    if (levelMembers.length === 0) continue;
+
+    let levelTotalPoints = 0;
+    for (const m of levelMembers) {
+      levelTotalPoints += memberPointsMap[m._id.toString()] || 0;
+    }
+    if (levelTotalPoints === 0) continue;
+
+    // عمولة الفريق (نسب ثابتة)
+    teamTotalPoints += levelTotalPoints * TEAM_RATES[i];
+
+    // عمولة القيادة (نسب حسب الرتبة - للبرونزي وما فوق)
+    if (hasLeadership) {
+      const leadershipRate = [
+        leadershipRates.generation1,
+        leadershipRates.generation2,
+        leadershipRates.generation3,
+        leadershipRates.generation4,
+        leadershipRates.generation5
+      ][i];
+
+      if (leadershipRate > 0) {
+        const leadershipPoints = levelTotalPoints * leadershipRate;
+        leadershipTotalPoints += leadershipPoints;
+        leadershipBreakdown.push({
           generation: i + 1,
           generationPoints: levelTotalPoints,
-          commissionRate: level.rate,
-          commissionRatePercent: (level.rate * 100).toFixed(0) + '%',
-          commissionPoints: commissionPoints,
-          commissionInShekel: Math.floor(commissionPoints * POINTS_TO_SHEKEL_RATE)
+          commissionRate: leadershipRate,
+          commissionRatePercent: (leadershipRate * 100).toFixed(0) + '%',
+          commissionPoints: leadershipPoints,
+          commissionInShekel: Math.floor(leadershipPoints * POINTS_TO_SHEKEL_RATE)
         });
       }
     }
   }
 
-  // تقريب المجموع الكلي مرة واحدة في النهاية لتجنب فقدان الكسور
-  const commissionInShekel = Math.floor(totalCommissionPoints * POINTS_TO_SHEKEL_RATE);
-
   return {
-    totalCommissionPoints,
-    commissionInShekel,
-    breakdown,
-    hasLeadershipCommission: true,
-    rankName: rankConfig.name,
-    rankNameEn: rankConfig.nameEn
+    team: {
+      totalCommissionPoints: teamTotalPoints,
+      commissionInShekel: Math.floor(teamTotalPoints * POINTS_TO_SHEKEL_RATE)
+    },
+    leadership: {
+      totalCommissionPoints: leadershipTotalPoints,
+      commissionInShekel: Math.floor(leadershipTotalPoints * POINTS_TO_SHEKEL_RATE),
+      hasLeadershipCommission: hasLeadership,
+      breakdown: leadershipBreakdown,
+      rankName: rankConfig.name,
+      rankNameEn: rankConfig.nameEn
+    }
   };
+};
+
+// للتوافق مع الكود القديم
+const calculateLeadershipCommission = async (User, memberId, startDate, endDate) => {
+  const result = await calculateNetworkCommissions(User, memberId, startDate, endDate);
+  return result.leadership;
 };
 
 module.exports = {
@@ -610,5 +655,6 @@ module.exports = {
   getAllRanks,
   getDownlineStructure,
   calculateDownlineCommission,
-  calculateLeadershipCommission
+  calculateLeadershipCommission,
+  calculateNetworkCommissions
 };

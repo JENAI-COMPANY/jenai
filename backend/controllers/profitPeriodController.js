@@ -4,7 +4,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const PointTransaction = require('../models/PointTransaction');
 const { calculateTotalPoints } = require('../utils/pointsCalculator');
-const { calculateLeadershipCommission, getRankInfo, getRankNumber } = require('../config/memberRanks');
+const { calculateNetworkCommissions, getRankInfo, getRankNumber } = require('../config/memberRanks');
 
 /**
  * احتساب وحفظ أرباح جميع الأعضاء لفترة معينة
@@ -66,27 +66,20 @@ exports.calculatePeriodProfits = async (req, res) => {
       // النقاط الشخصية: من طلبيات العضو + المكافآت ضمن التواريخ
       const personalPoints = (memberPoints['personal'] || 0) + (memberPoints['bonus'] || 0);
 
-      // نقاط الأجيال (بعد تطبيق النسب - من معاملات النقاط ضمن الفترة)
-      const gen1Points = memberPoints['generation1'] || 0;
-      const gen2Points = memberPoints['generation2'] || 0;
-      const gen3Points = memberPoints['generation3'] || 0;
-      const gen4Points = memberPoints['generation4'] || 0;
-      const gen5Points = memberPoints['generation5'] || 0;
-
       // حساب أرباح الأداء الشخصي: نقاط × 20% × 0.55
       const personalCommissionPoints = personalPoints * 0.20;
       const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55);
 
-      // حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
-      const teamCommissionPoints = gen1Points + gen2Points + gen3Points + gen4Points + gen5Points;
-      const teamProfitInShekel = Math.floor(teamCommissionPoints * 0.55);
+      // حساب عمولات الشبكة (فريق + قيادة) من مصدر موحد (personal+bonus للشبكة ضمن التواريخ)
+      const networkCommissions = await calculateNetworkCommissions(User, member._id, startDate, endDate);
+      const teamCommissionPoints = networkCommissions.team.totalCommissionPoints;
+      const teamProfitInShekel = networkCommissions.team.commissionInShekel;
+      const leadershipCommission = networkCommissions.leadership;
 
       // إجمالي أرباح الأداء
       const performanceProfitInShekel = personalProfitInShekel + teamProfitInShekel;
       const totalCommissionPoints = personalCommissionPoints + teamCommissionPoints;
 
-      // حساب عمولة القيادة
-      const leadershipCommission = await calculateLeadershipCommission(User, member._id);
       const memberRankNumber = getRankNumber(member.memberRank);
       const rankInfo = getRankInfo(memberRankNumber);
 
@@ -195,11 +188,7 @@ exports.calculatePeriodProfits = async (req, res) => {
         rankNameEn: rankInfo.nameEn,
         points: {
           personal: personalPoints,
-          generation1: gen1Points,
-          generation2: gen2Points,
-          generation3: gen3Points,
-          generation4: gen4Points,
-          generation5: gen5Points,
+          teamCommission: teamCommissionPoints,
           total: personalPoints + teamCommissionPoints
         },
         commissions: {
