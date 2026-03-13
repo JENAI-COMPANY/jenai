@@ -1213,81 +1213,63 @@ const Profile = () => {
                       <p>{language === 'ar' ? 'لم يتم احتساب أي دورة أرباح بعد' : 'No profit periods calculated yet'}</p>
                     </div>
                   ) : (
-                    <div className="profit-periods-table-container">
-                      <table className="profit-periods-table">
-                        <thead>
-                          <tr>
-                            <th>{language === 'ar' ? '#' : '#'}</th>
-                            <th>{language === 'ar' ? 'اسم الدورة' : 'Period Name'}</th>
-                            <th>{language === 'ar' ? 'رقم الدورة' : 'Period Number'}</th>
-                            <th>{language === 'ar' ? 'أرباح الأداء' : 'Performance Profit'}</th>
-                            <th>{language === 'ar' ? 'أرباح الأجيال' : 'Generations Profit'}</th>
-                            <th>{language === 'ar' ? 'أرباح القيادة' : 'Leadership Profit'}</th>
-                            <th>{language === 'ar' ? 'عمولة شراء زبون' : 'Customer Comm'}</th>
-                            <th>{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</th>
-                            <th>{language === 'ar' ? 'خصم الموقع 3%' : 'Site Deduction 3%'}</th>
-                            <th>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</th>
-                            <th>{language === 'ar' ? 'تاريخ الاحتساب' : 'Calculated Date'}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {profitPeriods.map((period, index) => {
-                            // حساب العمولات من النقاط مباشرة (نفس منطق صفحة الإدارة)
-                            const personalPts = period.profit?.points?.personal || 0;
-                            const gen1Pts = period.profit?.points?.generation1 || 0;
-                            const gen2Pts = period.profit?.points?.generation2 || 0;
-                            const gen3Pts = period.profit?.points?.generation3 || 0;
-                            const gen4Pts = period.profit?.points?.generation4 || 0;
-                            const gen5Pts = period.profit?.points?.generation5 || 0;
-                            const teamPts = gen1Pts + gen2Pts + gen3Pts + gen4Pts + gen5Pts;
+                    <div className="profit-periods-cards">
+                      {profitPeriods.map((period, index) => {
+                        const personalComm = Math.floor(period.profit?.personalProfit || 0);
+                        const teamComm = Math.floor(period.profit?.teamProfit || 0);
+                        const leadProfit = Math.floor(period.profit?.leadershipProfit || 0);
+                        const customerCommission = period.profit?.customerPurchaseCommission || 0;
+                        const totalBeforeDeduction = period.profit?.totalProfitBeforeDeduction || 0;
+                        const websiteCommission = period.profit?.websiteDevelopmentCommission || 0;
+                        const finalProfit = period.profit?.totalProfit || 0;
 
-                            const personalComm = Math.floor(personalPts * 0.20 * 0.55);
-                            const teamComm = Math.floor(teamPts * 0.55);
-                            const leadProfit = Math.floor(period.profit?.leadershipProfit || 0);
-                            const customerCommission = period.profit?.customerPurchaseCommission || 0;
-
-                            // البيانات من الباك اند (تتضمن الخصم)
-                            const totalBeforeDeduction = period.profit?.totalProfitBeforeDeduction || (personalComm + teamComm + leadProfit + customerCommission);
-                            const websiteCommission = period.profit?.websiteDevelopmentCommission || 0;
-                            const finalProfit = period.profit?.totalProfit || 0;
-
-                            return (
-                              <tr key={period.periodId}>
-                                <td>{index + 1}</td>
-                                <td className="period-name">{period.periodName}</td>
-                                <td className="period-number">{period.periodNumber}</td>
-                                <td className="profit-value">
-                                  ₪{personalComm}
-                                </td>
-                                <td className="profit-value">
-                                  ₪{teamComm}
-                                </td>
-                                <td className="profit-value">
-                                  ₪{leadProfit}
-                                </td>
-                                <td className="profit-value" style={{color: '#27ae60'}}>
-                                  ₪{customerCommission.toFixed(2)}
-                                </td>
-                                <td className="profit-value">
-                                  ₪{totalBeforeDeduction.toFixed(2)}
-                                </td>
-                                <td className="profit-value" style={{color: '#e74c3c'}}>
-                                  -₪{websiteCommission.toFixed(2)}
-                                </td>
-                                <td className="profit-value total-profit" style={{fontWeight: 'bold'}}>
-                                  ₪{finalProfit}
-                                </td>
-                                <td className="calculated-date">
-                                  {new Date(period.calculatedAt).toLocaleDateString(
-                                    language === 'ar' ? 'ar-EG' : 'en-US',
-                                    { year: 'numeric', month: 'short', day: 'numeric' }
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                        return (
+                          <div key={period.periodId} className="profit-period-card">
+                            <div className="ppc-header">
+                              <span className="ppc-index">#{index + 1}</span>
+                              <span className="ppc-name">{period.periodName}</span>
+                              <span className="ppc-date">
+                                {new Date(period.calculatedAt).toLocaleDateString(
+                                  language === 'ar' ? 'ar-EG' : 'en-US',
+                                  { year: 'numeric', month: 'short', day: 'numeric' }
+                                )}
+                              </span>
+                            </div>
+                            <div className="ppc-rows">
+                              <div className="ppc-row">
+                                <span className="ppc-label">{language === 'ar' ? 'أرباح شخصية' : 'Personal'}</span>
+                                <span className="ppc-val">₪{personalComm}</span>
+                              </div>
+                              <div className="ppc-row">
+                                <span className="ppc-label">{language === 'ar' ? 'عمولة الفريق' : 'Team Commission'}</span>
+                                <span className="ppc-val">₪{teamComm}</span>
+                              </div>
+                              <div className="ppc-row">
+                                <span className="ppc-label">{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</span>
+                                <span className="ppc-val">₪{leadProfit}</span>
+                              </div>
+                              {customerCommission > 0 && (
+                                <div className="ppc-row">
+                                  <span className="ppc-label">{language === 'ar' ? 'عمولة شراء زبون' : 'Customer Comm'}</span>
+                                  <span className="ppc-val" style={{color:'#27ae60'}}>₪{customerCommission.toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="ppc-row ppc-divider">
+                                <span className="ppc-label">{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</span>
+                                <span className="ppc-val">₪{totalBeforeDeduction.toFixed(2)}</span>
+                              </div>
+                              <div className="ppc-row">
+                                <span className="ppc-label">{language === 'ar' ? 'خصم الموقع 3%' : 'Site 3%'}</span>
+                                <span className="ppc-val" style={{color:'#e74c3c'}}>-₪{websiteCommission.toFixed(2)}</span>
+                              </div>
+                            </div>
+                            <div className="ppc-footer">
+                              <span>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</span>
+                              <span className="ppc-total">₪{finalProfit}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
