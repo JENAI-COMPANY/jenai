@@ -16,7 +16,7 @@ const ProfitCalculation = () => {
 
   // أقدم تاريخ مسموح به = اليوم التالي لآخر فترة مغلقة
   const minAllowedDate = profitPeriods
-    .filter(p => p.status === 'closed')
+    .filter(p => p.status === 'closed' || p.status === 'paid')
     .reduce((latest, p) => {
       const end = new Date(p.endDate);
       return end > latest ? end : latest;
