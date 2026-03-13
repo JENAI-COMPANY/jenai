@@ -204,6 +204,17 @@
   transition: background 0.2s;
 }
 .news-cancel-btn:hover { background: #e0e0e0; }
+.news-upload-btn {
+  background: #f5f5f5;
+  border: 2px dashed #bbb;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+  transition: all 0.2s;
+}
+.news-upload-btn:hover { background: #eee; border-color: #888; }
 
 /* Filters */
 .news-filters {

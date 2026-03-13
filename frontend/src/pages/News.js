@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -32,6 +32,9 @@ const News = () => {
     isPinned: false,
     author: 'فريق جيناي'
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const fileInputRef = useRef();
 
   const categories = ['عام', 'إعلانات', 'عروض', 'تحديثات', 'أحداث'];
 
@@ -72,6 +75,8 @@ const News = () => {
     setShowForm(false);
     setError('');
     setSuccess('');
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleEdit = (item) => {
@@ -87,6 +92,8 @@ const News = () => {
       isPinned: item.isPinned || false,
       author: item.author || 'فريق جيناي'
     });
+    setImageFile(null);
+    setImagePreview(item.image || '');
     setShowForm(true);
     setShowModal(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -101,15 +108,15 @@ const News = () => {
     setError('');
     const token = localStorage.getItem('token');
     try {
+      const payload = new FormData();
+      Object.entries(formData).forEach(([k, v]) => payload.append(k, v));
+      if (imageFile) payload.append('image', imageFile);
+      const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' };
       if (editingNews) {
-        await axios.put(`/api/news/${editingNews._id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.put(`/api/news/${editingNews._id}`, payload, { headers });
         setSuccess('تم تحديث الخبر بنجاح');
       } else {
-        await axios.post('/api/news', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post('/api/news', payload, { headers });
         setSuccess('تم إضافة الخبر بنجاح');
       }
       resetForm();
@@ -234,13 +241,29 @@ const News = () => {
                   />
                 </div>
                 <div className="news-form-group news-full-width">
-                  <label>رابط الصورة (اختياري)</label>
+                  <label>صورة الخبر (اختياري)</label>
                   <input
-                    type="url"
-                    value={formData.image}
-                    onChange={e => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="https://..."
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setImageFile(file);
+                        setImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
                   />
+                  <button type="button" className="news-upload-btn" onClick={() => fileInputRef.current.click()}>
+                    📁 اختر صورة
+                  </button>
+                  {imagePreview && (
+                    <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
+                      <img src={imagePreview} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 8, border: '1px solid #ddd' }} />
+                      <button type="button" onClick={() => { setImageFile(null); setImagePreview(''); setFormData({ ...formData, image: '' }); }} style={{ position: 'absolute', top: 4, left: 4, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 14 }}>✕</button>
+                    </div>
+                  )}
                 </div>
                 <div className="news-form-group news-full-width">
                   <label>محتوى الخبر بالعربية *</label>

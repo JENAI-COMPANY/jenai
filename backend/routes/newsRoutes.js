@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const News = require('../models/News');
 const { protect, optionalAuth } = require('../middleware/auth');
+const uploadNews = require('../middleware/uploadNews');
 
 // GET news - super_admin sees all, public sees only active
 router.get('/', optionalAuth, async (req, res) => {
@@ -27,12 +28,14 @@ router.get('/', optionalAuth, async (req, res) => {
 });
 
 // POST create news (super_admin only)
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, uploadNews.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'غير مصرح' });
     }
-    const news = await News.create(req.body);
+    const data = { ...req.body };
+    if (req.file) data.image = `/uploads/news/${req.file.filename}`;
+    const news = await News.create(data);
     res.status(201).json({ success: true, news });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -40,12 +43,14 @@ router.post('/', protect, async (req, res) => {
 });
 
 // PUT update news (super_admin only)
-router.put('/:id', protect, async (req, res) => {
+router.put('/:id', protect, uploadNews.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'غير مصرح' });
     }
-    const news = await News.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const data = { ...req.body };
+    if (req.file) data.image = `/uploads/news/${req.file.filename}`;
+    const news = await News.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!news) return res.status(404).json({ success: false, message: 'الخبر غير موجود' });
     res.json({ success: true, news });
   } catch (err) {
