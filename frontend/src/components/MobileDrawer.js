@@ -12,9 +12,11 @@ const MobileDrawer = ({ isOpen, onClose, title, children, footerButtons }) => {
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: 'white', zIndex: 99999,
         flexDirection: 'column',
-        fontFamily: 'inherit', direction: 'rtl'
+        fontFamily: 'inherit', direction: 'rtl',
+        height: '100%',
+        maxHeight: '100vh'
       }}>
-        {/* Header */}
+        {/* Header - fixed height */}
         <div style={{
           background: '#22513e', color: 'white',
           padding: '0.85rem 1rem',
@@ -36,9 +38,12 @@ const MobileDrawer = ({ isOpen, onClose, title, children, footerButtons }) => {
           <h3 style={{ margin: 0, fontSize: '1rem', flex: 1, textAlign: 'right', color: 'white' }}>{title}</h3>
         </div>
 
-        {/* Scrollable body */}
+        {/* Scrollable body - iOS Safari fix: height:0 + flex:1 forces proper scroll */}
         <div style={{
-          flex: 1, overflowY: 'auto', overflowX: 'hidden',
+          flex: 1,
+          height: 0,
+          overflowY: 'scroll',
+          overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
           padding: '1rem'
         }}>

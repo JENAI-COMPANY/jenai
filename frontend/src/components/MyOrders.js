@@ -5,6 +5,7 @@ import { userCancelOrder, userUpdateOrder } from '../services/api';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import '../styles/MyOrders.css';
+import MobileDrawer from './MobileDrawer';
 
 const MyOrders = () => {
   console.log('🔴🔴🔴 MyOrders component loaded - VERSION 2.0 WITH PRINT BUTTON 🔴🔴🔴');
@@ -440,6 +441,177 @@ const MyOrders = () => {
         </div>
       )}
 
+      {/* Order Details MobileDrawer */}
+      <MobileDrawer
+        isOpen={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        title={language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
+      >
+        {selectedOrder && (
+          <>
+            <div className="mo-detail-section">
+              <h4>{language === 'ar' ? 'معلومات الطلب' : 'Order Information'}</h4>
+              <p><strong>{language === 'ar' ? 'رقم الطلب:' : 'Order Number:'}</strong> {selectedOrder.orderNumber}</p>
+              <p><strong>{language === 'ar' ? 'الحالة:' : 'Status:'}</strong> <span className={`mo-status-badge ${getStatusBadgeClass(selectedOrder.status)}`}>{getStatusLabel(selectedOrder.status)}</span></p>
+              <p><strong>{language === 'ar' ? 'التاريخ:' : 'Date:'}</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+              <p><strong>{language === 'ar' ? 'طريقة الدفع:' : 'Payment Method:'}</strong> {
+                selectedOrder.paymentMethod === 'cash_on_delivery' ? (language === 'ar' ? 'الدفع عند التوصيل' : 'Cash on Delivery') :
+                selectedOrder.paymentMethod === 'cash_at_company' ? (language === 'ar' ? 'كاش بالشركة' : 'Cash at Company') :
+                selectedOrder.paymentMethod === 'reflect' ? (language === 'ar' ? 'ريفليكت' : 'Reflect') :
+                selectedOrder.paymentMethod
+              }</p>
+            </div>
+
+            {/* معلومات التواصل */}
+            <div className="mo-detail-section">
+              <h4>{language === 'ar' ? '📞 معلومات التواصل' : '📞 Contact Info'}</h4>
+              <p><strong>{language === 'ar' ? 'رقم الهاتف الأساسي:' : 'Primary Phone:'}</strong> {selectedOrder.contactPhone || 'N/A'}</p>
+              {selectedOrder.alternatePhone && (
+                <p><strong>{language === 'ar' ? 'رقم الهاتف البديل:' : 'Alternate Phone:'}</strong> {selectedOrder.alternatePhone}</p>
+              )}
+            </div>
+
+            <div className="mo-detail-section">
+              <h4>{language === 'ar' ? 'عنوان الشحن' : 'Shipping Address'}</h4>
+              <p>{selectedOrder.shippingAddress?.street}</p>
+              <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}</p>
+              <p>{selectedOrder.shippingAddress?.country}</p>
+            </div>
+
+            <div className="mo-detail-section">
+              <h4>{language === 'ar' ? 'المنتجات' : 'Products'}</h4>
+              <table className="mo-products-table">
+                <thead>
+                  <tr>
+                    <th>{language === 'ar' ? 'المنتج' : 'Product'}</th>
+                    <th>{language === 'ar' ? 'الكمية' : 'Qty'}</th>
+                    <th>{language === 'ar' ? 'السعر' : 'Price'}</th>
+                    <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder.orderItems?.map((item, index) => (
+                    <tr key={index}>
+                      <td>
+                        {item.name}
+                        {item.selectedColor && (
+                          <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                            🎨 {language === 'ar' ? 'اللون:' : 'Color:'} {item.selectedColor}
+                          </div>
+                        )}
+                        {item.selectedSize && (
+                          <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>
+                            📏 {language === 'ar' ? 'النمرة:' : 'Size:'} {item.selectedSize}
+                          </div>
+                        )}
+                      </td>
+                      <td>{item.quantity}</td>
+                      <td>₪{item.price?.toFixed(2)}</td>
+                      <td>{item.points || 0} {language === 'ar' ? 'نقطة' : 'pts'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mo-detail-section">
+              <h4>{language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}</h4>
+              <p><strong>{language === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ₪{selectedOrder.itemsPrice?.toFixed(2)}</p>
+              <p><strong>{language === 'ar' ? 'الشحن:' : 'Shipping:'}</strong> ₪{selectedOrder.shippingPrice?.toFixed(2)}</p>
+              <p><strong>{language === 'ar' ? 'الضريبة:' : 'Tax:'}</strong> ₪{selectedOrder.taxPrice?.toFixed(2)}</p>
+              {selectedOrder.discountAmount > 0 && (
+                <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -₪{selectedOrder.discountAmount?.toFixed(2)}</p>
+              )}
+              <p className="mo-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
+            </div>
+
+            {/* قسم الطلب المخصص */}
+            {selectedOrder.isCustomOrder && selectedOrder.customOrderDetails && (
+              <div className="mo-detail-section mo-custom-order-section">
+                <h4>🎨 {language === 'ar' ? 'تفاصيل الطلب المخصص' : 'Custom Order Details'}</h4>
+
+                <div className="mo-custom-field">
+                  <strong>{language === 'ar' ? '📝 المواصفات:' : '📝 Specifications:'}</strong>
+                  <p>{selectedOrder.customOrderDetails.specifications}</p>
+                </div>
+
+                {selectedOrder.customOrderDetails.requestedDeliveryDate && (
+                  <div className="mo-custom-field">
+                    <strong>{language === 'ar' ? '📅 موعد التسليم المطلوب:' : '📅 Requested Delivery:'}</strong>
+                    <p>{new Date(selectedOrder.customOrderDetails.requestedDeliveryDate).toLocaleDateString('ar-EG', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}</p>
+                  </div>
+                )}
+
+                {selectedOrder.customOrderDetails.additionalNotes && (
+                  <div className="mo-custom-field">
+                    <strong>{language === 'ar' ? '📋 ملاحظات إضافية:' : '📋 Additional Notes:'}</strong>
+                    <p>{selectedOrder.customOrderDetails.additionalNotes}</p>
+                  </div>
+                )}
+
+                {selectedOrder.customOrderDetails.adminResponse && (
+                  <div className="mo-custom-field mo-admin-response">
+                    <strong>{language === 'ar' ? '💬 رد الإدارة:' : '💬 Admin Response:'}</strong>
+                    <p>{selectedOrder.customOrderDetails.adminResponse}</p>
+                  </div>
+                )}
+
+                {selectedOrder.customOrderDetails.confirmedPrice && (
+                  <div className="mo-custom-field">
+                    <strong>{language === 'ar' ? '💰 السعر المؤكد:' : '💰 Confirmed Price:'}</strong>
+                    <p className="mo-confirmed-price">₪{selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
+                  </div>
+                )}
+
+                <div className="mo-custom-status">
+                  {selectedOrder.customOrderDetails.isConfirmed ? (
+                    <span className="mo-confirmed-badge">✅ {language === 'ar' ? 'تم تأكيد الطلب' : 'Confirmed'}</span>
+                  ) : (
+                    <span className="mo-pending-badge">⏳ {language === 'ar' ? 'بانتظار التأكيد' : 'Pending Confirmation'}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedOrder.notes && (
+              <div className="mo-detail-section">
+                <h4>{language === 'ar' ? 'ملاحظاتك' : 'Your Notes'}</h4>
+                <p>{selectedOrder.notes}</p>
+              </div>
+            )}
+
+            {/* أزرار التعديل والإلغاء في النافذة */}
+            {selectedOrder.status === 'pending' && (
+              <div className="mo-modal-actions">
+                <button
+                  className="mo-edit-btn-large"
+                  onClick={() => {
+                    setSelectedOrder(null);
+                    openEditModal(selectedOrder, { stopPropagation: () => {} });
+                  }}
+                >
+                  ✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+                </button>
+                <button
+                  className="mo-cancel-btn-large"
+                  onClick={() => {
+                    setSelectedOrder(null);
+                    openCancelModal(selectedOrder, { stopPropagation: () => {} });
+                  }}
+                >
+                  ❌ {language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </MobileDrawer>
+
       {/* Order Details Modal */}
       {selectedOrder && (
         <div className="mo-modal-overlay" onClick={() => setSelectedOrder(null)}>
@@ -640,6 +812,58 @@ const MyOrders = () => {
         </div>
       )}
 
+      {/* Cancel Order MobileDrawer */}
+      <MobileDrawer
+        isOpen={!!cancellingOrder}
+        onClose={() => setCancellingOrder(null)}
+        title={language === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+      >
+        {cancellingOrder && (
+          <>
+            <div className="mo-cancel-warning">
+              <p>⚠️ {language === 'ar'
+                ? `هل أنت متأكد من إلغاء الطلب رقم ${cancellingOrder.orderNumber}؟`
+                : `Are you sure you want to cancel order ${cancellingOrder.orderNumber}?`}
+              </p>
+              <p className="mo-warning-note">
+                {language === 'ar'
+                  ? 'لا يمكن التراجع عن هذا الإجراء.'
+                  : 'This action cannot be undone.'}
+              </p>
+            </div>
+
+            <div className="mo-cancel-form">
+              <label>{language === 'ar' ? 'سبب الإلغاء (اختياري):' : 'Cancellation Reason (optional):'}</label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder={language === 'ar' ? 'اكتب سبب الإلغاء...' : 'Enter cancellation reason...'}
+                rows="3"
+              />
+            </div>
+
+            <div className="mo-cancel-actions">
+              <button
+                className="mo-btn-secondary"
+                onClick={() => setCancellingOrder(null)}
+                disabled={actionLoading}
+              >
+                {language === 'ar' ? 'تراجع' : 'Go Back'}
+              </button>
+              <button
+                className="mo-btn-danger"
+                onClick={handleCancelOrder}
+                disabled={actionLoading}
+              >
+                {actionLoading
+                  ? (language === 'ar' ? 'جاري الإلغاء...' : 'Cancelling...')
+                  : (language === 'ar' ? 'تأكيد الإلغاء' : 'Confirm Cancel')}
+              </button>
+            </div>
+          </>
+        )}
+      </MobileDrawer>
+
       {/* Cancel Order Modal */}
       {cancellingOrder && (
         <div className="mo-modal-overlay" onClick={() => setCancellingOrder(null)}>
@@ -693,6 +917,220 @@ const MyOrders = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Order MobileDrawer */}
+      <MobileDrawer
+        isOpen={!!editingOrder}
+        onClose={() => setEditingOrder(null)}
+        title={language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+        footerButtons={
+          <>
+            <button onClick={handleUpdateOrder} className="mo-btn-primary">
+              {actionLoading
+                ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+                : (language === 'ar' ? 'حفظ التعديلات' : 'Save Changes')}
+            </button>
+            <button onClick={() => setEditingOrder(null)} className="mo-btn-secondary">
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </button>
+          </>
+        }
+      >
+        {editingOrder && (
+          <>
+            <div className="mo-edit-form">
+              {/* معلومات التواصل */}
+              <div className="mo-form-section">
+                <h4>📞 {language === 'ar' ? 'معلومات التواصل' : 'Contact Information'}</h4>
+                <div className="mo-form-row">
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'رقم الهاتف الأساسي *' : 'Primary Phone *'}</label>
+                    <input
+                      type="tel"
+                      value={editFormData.contactPhone}
+                      onChange={(e) => setEditFormData({...editFormData, contactPhone: e.target.value})}
+                      dir="ltr"
+                      required
+                    />
+                  </div>
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'رقم الهاتف البديل' : 'Alternate Phone'}</label>
+                    <input
+                      type="tel"
+                      value={editFormData.alternatePhone}
+                      onChange={(e) => setEditFormData({...editFormData, alternatePhone: e.target.value})}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* عنوان الشحن */}
+              <div className="mo-form-section">
+                <h4>📍 {language === 'ar' ? 'عنوان الشحن' : 'Shipping Address'}</h4>
+                <div className="mo-form-group">
+                  <label>{language === 'ar' ? 'العنوان التفصيلي *' : 'Street Address *'}</label>
+                  <input
+                    type="text"
+                    value={editFormData.shippingAddress.street}
+                    onChange={(e) => setEditFormData({
+                      ...editFormData,
+                      shippingAddress: {...editFormData.shippingAddress, street: e.target.value}
+                    })}
+                    required
+                  />
+                </div>
+                <div className="mo-form-row">
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'المدينة *' : 'City *'}</label>
+                    <input
+                      type="text"
+                      value={editFormData.shippingAddress.city}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        shippingAddress: {...editFormData.shippingAddress, city: e.target.value}
+                      })}
+                      required
+                    />
+                  </div>
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'المنطقة *' : 'State *'}</label>
+                    <input
+                      type="text"
+                      value={editFormData.shippingAddress.state}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        shippingAddress: {...editFormData.shippingAddress, state: e.target.value}
+                      })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="mo-form-row">
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'الرمز البريدي *' : 'ZIP Code *'}</label>
+                    <input
+                      type="text"
+                      value={editFormData.shippingAddress.zipCode}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        shippingAddress: {...editFormData.shippingAddress, zipCode: e.target.value}
+                      })}
+                      required
+                    />
+                  </div>
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'الدولة *' : 'Country *'}</label>
+                    <input
+                      type="text"
+                      value={editFormData.shippingAddress.country}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        shippingAddress: {...editFormData.shippingAddress, country: e.target.value}
+                      })}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ملاحظات */}
+              <div className="mo-form-section">
+                <h4>📝 {language === 'ar' ? 'ملاحظات' : 'Notes'}</h4>
+                <div className="mo-form-group">
+                  <textarea
+                    value={editFormData.notes}
+                    onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                    placeholder={language === 'ar' ? 'أي ملاحظات إضافية...' : 'Any additional notes...'}
+                    rows="2"
+                  />
+                </div>
+              </div>
+
+              {/* المنتجات والكميات */}
+              {!editingOrder.isCustomOrder && editFormData.orderItems.length > 0 && (
+                <div className="mo-form-section mo-products-edit-section">
+                  <h4>🛍️ {language === 'ar' ? 'المنتجات والكميات' : 'Products & Quantities'}</h4>
+                  <div className="mo-products-edit-list">
+                    {editFormData.orderItems.map((item, index) => (
+                      <div key={index} className="mo-product-edit-item">
+                        <div className="mo-product-name">
+                          <span className="mo-product-icon">📦</span>
+                          <span>{item.name}</span>
+                        </div>
+                        <div className="mo-product-quantity">
+                          <label>{language === 'ar' ? 'الكمية' : 'Quantity'}</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => handleQuantityChange(index, e.target.value)}
+                          />
+                        </div>
+                        <div className="mo-product-subtotal">
+                          <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
+                          <span className="mo-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mo-total-display">
+                    <span className="mo-total-label">{language === 'ar' ? 'الإجمالي الجديد:' : 'New Total:'}</span>
+                    <span className="mo-total-value">₪{calculateNewTotal().toFixed(2)}</span>
+                  </div>
+                  <div className="mo-edit-note">
+                    <small>ℹ️ {language === 'ar'
+                      ? 'ملاحظة: سيتم تحديث المجموع الكلي للطلب بناءً على الكميات الجديدة'
+                      : 'Note: Order total will be updated based on new quantities'}</small>
+                  </div>
+                </div>
+              )}
+
+              {/* تفاصيل الطلب المخصص */}
+              {editingOrder.isCustomOrder && (
+                <div className="mo-form-section mo-custom-edit-section">
+                  <h4>🎨 {language === 'ar' ? 'تفاصيل الطلب المخصص' : 'Custom Order Details'}</h4>
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'المواصفات المطلوبة *' : 'Specifications *'}</label>
+                    <textarea
+                      value={editFormData.customOrderDetails.specifications}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        customOrderDetails: {...editFormData.customOrderDetails, specifications: e.target.value}
+                      })}
+                      rows="3"
+                      required
+                    />
+                  </div>
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'موعد التسليم المطلوب' : 'Requested Delivery Date'}</label>
+                    <input
+                      type="date"
+                      value={editFormData.customOrderDetails.requestedDeliveryDate}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        customOrderDetails: {...editFormData.customOrderDetails, requestedDeliveryDate: e.target.value}
+                      })}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div className="mo-form-group">
+                    <label>{language === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes'}</label>
+                    <textarea
+                      value={editFormData.customOrderDetails.additionalNotes}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        customOrderDetails: {...editFormData.customOrderDetails, additionalNotes: e.target.value}
+                      })}
+                      rows="2"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </MobileDrawer>
 
       {/* Edit Order Modal */}
       {editingOrder && (

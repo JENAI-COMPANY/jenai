@@ -556,7 +556,8 @@
   .um-modal-overlay,
   .om-modal-overlay,
   .pm-modal-overlay,
-  .mr-modal-overlay {
+  .mr-modal-overlay,
+  .mo-modal-overlay {
     display: none !important;
   }
 }
