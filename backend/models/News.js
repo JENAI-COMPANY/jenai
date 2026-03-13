@@ -20,6 +20,10 @@ const newsSchema = new mongoose.Schema({
   image: {
     type: String
   },
+  images: {
+    type: [String],
+    default: []
+  },
   category: {
     type: String,
     default: 'عام'

@@ -28,13 +28,16 @@ router.get('/', optionalAuth, async (req, res) => {
 });
 
 // POST create news (super_admin only)
-router.post('/', protect, uploadNews.single('image'), async (req, res) => {
+router.post('/', protect, uploadNews.array('images', 10), async (req, res) => {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'غير مصرح' });
     }
     const data = { ...req.body };
-    if (req.file) data.image = `/uploads/news/${req.file.filename}`;
+    if (req.files && req.files.length > 0) {
+      data.images = req.files.map(f => `/uploads/news/${f.filename}`);
+      data.image = data.images[0];
+    }
     const news = await News.create(data);
     res.status(201).json({ success: true, news });
   } catch (err) {
@@ -43,13 +46,21 @@ router.post('/', protect, uploadNews.single('image'), async (req, res) => {
 });
 
 // PUT update news (super_admin only)
-router.put('/:id', protect, uploadNews.single('image'), async (req, res) => {
+router.put('/:id', protect, uploadNews.array('images', 10), async (req, res) => {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'غير مصرح' });
     }
     const data = { ...req.body };
-    if (req.file) data.image = `/uploads/news/${req.file.filename}`;
+    if (req.files && req.files.length > 0) {
+      const newImages = req.files.map(f => `/uploads/news/${f.filename}`);
+      const existing = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
+      data.images = [...existing, ...newImages];
+      data.image = data.images[0];
+    } else if (req.body.existingImages) {
+      data.images = JSON.parse(req.body.existingImages);
+      data.image = data.images[0] || '';
+    }
     const news = await News.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!news) return res.status(404).json({ success: false, message: 'الخبر غير موجود' });
     res.json({ success: true, news });

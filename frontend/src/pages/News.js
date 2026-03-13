@@ -32,8 +32,9 @@ const News = () => {
     isPinned: false,
     author: 'فريق جيناي'
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const fileInputRef = useRef();
 
   const categories = ['عام', 'إعلانات', 'عروض', 'تحديثات', 'أحداث'];
@@ -75,8 +76,9 @@ const News = () => {
     setShowForm(false);
     setError('');
     setSuccess('');
-    setImageFile(null);
-    setImagePreview('');
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImages([]);
   };
 
   const handleEdit = (item) => {
@@ -92,8 +94,9 @@ const News = () => {
       isPinned: item.isPinned || false,
       author: item.author || 'فريق جيناي'
     });
-    setImageFile(null);
-    setImagePreview(item.image || '');
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImages(item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []));
     setShowForm(true);
     setShowModal(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -110,7 +113,8 @@ const News = () => {
     try {
       const payload = new FormData();
       Object.entries(formData).forEach(([k, v]) => payload.append(k, v));
-      if (imageFile) payload.append('image', imageFile);
+      imageFiles.forEach(f => payload.append('images', f));
+      payload.append('existingImages', JSON.stringify(existingImages));
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' };
       if (editingNews) {
         await axios.put(`/api/news/${editingNews._id}`, payload, { headers });
@@ -241,29 +245,36 @@ const News = () => {
                   />
                 </div>
                 <div className="news-form-group news-full-width">
-                  <label>صورة الخبر (اختياري)</label>
+                  <label>صور الخبر (اختياري - يمكن رفع أكثر من صورة)</label>
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     ref={fileInputRef}
                     style={{ display: 'none' }}
                     onChange={e => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        setImageFile(file);
-                        setImagePreview(URL.createObjectURL(file));
-                      }
+                      const files = Array.from(e.target.files);
+                      setImageFiles(prev => [...prev, ...files]);
+                      setImagePreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
                     }}
                   />
                   <button type="button" className="news-upload-btn" onClick={() => fileInputRef.current.click()}>
-                    📁 اختر صورة
+                    📁 اختر صور
                   </button>
-                  {imagePreview && (
-                    <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
-                      <img src={imagePreview} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 8, border: '1px solid #ddd' }} />
-                      <button type="button" onClick={() => { setImageFile(null); setImagePreview(''); setFormData({ ...formData, image: '' }); }} style={{ position: 'absolute', top: 4, left: 4, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 14 }}>✕</button>
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                    {existingImages.map((src, i) => (
+                      <div key={'ex-'+i} style={{ position: 'relative', display: 'inline-block' }}>
+                        <img src={src} alt="" style={{ maxHeight: 100, maxWidth: 120, borderRadius: 8, border: '1px solid #ddd', objectFit: 'cover' }} />
+                        <button type="button" onClick={() => setExistingImages(prev => prev.filter((_, idx) => idx !== i))} style={{ position: 'absolute', top: 2, left: 2, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, lineHeight: '22px', textAlign: 'center' }}>✕</button>
+                      </div>
+                    ))}
+                    {imagePreviews.map((src, i) => (
+                      <div key={'new-'+i} style={{ position: 'relative', display: 'inline-block' }}>
+                        <img src={src} alt="" style={{ maxHeight: 100, maxWidth: 120, borderRadius: 8, border: '2px solid #27ae60', objectFit: 'cover' }} />
+                        <button type="button" onClick={() => { setImagePreviews(prev => prev.filter((_, idx) => idx !== i)); setImageFiles(prev => prev.filter((_, idx) => idx !== i)); }} style={{ position: 'absolute', top: 2, left: 2, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, lineHeight: '22px', textAlign: 'center' }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="news-form-group news-full-width">
                   <label>محتوى الخبر بالعربية *</label>
