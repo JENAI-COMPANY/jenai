@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const PointTransaction = require('../models/PointTransaction');
 const { calculatePersonalPerformancePoints, calculateOrderPoints } = require('../utils/pointsCalculator');
 const { updateMemberRank } = require('../config/memberRanks');
 const { updateUplineLeadershipCommissions } = require('../utils/calculateLeadershipCommission');
@@ -194,6 +195,19 @@ const distributeCommissions = async (buyer, productPoints) => {
     buyer.availableCommission = Math.floor((buyer.availableCommission || 0) + personalProfit);
     await buyer.save();
 
+    // تسجيل معاملة النقاط الشخصية
+    try {
+      await PointTransaction.create({
+        memberId: buyer._id,
+        points: productPoints,
+        type: 'personal',
+        sourceType: 'order',
+        earnedAt: new Date()
+      });
+    } catch (ptErr) {
+      console.error('PointTransaction record failed (non-critical):', ptErr.message);
+    }
+
     // تحديث رتبة المشتري تلقائياً
     await updateMemberRank(buyer._id, User);
 
@@ -226,6 +240,19 @@ const distributeCommissions = async (buyer, productPoints) => {
       currentMember.availableCommission = (currentMember.availableCommission || 0) + profit;
 
       await currentMember.save();
+
+      // تسجيل معاملة نقاط الأجيال
+      try {
+        await PointTransaction.create({
+          memberId: currentMember._id,
+          points: genPoints,
+          type: `generation${generationLevel + 1}`,
+          sourceType: 'order',
+          earnedAt: new Date()
+        });
+      } catch (ptErr) {
+        console.error('PointTransaction record failed (non-critical):', ptErr.message);
+      }
 
       // تحديث رتبة العضو تلقائياً
       await updateMemberRank(currentMember._id, User);
@@ -440,6 +467,20 @@ exports.updateOrderStatus = async (req, res) => {
             buyer.monthlyPoints = (buyer.monthlyPoints || 0) + bonusPoints;
             buyer.firstOrderBonus.received = true;
             await buyer.save();
+
+            // تسجيل معاملة نقاط مكافأة أول طلب
+            try {
+              await PointTransaction.create({
+                memberId: buyer._id,
+                points: bonusPoints,
+                type: 'bonus',
+                sourceType: 'first_order_bonus',
+                sourceId: order._id,
+                earnedAt: new Date()
+              });
+            } catch (ptErr) {
+              console.error('PointTransaction record failed (non-critical):', ptErr.message);
+            }
 
             console.log(`🎁 ${buyer.name} حصل على ${bonusPoints} نقاط هدية لأول عملية شراء خلال 30 يوم!`);
           }

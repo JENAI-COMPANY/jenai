@@ -2,6 +2,7 @@ const User = require('../models/User');
 const ProfitPeriod = require('../models/ProfitPeriod');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const PointTransaction = require('../models/PointTransaction');
 const { calculateTotalPoints } = require('../utils/pointsCalculator');
 const { calculateLeadershipCommission, getRankInfo, getRankNumber } = require('../config/memberRanks');
 
@@ -26,7 +27,33 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // جلب جميع الأعضاء
     const members = await User.find({ role: 'member' })
-      .select('name username memberRank monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points');
+      .select('name username memberRank');
+
+    // حساب النقاط من معاملات النقاط ضمن نطاق التواريخ المحدد
+    const endDateObj2 = new Date(endDate);
+    endDateObj2.setHours(23, 59, 59, 999);
+
+    const pointsAgg = await PointTransaction.aggregate([
+      {
+        $match: {
+          earnedAt: { $gte: new Date(startDate), $lte: endDateObj2 }
+        }
+      },
+      {
+        $group: {
+          _id: { memberId: '$memberId', type: '$type' },
+          total: { $sum: '$points' }
+        }
+      }
+    ]);
+
+    // بناء خريطة النقاط لكل عضو
+    const pointsMap = {};
+    for (const t of pointsAgg) {
+      const id = t._id.memberId.toString();
+      if (!pointsMap[id]) pointsMap[id] = {};
+      pointsMap[id][t._id.type] = (pointsMap[id][t._id.type] || 0) + t.total;
+    }
 
     const membersProfits = [];
     let totalPerformanceProfits = 0;
@@ -35,15 +62,16 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // حساب أرباح كل عضو
     for (const member of members) {
-      // النقاط الشخصية (خام)
-      const personalPoints = member.monthlyPoints || 0;
+      const memberPoints = pointsMap[member._id.toString()] || {};
+      // النقاط الشخصية: من طلبيات العضو + المكافآت ضمن التواريخ
+      const personalPoints = (memberPoints['personal'] || 0) + (memberPoints['bonus'] || 0);
 
-      // نقاط الأجيال (بعد تطبيق النسب - مخزنة في قاعدة البيانات)
-      const gen1Points = member.generation1Points || 0;
-      const gen2Points = member.generation2Points || 0;
-      const gen3Points = member.generation3Points || 0;
-      const gen4Points = member.generation4Points || 0;
-      const gen5Points = member.generation5Points || 0;
+      // نقاط الأجيال (بعد تطبيق النسب - من معاملات النقاط ضمن الفترة)
+      const gen1Points = memberPoints['generation1'] || 0;
+      const gen2Points = memberPoints['generation2'] || 0;
+      const gen3Points = memberPoints['generation3'] || 0;
+      const gen4Points = memberPoints['generation4'] || 0;
+      const gen5Points = memberPoints['generation5'] || 0;
 
       // حساب أرباح الأداء الشخصي: نقاط × 20% × 0.55
       const personalCommissionPoints = personalPoints * 0.20;
