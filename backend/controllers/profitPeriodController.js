@@ -26,7 +26,29 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // جلب جميع الأعضاء
     const members = await User.find({ role: 'member' })
-      .select('name username memberRank monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points');
+      .select('name username memberRank monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points profitPoints');
+
+    // جلب النقاط المحتسبة مسبقاً في الدورات المفتوحة (draft/finalized)
+    // يمنع احتساب نفس النقاط مرتين عبر دورات متعددة غير مغلقة
+    const openPeriods = await ProfitPeriod.find({ status: { $in: ['draft', 'finalized'] } })
+      .select('membersProfits');
+
+    const usedPointsMap = {};
+    for (const openPeriod of openPeriods) {
+      for (const mp of openPeriod.membersProfits) {
+        const id = mp.memberId.toString();
+        if (!usedPointsMap[id]) {
+          usedPointsMap[id] = { personal: 0, gen1: 0, gen2: 0, gen3: 0, gen4: 0, gen5: 0, profit: 0 };
+        }
+        usedPointsMap[id].personal += mp.points.personal || 0;
+        usedPointsMap[id].gen1    += mp.points.generation1 || 0;
+        usedPointsMap[id].gen2    += mp.points.generation2 || 0;
+        usedPointsMap[id].gen3    += mp.points.generation3 || 0;
+        usedPointsMap[id].gen4    += mp.points.generation4 || 0;
+        usedPointsMap[id].gen5    += mp.points.generation5 || 0;
+        usedPointsMap[id].profit  += mp.points.profitPoints || 0;
+      }
+    }
 
     const membersProfits = [];
     let totalPerformanceProfits = 0;
@@ -35,19 +57,26 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // حساب أرباح كل عضو
     for (const member of members) {
-      // النقاط الشخصية (خام)
-      const personalPoints = member.monthlyPoints || 0;
+      // استبعاد النقاط المحتسبة في دورات مفتوحة أخرى
+      const usedPoints = usedPointsMap[member._id.toString()] || {};
 
-      // نقاط الأجيال (بعد تطبيق النسب - مخزنة في قاعدة البيانات)
-      const gen1Points = member.generation1Points || 0;
-      const gen2Points = member.generation2Points || 0;
-      const gen3Points = member.generation3Points || 0;
-      const gen4Points = member.generation4Points || 0;
-      const gen5Points = member.generation5Points || 0;
+      // النقاط الشخصية بعد استبعاد المحتسب مسبقاً
+      const personalPoints = Math.max(0, (member.monthlyPoints || 0) - (usedPoints.personal || 0));
 
-      // حساب أرباح الأداء الشخصي: نقاط × 20% × 0.55
+      // نقاط الربح (مسابقات/جوائز) بعد الاستبعاد
+      const profitPointsValue = Math.max(0, (member.profitPoints || 0) - (usedPoints.profit || 0));
+
+      // نقاط الأجيال بعد الاستبعاد
+      const gen1Points = Math.max(0, (member.generation1Points || 0) - (usedPoints.gen1 || 0));
+      const gen2Points = Math.max(0, (member.generation2Points || 0) - (usedPoints.gen2 || 0));
+      const gen3Points = Math.max(0, (member.generation3Points || 0) - (usedPoints.gen3 || 0));
+      const gen4Points = Math.max(0, (member.generation4Points || 0) - (usedPoints.gen4 || 0));
+      const gen5Points = Math.max(0, (member.generation5Points || 0) - (usedPoints.gen5 || 0));
+
+      // حساب أرباح الأداء الشخصي: (نقاط شخصية × 20% + نقاط ربح مباشرة) × 0.55
       const personalCommissionPoints = personalPoints * 0.20;
-      const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55);
+      const profitPointsInShekel = Math.floor(profitPointsValue * 0.55);
+      const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55) + profitPointsInShekel;
 
       // حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
       const teamCommissionPoints = gen1Points + gen2Points + gen3Points + gen4Points + gen5Points;
@@ -172,7 +201,8 @@ exports.calculatePeriodProfits = async (req, res) => {
           generation3: gen3Points,
           generation4: gen4Points,
           generation5: gen5Points,
-          total: personalPoints + teamCommissionPoints
+          profitPoints: profitPointsValue,
+          total: personalPoints + teamCommissionPoints + profitPointsValue
         },
         commissions: {
           performance: {
@@ -425,25 +455,29 @@ exports.updateProfitPeriodStatus = async (req, res) => {
       });
     }
 
-    // عند إغلاق الدورة: تصفير نقاط جميع الأعضاء المحتسبين
+    // عند إغلاق الدورة: طرح النقاط المحتسبة في هذه الدورة فقط (وليس تصفير الكل)
+    // هذا يحافظ على النقاط الجديدة التي أُضيفت بعد احتساب الدورة
     if (status === 'paid' && period.status !== 'paid') {
-      const memberIds = period.membersProfits.map(mp => mp.memberId);
-
-      await User.updateMany(
-        { _id: { $in: memberIds } },
-        {
-          $set: {
-            monthlyPoints: 0,
-            generation1Points: 0,
-            generation2Points: 0,
-            generation3Points: 0,
-            generation4Points: 0,
-            generation5Points: 0
-          }
+      const bulkOps = period.membersProfits.map(mp => ({
+        updateOne: {
+          filter: { _id: mp.memberId },
+          update: [{
+            $set: {
+              monthlyPoints:    { $max: [0, { $subtract: ['$monthlyPoints',    mp.points.personal    || 0] }] },
+              generation1Points:{ $max: [0, { $subtract: ['$generation1Points', mp.points.generation1 || 0] }] },
+              generation2Points:{ $max: [0, { $subtract: ['$generation2Points', mp.points.generation2 || 0] }] },
+              generation3Points:{ $max: [0, { $subtract: ['$generation3Points', mp.points.generation3 || 0] }] },
+              generation4Points:{ $max: [0, { $subtract: ['$generation4Points', mp.points.generation4 || 0] }] },
+              generation5Points:{ $max: [0, { $subtract: ['$generation5Points', mp.points.generation5 || 0] }] },
+              profitPoints:     { $max: [0, { $subtract: ['$profitPoints',      mp.points.profitPoints || 0] }] }
+            }
+          }]
         }
-      );
+      }));
 
-      console.log(`✅ تم تصفير نقاط ${memberIds.length} عضو عند إغلاق الدورة ${period.periodName}`);
+      await User.bulkWrite(bulkOps);
+
+      console.log(`✅ تم طرح نقاط ${period.membersProfits.length} عضو عند إغلاق الدورة ${period.periodName}`);
     }
 
     period.status = status;
