@@ -238,21 +238,6 @@ const About = () => {
           </p>
         </section>
 
-        {/* Achievements 2025 */}
-        <section className="about-section achievements-section" ref={addToRefs}>
-          <h2 className="section-title">
-            {language === 'ar' ? 'إنجازاتنا 2025' : 'Our Achievements 2025'}
-          </h2>
-          <div className="achievements-grid">
-            {achievements2025.map((achievement, index) => (
-              <div key={index} className="achievement-card">
-                <div className="achievement-icon">{achievement.icon}</div>
-                <h3 className="achievement-title">{achievement.title}</h3>
-                <p className="achievement-description">{achievement.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {/* Certificates */}
         <section className="about-section certificates-section" ref={addToRefs}>
