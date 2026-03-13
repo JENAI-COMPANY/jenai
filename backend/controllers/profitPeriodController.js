@@ -26,29 +26,7 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // جلب جميع الأعضاء
     const members = await User.find({ role: 'member' })
-      .select('name username memberRank monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points profitPoints');
-
-    // جلب النقاط المحتسبة مسبقاً في الدورات المفتوحة (draft/finalized)
-    // يمنع احتساب نفس النقاط مرتين عبر دورات متعددة غير مغلقة
-    const openPeriods = await ProfitPeriod.find({ status: { $in: ['draft', 'finalized'] } })
-      .select('membersProfits');
-
-    const usedPointsMap = {};
-    for (const openPeriod of openPeriods) {
-      for (const mp of openPeriod.membersProfits) {
-        const id = mp.memberId.toString();
-        if (!usedPointsMap[id]) {
-          usedPointsMap[id] = { personal: 0, gen1: 0, gen2: 0, gen3: 0, gen4: 0, gen5: 0, profit: 0 };
-        }
-        usedPointsMap[id].personal += mp.points.personal || 0;
-        usedPointsMap[id].gen1    += mp.points.generation1 || 0;
-        usedPointsMap[id].gen2    += mp.points.generation2 || 0;
-        usedPointsMap[id].gen3    += mp.points.generation3 || 0;
-        usedPointsMap[id].gen4    += mp.points.generation4 || 0;
-        usedPointsMap[id].gen5    += mp.points.generation5 || 0;
-        usedPointsMap[id].profit  += mp.points.profitPoints || 0;
-      }
-    }
+      .select('name username memberRank monthlyPoints generation1Points generation2Points generation3Points generation4Points generation5Points');
 
     const membersProfits = [];
     let totalPerformanceProfits = 0;
@@ -57,26 +35,19 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // حساب أرباح كل عضو
     for (const member of members) {
-      // استبعاد النقاط المحتسبة في دورات مفتوحة أخرى
-      const usedPoints = usedPointsMap[member._id.toString()] || {};
+      // النقاط الشخصية (خام)
+      const personalPoints = member.monthlyPoints || 0;
 
-      // النقاط الشخصية بعد استبعاد المحتسب مسبقاً
-      const personalPoints = Math.max(0, (member.monthlyPoints || 0) - (usedPoints.personal || 0));
+      // نقاط الأجيال (بعد تطبيق النسب - مخزنة في قاعدة البيانات)
+      const gen1Points = member.generation1Points || 0;
+      const gen2Points = member.generation2Points || 0;
+      const gen3Points = member.generation3Points || 0;
+      const gen4Points = member.generation4Points || 0;
+      const gen5Points = member.generation5Points || 0;
 
-      // نقاط الربح (مسابقات/جوائز) بعد الاستبعاد
-      const profitPointsValue = Math.max(0, (member.profitPoints || 0) - (usedPoints.profit || 0));
-
-      // نقاط الأجيال بعد الاستبعاد
-      const gen1Points = Math.max(0, (member.generation1Points || 0) - (usedPoints.gen1 || 0));
-      const gen2Points = Math.max(0, (member.generation2Points || 0) - (usedPoints.gen2 || 0));
-      const gen3Points = Math.max(0, (member.generation3Points || 0) - (usedPoints.gen3 || 0));
-      const gen4Points = Math.max(0, (member.generation4Points || 0) - (usedPoints.gen4 || 0));
-      const gen5Points = Math.max(0, (member.generation5Points || 0) - (usedPoints.gen5 || 0));
-
-      // حساب أرباح الأداء الشخصي: (نقاط شخصية × 20% + نقاط ربح مباشرة) × 0.55
+      // حساب أرباح الأداء الشخصي: نقاط × 20% × 0.55
       const personalCommissionPoints = personalPoints * 0.20;
-      const profitPointsInShekel = Math.floor(profitPointsValue * 0.55);
-      const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55) + profitPointsInShekel;
+      const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55);
 
       // حساب أرباح الفريق: نقاط الأجيال (بعد النسب) × 0.55
       const teamCommissionPoints = gen1Points + gen2Points + gen3Points + gen4Points + gen5Points;
@@ -201,8 +172,7 @@ exports.calculatePeriodProfits = async (req, res) => {
           generation3: gen3Points,
           generation4: gen4Points,
           generation5: gen5Points,
-          profitPoints: profitPointsValue,
-          total: personalPoints + teamCommissionPoints + profitPointsValue
+          total: personalPoints + teamCommissionPoints
         },
         commissions: {
           performance: {
@@ -402,20 +372,18 @@ exports.deleteProfitPeriod = async (req, res) => {
       });
     }
 
-    // عند حذف مسودة: إعادة تأشير الطلبيات لإمكانية إدراجها في احتساب قادم
-    if (period.status === 'draft') {
-      const endDateObj = new Date(period.endDate);
-      endDateObj.setHours(23, 59, 59, 999);
-      await Order.updateMany(
-        {
-          isDelivered: true,
-          deliveredAt: { $gte: new Date(period.startDate), $lte: endDateObj },
-          isCustomerCommissionCalculated: true
-        },
-        { $set: { isCustomerCommissionCalculated: false } }
-      );
-      console.log(`✅ تم إعادة تأشير الطلبيات ضمن فترة ${period.periodName} لإمكانية إعادة الاحتساب`);
-    }
+    // إعادة تأشير الطلبيات عند حذف أي فترة غير مغلقة (draft أو finalized)
+    const endDateObj = new Date(period.endDate);
+    endDateObj.setHours(23, 59, 59, 999);
+    await Order.updateMany(
+      {
+        isDelivered: true,
+        deliveredAt: { $gte: new Date(period.startDate), $lte: endDateObj },
+        isCustomerCommissionCalculated: true
+      },
+      { $set: { isCustomerCommissionCalculated: false } }
+    );
+    console.log(`✅ تم إعادة تأشير الطلبيات ضمن فترة ${period.periodName} لإمكانية إعادة الاحتساب`);
 
     await ProfitPeriod.findByIdAndDelete(req.params.id);
 
