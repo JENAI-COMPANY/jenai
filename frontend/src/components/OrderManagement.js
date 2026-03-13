@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/OrderManagement.css';
+import MobileDrawer from './MobileDrawer';
 
 const OrderManagement = () => {
   const { language } = useLanguage();
@@ -30,6 +31,13 @@ const OrderManagement = () => {
     notes: '',
     orderItems: []
   });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+
+  useEffect(() => {
+    const mobileHandler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', mobileHandler);
+    return () => window.removeEventListener('resize', mobileHandler);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -641,8 +649,175 @@ const OrderManagement = () => {
         </table>
       </div>
 
-      {/* Order Details Modal */}
-      {selectedOrder && (
+      {/* Order Details Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={!!selectedOrder && !editingOrder}
+        onClose={() => setSelectedOrder(null)}
+        title={language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
+        footerButtons={selectedOrder && selectedOrder.status === 'pending' ? (
+          <button
+            className="om-edit-btn-large"
+            onClick={() => {
+              const order = selectedOrder;
+              setSelectedOrder(null);
+              openEditModal(order, { stopPropagation: () => {} });
+            }}
+          >
+            ✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+          </button>
+        ) : null}
+      >
+        {selectedOrder && (
+          <div>
+            <button
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white', border: 'none', padding: '8px 16px',
+                borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
+                display: 'flex', alignItems: 'center', gap: '5px',
+                fontSize: '14px', marginBottom: '12px'
+              }}
+              onClick={() => handlePrintOrder(selectedOrder)}
+            >
+              🖨️ {language === 'ar' ? 'طباعة' : 'Print'}
+            </button>
+
+            <div className="om-detail-section">
+              <h4>{language === 'ar' ? 'معلومات الطلب' : 'Order Information'}</h4>
+              <p><strong>{language === 'ar' ? 'رقم الطلب:' : 'Order Number:'}</strong> {selectedOrder.orderNumber}</p>
+              <p><strong>{language === 'ar' ? 'الحالة:' : 'Status:'}</strong> <span className={`om-status-badge ${getStatusBadgeClass(selectedOrder.status)}`}>{getStatusLabel(selectedOrder.status)}</span></p>
+              <p><strong>{language === 'ar' ? 'التاريخ:' : 'Date:'}</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+            </div>
+
+            <div className="om-detail-section">
+              <h4>{language === 'ar' ? 'معلومات العميل' : 'Customer Information'}</h4>
+              <p><strong>{language === 'ar' ? 'الاسم:' : 'Name:'}</strong> {selectedOrder.user?.name}</p>
+              <p><strong>{language === 'ar' ? 'الهاتف:' : 'Phone:'}</strong> {selectedOrder.contactPhone}</p>
+              {selectedOrder.alternatePhone && (
+                <p><strong>{language === 'ar' ? 'هاتف بديل:' : 'Alternate Phone:'}</strong> {selectedOrder.alternatePhone}</p>
+              )}
+              <p><strong>{language === 'ar' ? 'طريقة الدفع:' : 'Payment Method:'}</strong> {
+                selectedOrder.paymentMethod === 'cash_on_delivery' ? (language === 'ar' ? 'الدفع عند التوصيل' : 'Cash on Delivery') :
+                selectedOrder.paymentMethod === 'cash_at_company' ? (language === 'ar' ? 'كاش بالشركة' : 'Cash at Company') :
+                selectedOrder.paymentMethod === 'reflect' ? (language === 'ar' ? 'ريفليكت' : 'Reflect') :
+                selectedOrder.paymentMethod
+              }</p>
+            </div>
+
+            <div className="om-detail-section">
+              <h4>{language === 'ar' ? 'عنوان الشحن' : 'Shipping Address'}</h4>
+              <p>{selectedOrder.shippingAddress?.street}</p>
+              <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}</p>
+              <p>{selectedOrder.shippingAddress?.country}</p>
+            </div>
+
+            <div className="om-detail-section">
+              <h4>{language === 'ar' ? 'المنتجات' : 'Products'}</h4>
+              <table className="om-products-table">
+                <thead>
+                  <tr>
+                    <th>{language === 'ar' ? 'المنتج' : 'Product'}</th>
+                    <th>{language === 'ar' ? 'الكمية' : 'Qty'}</th>
+                    <th>{language === 'ar' ? 'السعر' : 'Price'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder.orderItems?.map((item, index) => (
+                    <tr key={index}>
+                      <td>
+                        {item.name}
+                        {item.selectedColor && <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>🎨 {item.selectedColor}</div>}
+                        {item.selectedSize && <div style={{ fontSize: '0.9em', color: '#666', marginTop: '4px' }}>📏 {item.selectedSize}</div>}
+                      </td>
+                      <td>{item.quantity}</td>
+                      <td>₪{item.price?.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="om-detail-section">
+              <h4>{language === 'ar' ? 'ملخص الطلب' : 'Order Summary'}</h4>
+              <p><strong>{language === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ₪{selectedOrder.itemsPrice?.toFixed(2)}</p>
+              <p><strong>{language === 'ar' ? 'الشحن:' : 'Shipping:'}</strong> ₪{selectedOrder.shippingPrice?.toFixed(2)}</p>
+              <p><strong>{language === 'ar' ? 'الضريبة:' : 'Tax:'}</strong> ₪{selectedOrder.taxPrice?.toFixed(2)}</p>
+              {selectedOrder.discountAmount > 0 && (
+                <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -₪{selectedOrder.discountAmount?.toFixed(2)}</p>
+              )}
+              <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
+              {selectedOrder.totalPoints && (
+                <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
+                  <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {selectedOrder.totalPoints}
+                </p>
+              )}
+            </div>
+
+            {selectedOrder.isCustomOrder && selectedOrder.customOrderDetails && (
+              <div className="om-detail-section om-custom-order-section">
+                <h4>🎨 {language === 'ar' ? 'تفاصيل الطلب المخصص' : 'Custom Order Details'}</h4>
+                <div className="om-custom-field">
+                  <strong>{language === 'ar' ? '📝 المواصفات المطلوبة:' : '📝 Specifications:'}</strong>
+                  <p className="om-specifications">{selectedOrder.customOrderDetails.specifications}</p>
+                </div>
+                {selectedOrder.customOrderDetails.requestedDeliveryDate && (
+                  <div className="om-custom-field">
+                    <strong>{language === 'ar' ? '📅 موعد التسليم المطلوب:' : '📅 Requested Delivery Date:'}</strong>
+                    <p>{new Date(selectedOrder.customOrderDetails.requestedDeliveryDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  </div>
+                )}
+                {selectedOrder.customOrderDetails.additionalNotes && (
+                  <div className="om-custom-field">
+                    <strong>{language === 'ar' ? '📋 ملاحظات إضافية:' : '📋 Additional Notes:'}</strong>
+                    <p>{selectedOrder.customOrderDetails.additionalNotes}</p>
+                  </div>
+                )}
+                {selectedOrder.customOrderDetails.confirmedPrice && (
+                  <div className="om-custom-field">
+                    <strong>{language === 'ar' ? '💰 السعر المؤكد:' : '💰 Confirmed Price:'}</strong>
+                    <p className="om-confirmed-price">₪{selectedOrder.customOrderDetails.confirmedPrice?.toFixed(2)}</p>
+                  </div>
+                )}
+                {selectedOrder.customOrderDetails.adminResponse && (
+                  <div className="om-custom-field">
+                    <strong>{language === 'ar' ? '💬 رد الإدارة:' : '💬 Admin Response:'}</strong>
+                    <p>{selectedOrder.customOrderDetails.adminResponse}</p>
+                  </div>
+                )}
+                <div className="om-custom-status">
+                  {selectedOrder.customOrderDetails.isConfirmed ? (
+                    <span className="om-confirmed">✅ {language === 'ar' ? 'تم تأكيد الطلب' : 'Order Confirmed'}</span>
+                  ) : (
+                    <>
+                      <span className="om-pending-confirm">⏳ {language === 'ar' ? 'بانتظار التأكيد' : 'Pending Confirmation'}</span>
+                      <button className="om-confirm-btn" onClick={() => openConfirmModal(selectedOrder)}>
+                        {language === 'ar' ? 'تأكيد المواصفات' : 'Confirm Specifications'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedOrder.notes && (
+              <div className="om-detail-section">
+                <h4>{language === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'}</h4>
+                <p>{selectedOrder.notes}</p>
+              </div>
+            )}
+
+            {selectedOrder.adminNotes && (
+              <div className="om-detail-section">
+                <h4>{language === 'ar' ? 'ملاحظات الإدارة' : 'Admin Notes'}</h4>
+                <p>{selectedOrder.adminNotes}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </MobileDrawer>
+
+      {/* Order Details Modal - Desktop Version */}
+      {!isMobile && selectedOrder && (
         <div className="om-modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div className="om-modal" onClick={(e) => e.stopPropagation()}>
             <div className="om-modal-header">
@@ -892,8 +1067,109 @@ const OrderManagement = () => {
         </div>
       )}
 
-      {/* Edit Order Modal */}
-      {editingOrder && (
+      {/* Edit Order Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={!!editingOrder}
+        onClose={() => setEditingOrder(null)}
+        title={editingOrder ? `✏️ ${language === 'ar' ? 'تعديل الطلب' : 'Edit Order'} - ${editingOrder.orderNumber}` : ''}
+        footerButtons={
+          <>
+            <button className="om-btn-confirm" onClick={handleUpdateOrder}>
+              {language === 'ar' ? 'حفظ التعديلات' : 'Save Changes'}
+            </button>
+            <button className="om-btn-cancel" onClick={() => setEditingOrder(null)}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </button>
+          </>
+        }
+      >
+        {editingOrder && (
+          <div className="om-edit-form">
+            <div className="om-form-section">
+              <h4>📞 {language === 'ar' ? 'معلومات التواصل' : 'Contact Information'}</h4>
+              <div className="om-form-row">
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? 'رقم الهاتف الأساسي *' : 'Primary Phone *'}</label>
+                  <input type="tel" value={editFormData.contactPhone} onChange={(e) => setEditFormData({...editFormData, contactPhone: e.target.value})} dir="ltr" required />
+                </div>
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? 'رقم الهاتف البديل' : 'Alternate Phone'}</label>
+                  <input type="tel" value={editFormData.alternatePhone} onChange={(e) => setEditFormData({...editFormData, alternatePhone: e.target.value})} dir="ltr" />
+                </div>
+              </div>
+            </div>
+
+            <div className="om-form-section">
+              <h4>📍 {language === 'ar' ? 'عنوان الشحن' : 'Shipping Address'}</h4>
+              <div className="om-form-group">
+                <label>{language === 'ar' ? 'العنوان التفصيلي *' : 'Street Address *'}</label>
+                <input type="text" value={editFormData.shippingAddress.street} onChange={(e) => setEditFormData({ ...editFormData, shippingAddress: {...editFormData.shippingAddress, street: e.target.value} })} required />
+              </div>
+              <div className="om-form-row">
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? 'المدينة *' : 'City *'}</label>
+                  <input type="text" value={editFormData.shippingAddress.city} onChange={(e) => setEditFormData({ ...editFormData, shippingAddress: {...editFormData.shippingAddress, city: e.target.value} })} required />
+                </div>
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? 'المنطقة *' : 'State *'}</label>
+                  <input type="text" value={editFormData.shippingAddress.state} onChange={(e) => setEditFormData({ ...editFormData, shippingAddress: {...editFormData.shippingAddress, state: e.target.value} })} required />
+                </div>
+              </div>
+              <div className="om-form-row">
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? 'الرمز البريدي *' : 'ZIP Code *'}</label>
+                  <input type="text" value={editFormData.shippingAddress.zipCode} onChange={(e) => setEditFormData({ ...editFormData, shippingAddress: {...editFormData.shippingAddress, zipCode: e.target.value} })} required />
+                </div>
+                <div className="om-form-group">
+                  <label>{language === 'ar' ? 'الدولة *' : 'Country *'}</label>
+                  <input type="text" value={editFormData.shippingAddress.country} onChange={(e) => setEditFormData({ ...editFormData, shippingAddress: {...editFormData.shippingAddress, country: e.target.value} })} required />
+                </div>
+              </div>
+            </div>
+
+            <div className="om-form-section">
+              <h4>📝 {language === 'ar' ? 'ملاحظات' : 'Notes'}</h4>
+              <div className="om-form-group">
+                <textarea value={editFormData.notes} onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})} placeholder={language === 'ar' ? 'أي ملاحظات إضافية...' : 'Any additional notes...'} rows="2" />
+              </div>
+            </div>
+
+            {!editingOrder.isCustomOrder && editFormData.orderItems.length > 0 && (
+              <div className="om-form-section om-products-edit-section">
+                <h4>🛍️ {language === 'ar' ? 'المنتجات والكميات' : 'Products & Quantities'}</h4>
+                <div className="om-products-edit-list">
+                  {editFormData.orderItems.map((item, index) => (
+                    <div key={index} className="om-product-edit-item">
+                      <div className="om-product-name">
+                        <span className="om-product-icon">📦</span>
+                        <span>{item.name}</span>
+                      </div>
+                      <div className="om-product-quantity">
+                        <label>{language === 'ar' ? 'الكمية' : 'Quantity'}</label>
+                        <input type="number" min="1" value={item.quantity} onChange={(e) => handleQuantityChange(index, e.target.value)} />
+                      </div>
+                      <div className="om-product-subtotal">
+                        <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
+                        <span className="om-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="om-total-display">
+                  <span className="om-total-label">{language === 'ar' ? 'الإجمالي الجديد:' : 'New Total:'}</span>
+                  <span className="om-total-value">₪{calculateNewTotal().toFixed(2)}</span>
+                </div>
+                <div className="om-edit-note">
+                  <small>ℹ️ {language === 'ar' ? 'ملاحظة: سيتم تحديث المجموع الكلي للطلب بناءً على الكميات الجديدة' : 'Note: Order total will be updated based on new quantities'}</small>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </MobileDrawer>
+
+      {/* Edit Order Modal - Desktop Version */}
+      {!isMobile && editingOrder && (
         <div className="om-modal-overlay" onClick={() => setEditingOrder(null)}>
           <div className="om-modal om-edit-modal" onClick={(e) => e.stopPropagation()}>
             <div className="om-modal-header om-edit-header">

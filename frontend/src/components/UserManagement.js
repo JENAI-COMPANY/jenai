@@ -6,6 +6,7 @@ import '../styles/UserManagement.css';
 import '../styles/Verification.css';
 import { countryCodes, allCountries } from '../utils/countryCodes';
 import { getRankImage, getRankName } from '../utils/rankHelpers';
+import MobileDrawer from './MobileDrawer';
 
 const UserManagement = () => {
   const { language } = useLanguage();
@@ -47,6 +48,13 @@ const UserManagement = () => {
   const [editCurrentSponsorName, setEditCurrentSponsorName] = useState('');
   const [editNewSponsorName, setEditNewSponsorName] = useState('');
   const [editPassword, setEditPassword] = useState({ newPassword: '', confirmPassword: '', showNew: false, showConfirm: false });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+
+  useEffect(() => {
+    const mobileHandler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', mobileHandler);
+    return () => window.removeEventListener('resize', mobileHandler);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -810,8 +818,331 @@ const UserManagement = () => {
         </table>
       </div>
 
-      {/* Edit User Modal */}
-      {editingUser && (
+      {/* Edit User Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={!!editingUser}
+        onClose={() => setEditingUser(null)}
+        title={language === 'ar' ? 'تعديل المستخدم' : 'Edit User'}
+        footerButtons={
+          <>
+            <button className="um-save-btn" onClick={handleSaveEdit}>
+              {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+            </button>
+            <button className="um-cancel-btn" onClick={() => setEditingUser(null)}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </button>
+          </>
+        }
+      >
+        {editingUser && (
+          <div>
+              <div className="um-form-row">
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'الاسم الكامل' : 'Full Name'}</label>
+                  <input
+                    type="text"
+                    value={editingUser.name}
+                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  />
+                </div>
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</label>
+                  <input
+                    type="text"
+                    value={editingUser.username}
+                    onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="um-form-row">
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'الهاتف' : 'Phone'}</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <select
+                      value={editingUser.countryCode || '+970'}
+                      onChange={(e) => setEditingUser({ ...editingUser, countryCode: e.target.value })}
+                      style={{ flex: '0 0 180px' }}
+                    >
+                      {countryCodes.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.code} - {item.country}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={editingUser.phone}
+                      onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                      style={{ flex: '1' }}
+                    />
+                  </div>
+                </div>
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'نوع المستخدم' : 'Role'}</label>
+                  <select
+                    value={editingUser.role}
+                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                    disabled={currentUser?.role !== 'super_admin'}
+                  >
+                    <option value="customer">{language === 'ar' ? 'عميل' : 'Customer'}</option>
+                    <option value="member">{language === 'ar' ? 'عضو' : 'Member'}</option>
+                    <option value="regional_admin">{language === 'ar' ? 'مسؤول إقليمي' : 'Regional Admin'}</option>
+                    <option value="super_admin">{language === 'ar' ? 'مسؤول رئيسي' : 'Super Admin'}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="um-form-row">
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'الدولة' : 'Country'}</label>
+                  <select
+                    value={editingUser.country || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, country: e.target.value })}
+                  >
+                    <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
+                    {allCountries.map((country) => (
+                      <option key={country.value} value={country.value}>
+                        {language === 'ar' ? country.label : country.value}
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                    {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
+                  </small>
+                </div>
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'المدينة (إنجليزي)' : 'City (English)'}</label>
+                  <input
+                    type="text"
+                    value={editingUser.city || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value.replace(/[^a-zA-Z\s-]/g, '') })}
+                    placeholder="Jenin / Ramallah / Gaza"
+                  />
+                  <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                    {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
+                  </small>
+                </div>
+              </div>
+
+              {currentUser?.role === 'super_admin' && (editingUser.role === 'regional_admin' || editingUser.role === 'member' || editingUser.role === 'customer') && (
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'المنطقة الإدارية (اختياري)' : 'Administrative Region (Optional)'}</label>
+                    <select
+                      value={editingUser.region || ''}
+                      onChange={(e) => setEditingUser({ ...editingUser, region: e.target.value })}
+                    >
+                      <option value="">{language === 'ar' ? 'اختر المنطقة' : 'Select Region'}</option>
+                      {regions.map((region) => (
+                        <option key={region._id} value={region._id}>
+                          {language === 'ar' ? region.nameAr : region.nameEn}
+                        </option>
+                      ))}
+                    </select>
+                    <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                      {language === 'ar' ? 'تحدد أي مسؤول إقليمي يمكنه التحكم بهذا المستخدم' : 'Determines which regional admin can manage this user'}
+                    </small>
+                  </div>
+                </div>
+              )}
+
+              <div className="um-form-row">
+                <div className="um-form-group">
+                  <label>{language === 'ar' ? 'كود الراعي (من أحاله)' : 'Sponsor Code (Who referred)'}</label>
+                  <small style={{ color: '#555', fontSize: '12px', display: 'block', marginBottom: '6px', background: '#f5f5f5', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    {language === 'ar' ? '📌 الراعي الحالي: ' : '📌 Current sponsor: '}
+                    <strong>{editingUser.sponsorCode || (language === 'ar' ? 'لا يوجد' : 'None')}</strong>
+                    {editCurrentSponsorName && (
+                      <span style={{ color: '#1a7a3c', marginRight: '6px', marginLeft: '6px' }}>
+                        — {editCurrentSponsorName}
+                      </span>
+                    )}
+                  </small>
+                  {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin_secretary') && (
+                    <>
+                      <input
+                        type="text"
+                        value={editingUser.newSponsorCode}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase();
+                          setEditingUser({ ...editingUser, newSponsorCode: val });
+                          fetchSponsorForEdit(val, false);
+                        }}
+                        placeholder={language === 'ar' ? 'أدخل كود الراعي الجديد' : 'Enter new sponsor code'}
+                      />
+                      {editingUser.newSponsorCode && (
+                        <small style={{ fontSize: '12px', display: 'block', marginTop: '4px', color: editNewSponsorName ? '#1a7a3c' : '#c0392b' }}>
+                          {editNewSponsorName
+                            ? `✅ ${language === 'ar' ? 'سيتم التغيير إلى:' : 'Will change to:'} ${editNewSponsorName} (${editingUser.newSponsorCode})`
+                            : `⚠️ ${language === 'ar' ? 'الكود غير موجود' : 'Code not found'}`}
+                        </small>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {currentUser?.role === 'super_admin' && (
+                <>
+                  <div className="um-form-row">
+                    <div className="um-form-group">
+                      <label>{language === 'ar' ? 'كود الإحالة الخاص' : 'Own Referral Code'}</label>
+                      <input
+                        type="text"
+                        value={editingUser.subscriberCode}
+                        onChange={(e) => setEditingUser({ ...editingUser, subscriberCode: e.target.value.toUpperCase() })}
+                        placeholder={language === 'ar' ? 'مثال: AB123456' : 'Example: AB123456'}
+                      />
+                      <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        {language === 'ar' ? 'كود الإحالة الخاص بهذا المستخدم' : 'This user\'s own referral code'}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="um-form-row">
+                    <div className="um-form-group">
+                      <label>{language === 'ar' ? 'النقاط التراكمية' : 'Cumulative Points'}</label>
+                      <input
+                        type="number"
+                        value={editingUser.points}
+                        onChange={(e) => setEditingUser({ ...editingUser, points: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="um-form-group">
+                      <label>{language === 'ar' ? 'نقاط الأداء الشخصي' : 'Personal Performance Points'}</label>
+                      <input
+                        type="number"
+                        value={editingUser.monthlyPoints}
+                        onChange={(e) => setEditingUser({ ...editingUser, monthlyPoints: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+
+                  {editingUser.role === 'member' && (
+                    <>
+                      <div className="um-form-row">
+                        <div className="um-form-group">
+                          <label style={{ color: '#ff9800' }}>🎁 {language === 'ar' ? 'إضافة نقاط مكافأة' : 'Add Bonus Points'}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder={language === 'ar' ? 'أدخل عدد النقاط المراد إضافتها' : 'Enter points to add'}
+                            value={editingUser.bonusPoints || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, bonusPoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#ff9800' }}
+                          />
+                          <small style={{ color: '#ff9800', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar'
+                              ? '💰 تُضاف للنقاط والرتبة والربح وتُوزع على الأعضاء العلويين (مثل شراء منتج)'
+                              : '💰 Added to points, rank & profit, distributes to upline (like purchasing a product)'}
+                          </small>
+                        </div>
+                        <div className="um-form-group">
+                          <label style={{ color: '#ff9800' }}>📝 {language === 'ar' ? 'سبب المكافأة' : 'Bonus Reason'}</label>
+                          <input
+                            type="text"
+                            placeholder={language === 'ar' ? 'أدخل سبب إضافة المكافأة' : 'Enter bonus reason'}
+                            value={editingUser.bonusPointsReason || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, bonusPointsReason: e.target.value })}
+                            style={{ borderColor: '#ff9800' }}
+                          />
+                          <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar' ? 'يُحفظ في سجل المكافآت' : 'Saved in rewards log'}
+                          </small>
+                        </div>
+                      </div>
+                      <div className="um-form-row">
+                        <div className="um-form-group">
+                          <label style={{ color: '#9c27b0' }}>💵 {language === 'ar' ? 'إضافة نقاط تعويض' : 'Add Compensation Points'}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder={language === 'ar' ? 'أدخل عدد النقاط المراد إضافتها' : 'Enter points to add'}
+                            value={editingUser.compensationPoints || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, compensationPoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#9c27b0' }}
+                          />
+                          <small style={{ color: '#9c27b0', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar'
+                              ? '⚠️ تُضاف للتراكمي فقط لحساب الرتبة، لا تُوزع ولا تُحسب كأرباح'
+                              : '⚠️ Added to cumulative points for rank only, no profit or distribution'}
+                          </small>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              <div className="um-form-row">
+                <div className="um-form-group checkbox-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={editingUser.isActive !== false}
+                      onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })}
+                    />
+                    <span>{language === 'ar' ? 'الحساب نشط' : 'Account Active'}</span>
+                  </label>
+                  <small style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                    {language === 'ar'
+                      ? '⚠️ عند إيقاف النشاط، لن يتمكن المستخدم من تسجيل الدخول'
+                      : '⚠️ When disabled, user will not be able to login'}
+                  </small>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px dashed #ddd', paddingTop: '16px', marginTop: '4px' }}>
+                <label style={{ fontWeight: 'bold', color: '#555', fontSize: '14px', display: 'block', marginBottom: '12px' }}>
+                  {language === 'ar' ? '🔒 تغيير كلمة المرور (اختياري)' : '🔒 Change Password (Optional)'}
+                </label>
+                <div className="um-form-row">
+                  <div className="um-form-group" style={{ position: 'relative' }}>
+                    <label>{language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}</label>
+                    <input
+                      type={editPassword.showNew ? 'text' : 'password'}
+                      value={editPassword.newPassword}
+                      onChange={(e) => setEditPassword({ ...editPassword, newPassword: e.target.value })}
+                      placeholder={language === 'ar' ? 'اتركه فارغاً للإبقاء على الحالية' : 'Leave empty to keep current'}
+                      style={{ paddingRight: '38px' }}
+                    />
+                    <span
+                      onClick={() => setEditPassword({ ...editPassword, showNew: !editPassword.showNew })}
+                      style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
+                    >
+                      {editPassword.showNew ? '🙈' : '👁️'}
+                    </span>
+                  </div>
+                  <div className="um-form-group" style={{ position: 'relative' }}>
+                    <label>{language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}</label>
+                    <input
+                      type={editPassword.showConfirm ? 'text' : 'password'}
+                      value={editPassword.confirmPassword}
+                      onChange={(e) => setEditPassword({ ...editPassword, confirmPassword: e.target.value })}
+                      placeholder={language === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter new password'}
+                      style={{ paddingRight: '38px' }}
+                    />
+                    <span
+                      onClick={() => setEditPassword({ ...editPassword, showConfirm: !editPassword.showConfirm })}
+                      style={{ position: 'absolute', right: '10px', bottom: '10px', cursor: 'pointer', fontSize: '16px', userSelect: 'none', color: '#888' }}
+                    >
+                      {editPassword.showConfirm ? '🙈' : '👁️'}
+                    </span>
+                    {editPassword.newPassword && editPassword.confirmPassword && editPassword.newPassword !== editPassword.confirmPassword && (
+                      <small style={{ color: '#e74c3c', fontSize: '11px' }}>
+                        {language === 'ar' ? '⚠️ كلمتا المرور غير متطابقتين' : '⚠️ Passwords do not match'}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              </div>
+          </div>
+        )}
+      </MobileDrawer>
+
+      {/* Edit User Modal - Desktop Version */}
+      {!isMobile && editingUser && (
         <div className="um-modal-overlay" onClick={() => setEditingUser(null)}>
           <div className="um-modal um-modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="um-modal-header">
@@ -1141,8 +1472,193 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* Add User Modal */}
-      {showAddForm && (
+      {/* Add User Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title={language === 'ar' ? 'إضافة مستخدم جديد' : 'Add New User'}
+        footerButtons={
+          <>
+            <button className="um-save-btn" onClick={(e) => { e.preventDefault(); handleCreateUser(e); }} type="button">
+              {language === 'ar' ? 'إضافة المستخدم' : 'Add User'}
+            </button>
+            <button className="um-cancel-btn" type="button" onClick={() => setShowAddForm(false)}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateUser} autoComplete="off" id="add-user-form-mobile">
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'اسم المستخدم (إنجليزي فقط) *' : 'Username (English only) *'}</label>
+                    <input
+                      type="text"
+                      value={newUser.username}
+                      onChange={(e) => {
+                        const englishOnly = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '');
+                        setNewUser({ ...newUser, username: englishOnly });
+                      }}
+                      required
+                    />
+                  </div>
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'الاسم الكامل *' : 'Full Name *'}</label>
+                    <input
+                      type="text"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'كلمة المرور *' : 'Password *'}</label>
+                    <input
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      minLength="6"
+                      required
+                    />
+                  </div>
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'تأكيد كلمة المرور *' : 'Confirm Password *'}</label>
+                    <input
+                      type="password"
+                      value={newUser.confirmPassword}
+                      onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                      minLength="6"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'رقم الهاتف' : 'Phone'}</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <select
+                        value={newUser.countryCode || '+970'}
+                        onChange={(e) => setNewUser({ ...newUser, countryCode: e.target.value })}
+                        style={{ flex: '0 0 180px' }}
+                      >
+                        {countryCodes.map((item) => (
+                          <option key={item.code} value={item.code}>
+                            {item.code} - {item.country}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="tel"
+                        value={newUser.phone}
+                        onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                        style={{ flex: '1' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'نوع المستخدم *' : 'User Role *'}</label>
+                    <select
+                      value={newUser.role}
+                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                      required
+                    >
+                      <option value="customer">{language === 'ar' ? 'زبون' : 'Customer'}</option>
+                      <option value="member">{language === 'ar' ? 'عضو' : 'Member'}</option>
+                      {currentUser?.role === 'super_admin' && (
+                        <option value="regional_admin">{language === 'ar' ? 'ادمن منطقة' : 'Regional Admin'}</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="um-form-row">
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'الدولة' : 'Country'}</label>
+                    <select
+                      value={newUser.country || ''}
+                      onChange={(e) => setNewUser({ ...newUser, country: e.target.value })}
+                    >
+                      <option value="">{language === 'ar' ? 'اختر الدولة' : 'Select Country'}</option>
+                      {allCountries.map((country) => (
+                        <option key={country.value} value={country.value}>
+                          {language === 'ar' ? country.label : country.value}
+                        </option>
+                      ))}
+                    </select>
+                    <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                      {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
+                    </small>
+                  </div>
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'المدينة (إنجليزي)' : 'City (English)'}</label>
+                    <input
+                      type="text"
+                      value={newUser.city || ''}
+                      onChange={(e) => setNewUser({ ...newUser, city: e.target.value.replace(/[^a-zA-Z\s-]/g, '') })}
+                      placeholder="Jenin / Ramallah / Gaza"
+                    />
+                    <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                      {language === 'ar' ? 'تُستخدم لتوليد كود العضو' : 'Used for member code generation'}
+                    </small>
+                  </div>
+                </div>
+
+                {currentUser?.role === 'super_admin' && (newUser.role === 'regional_admin' || newUser.role === 'member' || newUser.role === 'customer') && (
+                  <div className="um-form-row">
+                    <div className="um-form-group">
+                      <label>{language === 'ar' ? 'المنطقة الإدارية (اختياري)' : 'Administrative Region (Optional)'}</label>
+                      <select
+                        value={newUser.region || ''}
+                        onChange={(e) => setNewUser({ ...newUser, region: e.target.value })}
+                      >
+                        <option value="">{language === 'ar' ? 'اختر المنطقة' : 'Select Region'}</option>
+                        {regions.map((region) => (
+                          <option key={region._id} value={region._id}>
+                            {language === 'ar' ? region.nameAr : region.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                      <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                        {language === 'ar' ? 'تحدد أي مسؤول إقليمي يمكنه التحكم بهذا المستخدم' : 'Determines which regional admin can manage this user'}
+                      </small>
+                    </div>
+                  </div>
+                )}
+
+                {newUser.role === 'member' && (
+                  <div className="um-form-group">
+                    <label>{language === 'ar' ? 'كود الراعي (اختياري)' : 'Sponsor Code (Optional)'}</label>
+                    <input
+                      type="text"
+                      value={newUser.sponsorCode}
+                      onChange={(e) => {
+                        const code = e.target.value.toUpperCase();
+                        setNewUser({ ...newUser, sponsorCode: code });
+                        fetchSponsorInfo(code, false);
+                      }}
+                      placeholder={language === 'ar' ? 'أدخل كود الراعي لربط العضو بشجرة العمولات' : 'Enter sponsor code to link member to commission tree'}
+                    />
+                    {newUserSponsorName && (
+                      <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#e8f5e9', borderRadius: '4px', color: '#2e7d32' }}>
+                        ✓ {language === 'ar' ? 'الراعي:' : 'Sponsor:'} <strong>{newUserSponsorName}</strong>
+                      </div>
+                    )}
+                    {newUser.sponsorCode && !newUserSponsorName && (
+                      <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fff3e0', borderRadius: '4px', color: '#f57c00' }}>
+                        ⚠️ {language === 'ar' ? 'كود غير موجود' : 'Code not found'}
+                      </div>
+                    )}
+                  </div>
+                )}
+        </form>
+      </MobileDrawer>
+
+      {/* Add User Modal - Desktop Version */}
+      {!isMobile && showAddForm && (
         <div className="um-modal-overlay" onClick={() => setShowAddForm(false)}>
           <div className="um-modal um-modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="um-modal-header">
@@ -1333,8 +1849,111 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* Location Statistics Modal */}
-      {showLocationStats && (
+      {/* Location Statistics Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={showLocationStats}
+        onClose={() => setShowLocationStats(false)}
+        title={`📊 ${language === 'ar' ? 'إحصائيات الأعضاء حسب الموقع' : 'Members Statistics by Location'}`}
+      >
+        <div>
+          <div className="um-stats-section">
+            <h4>🌍 {language === 'ar' ? 'حسب الدولة' : 'By Country'}</h4>
+            <div className="um-stats-table-wrapper">
+              <table className="um-stats-table">
+                <thead>
+                  <tr>
+                    <th>{language === 'ar' ? 'الدولة' : 'Country'}</th>
+                    <th>{language === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                    <th>{language === 'ar' ? 'أعضاء' : 'Members'}</th>
+                    <th>{language === 'ar' ? 'عملاء' : 'Customers'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(locationStats.byCountry)
+                    .sort((a, b) => b[1].total - a[1].total)
+                    .map(([country, stats]) => (
+                      <tr
+                        key={country}
+                        className="um-stats-row-clickable"
+                        onClick={() => {
+                          setFilterCountry(country === 'غير محدد' ? 'all' : country);
+                          setShowLocationStats(false);
+                        }}
+                      >
+                        <td className="um-country-name">{country}</td>
+                        <td className="um-stat-total">{stats.total}</td>
+                        <td className="um-stat-members">👥 {stats.members}</td>
+                        <td className="um-stat-customers">🛒 {stats.customers}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="um-stats-section">
+            <h4>🏙️ {language === 'ar' ? 'حسب المحافظة/المدينة' : 'By City/Province'}</h4>
+            <div className="um-stats-table-wrapper">
+              <table className="um-stats-table">
+                <thead>
+                  <tr>
+                    <th>{language === 'ar' ? 'الدولة' : 'Country'}</th>
+                    <th>{language === 'ar' ? 'المحافظة/المدينة' : 'City/Province'}</th>
+                    <th>{language === 'ar' ? 'الإجمالي' : 'Total'}</th>
+                    <th>{language === 'ar' ? 'أعضاء' : 'Members'}</th>
+                    <th>{language === 'ar' ? 'عملاء' : 'Customers'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(locationStats.byCity)
+                    .sort((a, b) => b[1].total - a[1].total)
+                    .slice(0, 20)
+                    .map(([key, stats]) => (
+                      <tr
+                        key={key}
+                        className="um-stats-row-clickable"
+                        onClick={() => {
+                          if (stats.country !== 'غير محدد') setFilterCountry(stats.country);
+                          setShowLocationStats(false);
+                        }}
+                      >
+                        <td>{stats.country}</td>
+                        <td className="um-city-name">{stats.city}</td>
+                        <td className="um-stat-total">{stats.total}</td>
+                        <td className="um-stat-members">👥 {stats.members}</td>
+                        <td className="um-stat-customers">🛒 {stats.customers}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="um-stats-summary">
+            <div className="um-summary-card">
+              <span className="um-summary-icon">🌍</span>
+              <span className="um-summary-value">{Object.keys(locationStats.byCountry).length}</span>
+              <span className="um-summary-label">{language === 'ar' ? 'دول' : 'Countries'}</span>
+            </div>
+            <div className="um-summary-card">
+              <span className="um-summary-icon">🏙️</span>
+              <span className="um-summary-value">{Object.keys(locationStats.byCity).length}</span>
+              <span className="um-summary-label">{language === 'ar' ? 'محافظات/مدن' : 'Cities'}</span>
+            </div>
+            <div className="um-summary-card">
+              <span className="um-summary-icon">👥</span>
+              <span className="um-summary-value">{users.filter(u => u.role === 'member').length}</span>
+              <span className="um-summary-label">{language === 'ar' ? 'إجمالي الأعضاء' : 'Total Members'}</span>
+            </div>
+            <div className="um-summary-card">
+              <span className="um-summary-icon">🛒</span>
+              <span className="um-summary-value">{users.filter(u => u.role === 'customer').length}</span>
+              <span className="um-summary-label">{language === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</span>
+            </div>
+          </div>
+        </div>
+      </MobileDrawer>
+
+      {/* Location Statistics Modal - Desktop Version */}
+      {!isMobile && showLocationStats && (
         <div className="um-modal-overlay" onClick={() => setShowLocationStats(false)}>
           <div className="um-modal um-modal-stats" onClick={(e) => e.stopPropagation()}>
             <div className="um-modal-header um-stats-header">
@@ -1460,8 +2079,94 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* Network Modal */}
-      {showNetworkModal && selectedNetwork && (
+      {/* Network Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={showNetworkModal && !!selectedNetwork}
+        onClose={() => { setShowNetworkModal(false); setSelectedNetwork(null); setNetworkSearchTerm(''); }}
+        title={selectedNetwork ? `🌐 ${language === 'ar' ? 'شبكة العضو:' : 'Member Network:'} ${selectedNetwork.user.name}` : ''}
+      >
+        {selectedNetwork && (
+          <div>
+            {networkLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <p>{language === 'ar' ? 'جاري تحميل البيانات...' : 'Loading data...'}</p>
+              </div>
+            ) : selectedNetwork.levels && (
+              <>
+                <div style={{ marginBottom: '20px' }}>
+                  <input
+                    type="text"
+                    placeholder={language === 'ar' ? 'بحث بالاسم، اليوزر أو الكود...' : 'Search by name, username or code...'}
+                    value={networkSearchTerm}
+                    onChange={(e) => setNetworkSearchTerm(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', border: '2px solid #e1e8ed', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+                <div className="um-network-summary">
+                  <div className="um-summary-item">
+                    <label>{language === 'ar' ? 'كود العضو:' : 'Member Code:'}</label>
+                    <span className="um-code-badge">{selectedNetwork.user.subscriberCode}</span>
+                  </div>
+                  <div className="um-summary-item">
+                    <label>{language === 'ar' ? 'إجمالي الشبكة:' : 'Total Network:'}</label>
+                    <span className="um-stat-value">{selectedNetwork.stats?.totalMembers || 0}</span>
+                  </div>
+                  <div className="um-summary-item">
+                    <label>{language === 'ar' ? 'النقاط:' : 'Points:'}</label>
+                    <span className="um-stat-value">{selectedNetwork.stats?.totalPoints || 0}</span>
+                  </div>
+                </div>
+                <div className="um-network-levels">
+                  {[1, 2, 3, 4, 5].map(level => {
+                    const levelKey = `level${level}`;
+                    const levelMembers = selectedNetwork.levels[levelKey] || [];
+                    const filteredLevelMembers = levelMembers.filter(member =>
+                      member.name.toLowerCase().includes(networkSearchTerm.toLowerCase()) ||
+                      member.username.toLowerCase().includes(networkSearchTerm.toLowerCase()) ||
+                      (member.subscriberCode || '').toLowerCase().includes(networkSearchTerm.toLowerCase())
+                    );
+                    return (
+                      <div key={level} className="um-network-level">
+                        <div className="um-level-header">
+                          <h4>{language === 'ar' ? `المستوى ${level}` : `Level ${level}`}</h4>
+                          <span className="um-level-count">{filteredLevelMembers.length} {language === 'ar' ? 'عضو' : 'member'}</span>
+                        </div>
+                        {filteredLevelMembers.length > 0 ? (
+                          <div className="um-level-members">
+                            {filteredLevelMembers.map(member => (
+                              <div key={member._id} className="um-member-card">
+                                <div className="um-member-info">
+                                  <strong>{member.name}</strong>
+                                  <small>@{member.username}</small>
+                                </div>
+                                <div className="um-member-details">
+                                  <span className="um-member-code">{member.subscriberCode}</span>
+                                  <span className="um-member-points">{member.monthlyPoints || 0} {language === 'ar' ? 'نقطة' : 'pts'}</span>
+                                </div>
+                                {member.memberRank && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', padding: '4px 8px', background: '#f8f9fa', borderRadius: '6px' }}>
+                                    <img src={`/${getRankImage(member.memberRank)}`} alt={getRankName(member.memberRank, language)} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#555' }}>{getRankName(member.memberRank, language)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="um-no-members">{language === 'ar' ? 'لا يوجد أعضاء في هذا المستوى' : 'No members in this level'}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </MobileDrawer>
+
+      {/* Network Modal - Desktop Version */}
+      {!isMobile && showNetworkModal && selectedNetwork && (
         <div className="um-modal-overlay" onClick={() => {
           setShowNetworkModal(false);
           setSelectedNetwork(null);
@@ -1584,8 +2289,60 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* Sponsor Code Modal */}
-      {showSponsorModal && (
+      {/* Sponsor Code Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={showSponsorModal}
+        onClose={() => { setShowSponsorModal(false); setPendingRoleChange(null); setSponsorCode(''); }}
+        title={`🎯 ${language === 'ar' ? 'كود الإحالة مطلوب' : 'Sponsor Code Required'}`}
+        footerButtons={
+          <>
+            <button className="um-save-btn" onClick={confirmRoleChangeWithSponsor}>
+              ✅ {language === 'ar' ? 'تأكيد التحويل' : 'Confirm Conversion'}
+            </button>
+            <button className="um-cancel-btn" onClick={() => { setShowSponsorModal(false); setPendingRoleChange(null); setSponsorCode(''); }}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </button>
+          </>
+        }
+      >
+        <div>
+          <p style={{ marginBottom: '1rem', color: '#666' }}>
+            {language === 'ar'
+              ? 'عند تحويل عميل إلى عضو، يجب إدخال كود الإحالة (الراعي) لربط العضو بشجرة العمولات.'
+              : 'When converting a customer to a member, you must enter a sponsor code to link the member to the commission tree.'}
+          </p>
+          <div className="um-form-group">
+            <label>{language === 'ar' ? 'كود الإحالة (إجباري) *' : 'Sponsor Code (Required) *'}</label>
+            <input
+              type="text"
+              value={sponsorCode}
+              onChange={(e) => {
+                const code = e.target.value.toUpperCase();
+                setSponsorCode(code);
+                fetchSponsorInfo(code, true);
+              }}
+              placeholder={language === 'ar' ? 'أدخل كود الراعي...' : 'Enter sponsor code...'}
+              onKeyPress={(e) => { if (e.key === 'Enter') confirmRoleChangeWithSponsor(); }}
+            />
+            {sponsorName && (
+              <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#e8f5e9', borderRadius: '4px', color: '#2e7d32' }}>
+                ✓ {language === 'ar' ? 'الراعي:' : 'Sponsor:'} <strong>{sponsorName}</strong>
+              </div>
+            )}
+            {sponsorCode && !sponsorName && (
+              <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fff3e0', borderRadius: '4px', color: '#f57c00' }}>
+                ⚠️ {language === 'ar' ? 'كود غير موجود' : 'Code not found'}
+              </div>
+            )}
+            <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+              {language === 'ar' ? 'مثال: AB123456' : 'Example: AB123456'}
+            </small>
+          </div>
+        </div>
+      </MobileDrawer>
+
+      {/* Sponsor Code Modal - Desktop Version */}
+      {!isMobile && showSponsorModal && (
         <div className="um-modal-overlay" onClick={() => {
           setShowSponsorModal(false);
           setPendingRoleChange(null);

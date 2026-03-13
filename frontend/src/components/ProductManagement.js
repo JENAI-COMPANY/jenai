@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/ProductManagement.css';
+import MobileDrawer from './MobileDrawer';
 
 // Deep-parse nested JSON strings (fixes multiple JSON.stringify calls issue)
 const deepParseOptions = (options) => {
@@ -86,6 +87,13 @@ const ProductManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('all'); // all, or specific category
   const [newColor, setNewColor] = useState('');
   const [newSize, setNewSize] = useState('');
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+
+  useEffect(() => {
+    const mobileHandler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', mobileHandler);
+    return () => window.removeEventListener('resize', mobileHandler);
+  }, []);
 
   const handlePrint = () => {
     const filtered = products.filter(product => {
@@ -722,8 +730,392 @@ const ProductManagement = () => {
       {error && <div className="pm-alert pm-alert-error">{error}</div>}
       {message && <div className="pm-alert pm-alert-success">{message}</div>}
 
-      {/* Add/Edit Form Modal */}
-      {showAddForm && (
+      {/* Add/Edit Form Modal - Mobile Version */}
+      <MobileDrawer
+        isOpen={showAddForm}
+        onClose={resetForm}
+        title={editingProduct ? (language === 'ar' ? 'تعديل المنتج' : 'Edit Product') : (language === 'ar' ? 'إضافة منتج جديد' : 'Add New Product')}
+        footerButtons={
+          <>
+            <button className="pm-save-btn" onClick={handleSubmit} type="button">
+              {editingProduct ? (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes') : (language === 'ar' ? 'إضافة المنتج' : 'Add Product')}
+            </button>
+            <button className="pm-cancel-btn" type="button" onClick={resetForm}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </button>
+          </>
+        }
+      >
+        {showAddForm && (
+          <form onSubmit={handleSubmit} className="pm-form" autoComplete="off">
+            {error && <div className="pm-alert pm-alert-error" style={{margin: '0 0 16px 0'}}>{error}</div>}
+            {message && <div className="pm-alert pm-alert-success" style={{margin: '0 0 16px 0'}}>{message}</div>}
+            <div className="pm-form-grid">
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'اسم المنتج' : 'Product Name'} *</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'القسم' : 'Category'} *</label>
+                  <div className="pm-category-input">
+                    <select
+                      value={showManageCategories || showAddCategory ? '' : formData.category}
+                      onChange={(e) => {
+                        if (e.target.value === '__add_new__') {
+                          setShowAddCategory(true);
+                          setShowManageCategories(false);
+                        } else if (e.target.value === '__manage__') {
+                          setShowManageCategories(true);
+                          setShowAddCategory(false);
+                        } else {
+                          setFormData({ ...formData, category: e.target.value });
+                          setShowAddCategory(false);
+                          setShowManageCategories(false);
+                        }
+                      }}
+                      className="pm-category-select"
+                      required
+                    >
+                      <option value="">{language === 'ar' ? 'اختر القسم' : 'Select Category'}</option>
+                      {categories
+                        .filter(cat => {
+                          if (user?.role === 'category_admin' && user?.managedCategories) {
+                            return user.managedCategories.includes(cat);
+                          }
+                          return true;
+                        })
+                        .map((cat, index) => (
+                          <option key={index} value={cat}>{cat}</option>
+                        ))}
+                      {user?.role !== 'category_admin' && (
+                        <>
+                          <option value="__add_new__">+ {language === 'ar' ? 'إضافة قسم جديد' : 'Add New Category'}</option>
+                          <option value="__manage__">⚙️ {language === 'ar' ? 'إدارة الأقسام' : 'Manage Categories'}</option>
+                        </>
+                      )}
+                    </select>
+
+                    {showAddCategory && (
+                      <div className="pm-add-category-popup">
+                        <input
+                          type="text"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder={language === 'ar' ? 'اسم القسم الجديد' : 'New category name'}
+                          onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                        />
+                        <button type="button" onClick={handleAddCategory} className="pm-btn-add-cat">✓</button>
+                        <button type="button" onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }} className="pm-btn-cancel-cat">✕</button>
+                      </div>
+                    )}
+
+                    {showManageCategories && (
+                      <div className="pm-manage-categories-popup">
+                        <div className="pm-manage-header">
+                          <h4>{language === 'ar' ? 'إدارة الأقسام' : 'Manage Categories'}</h4>
+                          <button type="button" onClick={() => setShowManageCategories(false)} className="pm-close-btn">✕</button>
+                        </div>
+                        <div className="pm-category-list">
+                          {categories.length === 0 ? (
+                            <p className="pm-no-categories">{language === 'ar' ? 'لا توجد أقسام' : 'No categories'}</p>
+                          ) : (
+                            categories.map((cat, index) => (
+                              <div key={index} className="pm-category-item">
+                                <span>{cat}</span>
+                                <button type="button" onClick={() => handleDeleteCategory(cat)} className="pm-delete-category-btn" title={language === 'ar' ? 'حذف' : 'Delete'}>🗑️</button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pm-form-group pm-full-width">
+                  <label>{language === 'ar' ? 'الوصف' : 'Description'}</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows="3"
+                  />
+                </div>
+
+                {user && (user.role === 'super_admin' || user.role === 'regional_admin' || user.role === 'category_admin') && (
+                  <div className="pm-form-group">
+                    <label>{language === 'ar' ? 'المنطقة' : 'Region'}</label>
+                    {(user.role === 'super_admin' || user.role === 'category_admin') ? (
+                      <div className="pm-category-input">
+                        <select
+                          value={showAddRegion ? '' : formData.region}
+                          onChange={(e) => {
+                            if (e.target.value === '__add_new__') {
+                              setShowAddRegion(true);
+                            } else {
+                              setFormData({ ...formData, region: e.target.value });
+                              setShowAddRegion(false);
+                            }
+                          }}
+                          className="pm-category-select"
+                        >
+                          <option value="all">{language === 'ar' ? 'جميع المناطق' : 'All Regions'}</option>
+                          {regions.map((region) => (
+                            <option key={region._id} value={region._id}>
+                              {language === 'ar' ? region.nameAr : region.nameEn}
+                            </option>
+                          ))}
+                          <option value="__add_new__">+ {language === 'ar' ? 'إضافة منطقة جديدة' : 'Add New Region'}</option>
+                        </select>
+
+                        {showAddRegion && (
+                          <div className="pm-add-category-popup pm-add-region-popup">
+                            <div style={{ marginBottom: '8px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                                {language === 'ar' ? 'الاسم بالعربي *' : 'Arabic Name *'}
+                              </label>
+                              <input type="text" value={newRegionData.nameAr} onChange={(e) => setNewRegionData({ ...newRegionData, nameAr: e.target.value })} placeholder={language === 'ar' ? 'مثال: فلسطين' : 'Example: فلسطين'} style={{ width: '100%' }} dir="rtl" />
+                            </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                                {language === 'ar' ? 'الاسم بالإنجليزي *' : 'English Name *'}
+                              </label>
+                              <input type="text" value={newRegionData.nameEn} onChange={(e) => setNewRegionData({ ...newRegionData, nameEn: e.target.value })} placeholder={language === 'ar' ? 'مثال: Palestine' : 'Example: Palestine'} style={{ width: '100%' }} dir="ltr" />
+                            </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                                {language === 'ar' ? 'رمز المنطقة *' : 'Region Code *'}
+                              </label>
+                              <input type="text" value={newRegionData.code} onChange={(e) => setNewRegionData({ ...newRegionData, code: e.target.value.toUpperCase() })} placeholder={language === 'ar' ? 'مثال: PS' : 'Example: PS'} maxLength="3" style={{ textTransform: 'uppercase', width: '100%' }} dir="ltr" />
+                            </div>
+                            <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }}>
+                              <button type="button" onClick={handleAddRegion} className="pm-btn-add-cat">✓</button>
+                              <button type="button" onClick={() => { setShowAddRegion(false); setNewRegionData({ nameAr: '', nameEn: '', code: '' }); }} className="pm-btn-cancel-cat">✕</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <input
+                          type="text"
+                          value={user.region ? (language === 'ar' ? user.region.nameAr : user.region.nameEn) : (language === 'ar' ? 'جاري التحميل...' : 'Loading...')}
+                          disabled
+                          className="pm-category-select"
+                          style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                        />
+                        <small style={{ display: 'block', marginTop: '5px', color: '#666', fontSize: '12px' }}>
+                          {language === 'ar' ? 'سيتم إضافة المنتج تلقائياً لمنطقتك' : 'Product will be added to your region automatically'}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {user && user.role === 'super_admin' && (
+                  <div className="pm-form-group">
+                    <label>{language === 'ar' ? 'المورد' : 'Supplier'}</label>
+                    <select
+                      value={formData.supplier || ''}
+                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                      className="pm-category-select"
+                    >
+                      <option value="">{language === 'ar' ? 'لا يوجد' : 'None'}</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier._id} value={supplier._id}>
+                          {supplier.name} (@{supplier.username})
+                        </option>
+                      ))}
+                    </select>
+                    <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {language === 'ar' ? 'المورد المسؤول عن هذا المنتج' : 'Supplier responsible for this product'}
+                    </small>
+                  </div>
+                )}
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'سعر الزبون' : 'Customer Price'} *</label>
+                  <input type="number" step="0.01" value={formData.customerPrice} onChange={(e) => setFormData({ ...formData, customerPrice: e.target.value })} required placeholder={language === 'ar' ? 'السعر للعملاء' : 'Price for customers'} />
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'سعر العضو' : 'Subscriber Price'} *</label>
+                  <input type="number" step="0.01" value={formData.subscriberPrice} onChange={(e) => setFormData({ ...formData, subscriberPrice: e.target.value })} required placeholder={language === 'ar' ? 'السعر للمشتركين' : 'Price for subscribers'} />
+                </div>
+
+                <div className="pm-form-section pm-discount-section">
+                  <h4>{language === 'ar' ? 'خصم الزباين (العملاء العاديين)' : 'Customer Discount'}</h4>
+                  <div className="pm-form-group pm-checkbox-group">
+                    <label>
+                      <input type="checkbox" checked={formData.customerDiscount.enabled} onChange={(e) => setFormData({ ...formData, customerDiscount: { ...formData.customerDiscount, enabled: e.target.checked } })} />
+                      <span>{language === 'ar' ? 'تفعيل خصم للزباين' : 'Enable Customer Discount'}</span>
+                    </label>
+                  </div>
+                  {formData.customerDiscount.enabled && (
+                    <div className="pm-form-row">
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر الأصلي' : 'Original Price'}</label>
+                        <input type="number" step="0.01" value={formData.customerDiscount.originalPrice} onChange={(e) => setFormData({ ...formData, customerDiscount: { ...formData.customerDiscount, originalPrice: e.target.value } })} placeholder={language === 'ar' ? 'السعر قبل الخصم' : 'Price before discount'} />
+                      </div>
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر بعد الخصم' : 'Discounted Price'}</label>
+                        <input type="number" step="0.01" value={formData.customerDiscount.discountedPrice} onChange={(e) => setFormData({ ...formData, customerDiscount: { ...formData.customerDiscount, discountedPrice: e.target.value } })} placeholder={language === 'ar' ? 'السعر بعد الخصم' : 'Price after discount'} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pm-form-section pm-discount-section">
+                  <h4>{language === 'ar' ? 'خصم الأعضاء' : 'Member Discount'}</h4>
+                  <div className="pm-form-group pm-checkbox-group">
+                    <label>
+                      <input type="checkbox" checked={formData.subscriberDiscount.enabled} onChange={(e) => setFormData({ ...formData, subscriberDiscount: { ...formData.subscriberDiscount, enabled: e.target.checked } })} />
+                      <span>{language === 'ar' ? 'تفعيل خصم للأعضاء' : 'Enable Member Discount'}</span>
+                    </label>
+                  </div>
+                  {formData.subscriberDiscount.enabled && (
+                    <div className="pm-form-row">
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر الأصلي' : 'Original Price'}</label>
+                        <input type="number" step="0.01" value={formData.subscriberDiscount.originalPrice} onChange={(e) => setFormData({ ...formData, subscriberDiscount: { ...formData.subscriberDiscount, originalPrice: e.target.value } })} placeholder={language === 'ar' ? 'السعر قبل الخصم' : 'Price before discount'} />
+                      </div>
+                      <div className="pm-form-group">
+                        <label>{language === 'ar' ? 'السعر بعد الخصم' : 'Discounted Price'}</label>
+                        <input type="number" step="0.01" value={formData.subscriberDiscount.discountedPrice} onChange={(e) => setFormData({ ...formData, subscriberDiscount: { ...formData.subscriberDiscount, discountedPrice: e.target.value } })} placeholder={language === 'ar' ? 'السعر بعد الخصم' : 'Price after discount'} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'سعر الجملة' : 'Bulk Price'}</label>
+                  <input type="number" step="0.01" value={formData.bulkPrice} onChange={(e) => setFormData({ ...formData, bulkPrice: e.target.value })} />
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'الحد الأدنى للجملة' : 'Bulk Min Quantity'}</label>
+                  <input type="number" value={formData.bulkMinQuantity} onChange={(e) => setFormData({ ...formData, bulkMinQuantity: e.target.value })} />
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'الكمية المتاحة' : 'Stock'} *</label>
+                  <input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} required />
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'الوزن' : 'Weight'}</label>
+                  <input type="text" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder={language === 'ar' ? 'اختياري' : 'Optional'} />
+                </div>
+
+                <div className="pm-form-group">
+                  <label>{language === 'ar' ? 'النقاط' : 'Points'}</label>
+                  <input type="number" value={formData.points} onChange={(e) => setFormData({ ...formData, points: e.target.value })} />
+                </div>
+
+                <div className="pm-form-group pm-full-width">
+                  <div className="pm-checkbox">
+                    <label>
+                      <input type="checkbox" checked={formData.hasColorOptions} onChange={(e) => setFormData({ ...formData, hasColorOptions: e.target.checked })} />
+                      {language === 'ar' ? '🎨 تفعيل خيارات الألوان' : '🎨 Enable Color Options'}
+                    </label>
+                  </div>
+                  {formData.hasColorOptions && (
+                    <div className="pm-options-container">
+                      <div className="pm-add-option">
+                        <input type="text" value={newColor} onChange={(e) => setNewColor(e.target.value)} placeholder={language === 'ar' ? 'أضف لون (مثال: أحمر، أزرق، أخضر)' : 'Add color (e.g. Red, Blue, Green)'} onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }} />
+                        <button type="button" onClick={addColor} className="pm-add-btn">{language === 'ar' ? '+ إضافة' : '+ Add'}</button>
+                      </div>
+                      <div className="pm-options-list">
+                        {formData.colors.map((color, index) => (
+                          <span key={index} className="pm-option-tag">{color}<button type="button" onClick={() => removeColor(color)} className="pm-remove-tag">×</button></span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pm-form-group pm-full-width">
+                  <div className="pm-checkbox">
+                    <label>
+                      <input type="checkbox" checked={formData.hasSizeOptions} onChange={(e) => setFormData({ ...formData, hasSizeOptions: e.target.checked })} />
+                      {language === 'ar' ? '📏 تفعيل خيارات النمرة/المقاس' : '📏 Enable Size Options'}
+                    </label>
+                  </div>
+                  {formData.hasSizeOptions && (
+                    <div className="pm-options-container">
+                      <div className="pm-add-option">
+                        <input type="text" value={newSize} onChange={(e) => setNewSize(e.target.value)} placeholder={language === 'ar' ? 'أضف نمرة (مثال: S, M, L, XL أو 38, 40, 42)' : 'Add size (e.g. S, M, L, XL or 38, 40, 42)'} onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSize(); } }} />
+                        <button type="button" onClick={addSize} className="pm-add-btn">{language === 'ar' ? '+ إضافة' : '+ Add'}</button>
+                      </div>
+                      <div className="pm-options-list">
+                        {formData.sizes.map((size, index) => (
+                          <span key={index} className="pm-option-tag">{size}<button type="button" onClick={() => removeSize(size)} className="pm-remove-tag">×</button></span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pm-form-group pm-full-width">
+                  <label>
+                    {language === 'ar' ? 'الصور والفيديوهات' : 'Images & Videos'}
+                    <span className="pm-required"> * {language === 'ar' ? '(الصورة الأولى مطلوبة)' : '(First image required)'}</span>
+                  </label>
+                  <div className="pm-media-upload">
+                    <input type="file" id="media-upload-mobile" multiple accept="image/*,video/*" onChange={handleMediaChange} style={{ display: 'none' }} />
+                    <label htmlFor="media-upload-mobile" className="pm-upload-btn">
+                      📤 {language === 'ar' ? 'اختر الصور/الفيديوهات' : 'Choose Images/Videos'}
+                    </label>
+                  </div>
+                  {mediaPreviews.length > 0 && (
+                    <div className="pm-media-previews">
+                      {mediaPreviews.map((media, index) => (
+                        <div key={index} className="pm-media-preview-item">
+                          {index === 0 && <span className="pm-primary-badge">{language === 'ar' ? 'رئيسية' : 'Primary'}</span>}
+                          {media.type === 'video' ? (
+                            <video src={media.url} controls className="pm-preview-video" />
+                          ) : (
+                            <img src={media.url} alt={`Preview ${index + 1}`} className="pm-preview-image" />
+                          )}
+                          <button type="button" className="pm-remove-media" onClick={() => removeMedia(index)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pm-form-group pm-checkbox">
+                  <label>
+                    <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />
+                    {language === 'ar' ? 'منتج نشط' : 'Active Product'}
+                  </label>
+                </div>
+
+                <div className="pm-form-group pm-checkbox">
+                  <label>
+                    <input type="checkbox" checked={formData.isNewArrival} onChange={(e) => setFormData({ ...formData, isNewArrival: e.target.checked })} />
+                    {language === 'ar' ? '🎁 وصل حديثاً' : '🎁 New Arrival'}
+                  </label>
+                </div>
+
+                <div className="pm-form-group pm-checkbox">
+                  <label>
+                    <input type="checkbox" checked={formData.isOffer} onChange={(e) => setFormData({ ...formData, isOffer: e.target.checked })} />
+                    {language === 'ar' ? '🏷️ إضافة للعروض' : '🏷️ Add to Offers'}
+                  </label>
+                </div>
+            </div>
+          </form>
+        )}
+      </MobileDrawer>
+
+      {/* Add/Edit Form Modal - Desktop Version */}
+      {!isMobile && showAddForm && (
         <div className="pm-modal-overlay" onClick={() => !editingProduct && resetForm()}>
           <div className="pm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pm-modal-header">
