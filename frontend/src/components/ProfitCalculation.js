@@ -218,8 +218,8 @@ const ProfitCalculation = () => {
         // 3. حساب أرباح الأداء الشخصي: (نقاط × 20% × 0.55)
         const personalComm = Math.floor(personalPts * 0.20 * 0.55);
 
-        // 4. حساب أرباح الأجيال: نقاط الأجيال (بعد النسب) × 0.55
-        const teamComm = Math.floor(teamPts * 0.55);
+        // 4. حساب أرباح الأجيال: تأتي محسوبة من الباك اند (بعد تطبيق النسب × 0.55)
+        const teamComm = Math.floor(member.profit?.teamProfit || 0);
 
         // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
         const leadProfit = Math.floor(member.profit?.leadershipProfit || 0);
@@ -488,8 +488,8 @@ const ProfitCalculation = () => {
                     // 3. حساب أرباح الأداء الشخصي: (نقاط × 20% × 0.55)
                     const personalComm = Math.floor(personalPts * 0.20 * 0.55);
 
-                    // 4. حساب أرباح الأجيال: نقاط الأجيال (بعد النسب) × 0.55
-                    const teamComm = Math.floor(teamPts * 0.55);
+                    // 4. حساب أرباح الأجيال: تأتي محسوبة من الباك اند (بعد تطبيق النسب × 0.55)
+                    const teamComm = Math.floor(member.profit?.teamProfit || 0);
 
                     // 5. أرباح القيادة (تأتي محسوبة من الباك اند)
                     const leadProfit = Math.floor(member.profit?.leadershipProfit || 0);
