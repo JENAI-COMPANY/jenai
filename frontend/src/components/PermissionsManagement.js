@@ -171,7 +171,7 @@ const PermissionsManagement = () => {
                             : user.region)
                         : '-'}
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'عرض الأعضاء' : 'View Members'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -181,7 +181,7 @@ const PermissionsManagement = () => {
                         <span className="slider"></span>
                       </label>
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'التحكم بالأعضاء' : 'Manage Members'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -191,7 +191,7 @@ const PermissionsManagement = () => {
                         <span className="slider"></span>
                       </label>
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'عرض المنتجات' : 'View Products'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -201,7 +201,7 @@ const PermissionsManagement = () => {
                         <span className="slider"></span>
                       </label>
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'التحكم بالمنتجات' : 'Manage Products'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -257,7 +257,7 @@ const PermissionsManagement = () => {
                         ? user.managedCategories.join(', ')
                         : '-'}
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'عرض المنتجات' : 'View Products'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -267,7 +267,7 @@ const PermissionsManagement = () => {
                         <span className="slider"></span>
                       </label>
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'التحكم بالمنتجات' : 'Manage Products'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -277,7 +277,7 @@ const PermissionsManagement = () => {
                         <span className="slider"></span>
                       </label>
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'عرض الطلبات' : 'View Orders'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"
@@ -287,7 +287,7 @@ const PermissionsManagement = () => {
                         <span className="slider"></span>
                       </label>
                     </td>
-                    <td>
+                    <td data-label={language === 'ar' ? 'التحكم بالطلبات' : 'Manage Orders'}>
                       <label className="permission-switch">
                         <input
                           type="checkbox"

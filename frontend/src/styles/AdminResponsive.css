@@ -536,3 +536,105 @@
     flex-shrink: 0 !important;
   }
 }
+
+/* ===== MOBILE DRAWER - CSS CONTROLLED VISIBILITY ===== */
+
+/* Desktop: hide MobileDrawer */
+@media (min-width: 769px) {
+  .mobile-drawer-root {
+    display: none !important;
+  }
+}
+
+/* Mobile: show MobileDrawer as flex, hide desktop modal overlays */
+@media (max-width: 768px) {
+  .mobile-drawer-root {
+    display: flex !important;
+  }
+
+  /* Hide desktop modals when MobileDrawer is available */
+  .um-modal-overlay,
+  .om-modal-overlay,
+  .pm-modal-overlay {
+    display: none !important;
+  }
+}
+
+/* ===== PERMISSIONS TABLE MOBILE FIX ===== */
+@media (max-width: 768px) {
+  .permissions-table-wrapper {
+    overflow: visible !important;
+  }
+
+  .permissions-table {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .permissions-table thead {
+    display: none !important;
+  }
+
+  .permissions-table tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Each admin = card */
+  .permissions-table tbody tr {
+    display: block !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    margin-bottom: 1rem !important;
+    padding: 1rem !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important;
+  }
+
+  /* User info cell - full width at top */
+  .permissions-table tbody td:first-child {
+    display: block !important;
+    width: 100% !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    padding-bottom: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Role badge cell */
+  .permissions-table tbody td:nth-child(2) {
+    display: inline-block !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Region/Category cell */
+  .permissions-table tbody td:nth-child(3) {
+    display: inline-block !important;
+    margin-right: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+    font-size: 0.85rem !important;
+    color: #555 !important;
+  }
+
+  /* Permission toggle cells - show with label */
+  .permissions-table tbody td:nth-child(n+4) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0.4rem 0 !important;
+    border-top: 1px solid #f9f9f9 !important;
+    width: 100% !important;
+  }
+
+  /* Show label before each permission toggle */
+  .permissions-table tbody td[data-label]::before {
+    content: attr(data-label) !important;
+    font-size: 0.85rem !important;
+    color: #444 !important;
+    font-weight: 500 !important;
+  }
+
+  /* Fix permission-switch size on mobile */
+  .permission-switch {
+    flex-shrink: 0 !important;
+  }
+}
