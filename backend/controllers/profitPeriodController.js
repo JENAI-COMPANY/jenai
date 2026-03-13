@@ -21,6 +21,19 @@ exports.calculatePeriodProfits = async (req, res) => {
       });
     }
 
+    // التحقق من عدم التداخل مع فترة مغلقة
+    const overlapping = await ProfitPeriod.findOne({
+      status: 'closed',
+      startDate: { $lte: new Date(endDate) },
+      endDate: { $gte: new Date(startDate) }
+    });
+    if (overlapping) {
+      return res.status(400).json({
+        success: false,
+        message: `التواريخ المحددة تتداخل مع فترة مغلقة: "${overlapping.periodName}" (${new Date(overlapping.startDate).toLocaleDateString('ar')} - ${new Date(overlapping.endDate).toLocaleDateString('ar')})`
+      });
+    }
+
     // توليد رقم الدورة تلقائياً (العد من 1)
     const lastPeriod = await ProfitPeriod.findOne().sort({ periodNumber: -1 });
     const periodNumber = lastPeriod ? (lastPeriod.periodNumber || 0) + 1 : 1;
