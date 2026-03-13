@@ -3404,7 +3404,7 @@ router.post('/create-order-for-user', protect, authorize('super_admin', 'sales_e
 
 // ==================== Migration: تحويل النقاط القديمة إلى PointTransaction ====================
 // يُشغَّل مرة واحدة فقط بعد رفع الكود الجديد لأول مرة
-router.post('/migrate-points', protect, adminOnly, async (req, res) => {
+router.post('/migrate-points', protect, isSuperAdmin, async (req, res) => {
   try {
     const { migrateDate } = req.body;
 
