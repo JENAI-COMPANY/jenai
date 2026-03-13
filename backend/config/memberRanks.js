@@ -581,6 +581,7 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
   let teamTotalPoints = 0;
   let leadershipTotalPoints = 0;
   const leadershipBreakdown = [];
+  const levelPoints = [0, 0, 0, 0, 0]; // نقاط كل جيل (للتخزين في الفترة)
 
   for (let i = 0; i < 5; i++) {
     const levelMembers = downlineStructure[`level${i + 1}`] || [];
@@ -590,6 +591,7 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
     for (const m of levelMembers) {
       levelTotalPoints += memberPointsMap[m._id.toString()] || 0;
     }
+    levelPoints[i] = levelTotalPoints;
     if (levelTotalPoints === 0) continue;
 
     // عمولة الفريق (نسب ثابتة)
@@ -623,7 +625,12 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
   return {
     team: {
       totalCommissionPoints: teamTotalPoints,
-      commissionInShekel: Math.floor(teamTotalPoints * POINTS_TO_SHEKEL_RATE)
+      commissionInShekel: Math.floor(teamTotalPoints * POINTS_TO_SHEKEL_RATE),
+      generation1: levelPoints[0],
+      generation2: levelPoints[1],
+      generation3: levelPoints[2],
+      generation4: levelPoints[3],
+      generation5: levelPoints[4]
     },
     leadership: {
       totalCommissionPoints: leadershipTotalPoints,

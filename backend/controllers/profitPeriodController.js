@@ -188,7 +188,11 @@ exports.calculatePeriodProfits = async (req, res) => {
         rankNameEn: rankInfo.nameEn,
         points: {
           personal: personalPoints,
-          teamCommission: teamCommissionPoints,
+          generation1: networkCommissions.team.generation1,
+          generation2: networkCommissions.team.generation2,
+          generation3: networkCommissions.team.generation3,
+          generation4: networkCommissions.team.generation4,
+          generation5: networkCommissions.team.generation5,
           total: personalPoints + teamCommissionPoints
         },
         commissions: {
