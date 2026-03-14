@@ -21,6 +21,7 @@ const News = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   const [formData, setFormData] = useState({
     titleAr: '',
@@ -446,6 +447,14 @@ const News = () => {
         )}
       </div>
 
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div className="news-lightbox" onClick={() => setLightboxImage(null)}>
+          <button className="news-lightbox-close" onClick={() => setLightboxImage(null)}>✕</button>
+          <img src={lightboxImage} alt="" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
       {/* News Detail Modal */}
       {showModal && selectedNews && (
         isMobile ? (
@@ -455,10 +464,19 @@ const News = () => {
               <button className="news-detail-back" onClick={() => setShowModal(false)}>← رجوع</button>
             </div>
             {selectedNews.video && <video src={selectedNews.video} controls className="news-detail-video" />}
-            {!selectedNews.video && selectedNews.image && <img src={selectedNews.image} alt={selectedNews.titleAr} className="news-detail-img" />}
+            {!selectedNews.video && selectedNews.image && (
+              <img
+                src={selectedNews.image}
+                alt={selectedNews.titleAr}
+                className="news-detail-img"
+                onClick={() => setLightboxImage(selectedNews.image)}
+              />
+            )}
             {selectedNews.images && selectedNews.images.length > 1 && (
               <div className="news-detail-images-row">
-                {selectedNews.images.map((src, i) => <img key={i} src={src} alt="" />)}
+                {selectedNews.images.map((src, i) => (
+                  <img key={i} src={src} alt="" onClick={() => setLightboxImage(src)} />
+                ))}
               </div>
             )}
             <div className="news-detail-body">
@@ -492,14 +510,14 @@ const News = () => {
                 </div>
               )}
               {!selectedNews.video && selectedNews.image && (
-                <div className="news-modal-image">
+                <div className="news-modal-image" onClick={() => setLightboxImage(selectedNews.image)}>
                   <img src={selectedNews.image} alt={selectedNews.titleAr} />
                 </div>
               )}
               {selectedNews.images && selectedNews.images.length > 1 && (
                 <div style={{ display: 'flex', gap: 8, padding: '8px 16px', overflowX: 'auto' }}>
                   {selectedNews.images.map((src, i) => (
-                    <img key={i} src={src} alt="" style={{ height: 80, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                    <img key={i} src={src} alt="" onClick={() => setLightboxImage(src)} style={{ height: 80, borderRadius: 6, objectFit: 'cover', flexShrink: 0, cursor: 'pointer' }} />
                   ))}
                 </div>
               )}
