@@ -450,9 +450,21 @@ const News = () => {
         <div className="news-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="news-modal" onClick={e => e.stopPropagation()}>
             <button className="news-modal-close" onClick={() => setShowModal(false)}>✕</button>
-            {selectedNews.image && (
+            {selectedNews.video && (
+              <div className="news-modal-image">
+                <video src={selectedNews.video} controls style={{ width: '100%', maxHeight: 320, borderRadius: 8 }} />
+              </div>
+            )}
+            {!selectedNews.video && selectedNews.image && (
               <div className="news-modal-image">
                 <img src={selectedNews.image} alt={selectedNews.titleAr} />
+              </div>
+            )}
+            {selectedNews.images && selectedNews.images.length > 1 && (
+              <div style={{ display: 'flex', gap: 8, padding: '8px 16px', overflowX: 'auto' }}>
+                {selectedNews.images.map((src, i) => (
+                  <img key={i} src={src} alt="" style={{ height: 80, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                ))}
               </div>
             )}
             <div className="news-modal-body">
@@ -489,13 +501,20 @@ const News = () => {
 
 const NewsCard = ({ item, isSuperAdmin, onOpen, onEdit, onDelete, formatDate, language, featured }) => (
   <div className={`news-card ${featured ? 'news-card-featured' : ''} ${!item.isActive && isSuperAdmin ? 'news-card-inactive' : ''}`}>
-    {item.image && (
+    {item.video && (
+      <div className="news-card-image" onClick={() => onOpen(item)} style={{ position: 'relative', background: '#000', cursor: 'pointer' }}>
+        <video src={item.video} style={{ width: '100%', maxHeight: 180, objectFit: 'cover', opacity: 0.8 }} />
+        <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 40 }}>▶️</span>
+        {item.isPinned && <span className="news-pin-badge">📌</span>}
+      </div>
+    )}
+    {!item.video && item.image && (
       <div className="news-card-image" onClick={() => onOpen(item)}>
         <img src={item.image} alt={item.titleAr} />
         {item.isPinned && <span className="news-pin-badge">📌</span>}
       </div>
     )}
-    {!item.image && item.isPinned && (
+    {!item.video && !item.image && item.isPinned && (
       <div className="news-card-no-image" onClick={() => onOpen(item)}>
         <span className="news-pin-badge-standalone">📌</span>
       </div>
