@@ -40,7 +40,7 @@ exports.calculatePeriodProfits = async (req, res) => {
 
     // جلب جميع الأعضاء
     const members = await User.find({ role: 'member' })
-      .select('name username memberRank');
+      .select('name username memberRank subscriberCode');
 
     // حساب النقاط من معاملات النقاط ضمن نطاق التواريخ المحدد
     const endDateObj2 = new Date(endDate);
@@ -196,6 +196,7 @@ exports.calculatePeriodProfits = async (req, res) => {
         memberId: member._id,
         memberName: member.name,
         username: member.username,
+        subscriberCode: member.subscriberCode || '',
         memberRank: memberRankNumber,
         rankName: rankInfo.name,
         rankNameEn: rankInfo.nameEn,

@@ -13,6 +13,7 @@ const ProfitCalculation = () => {
   const [calculating, setCalculating] = useState(false);
   const [profitData, setProfitData] = useState(null);
   const [profitPeriods, setProfitPeriods] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // أقدم تاريخ مسموح به = تاريخ نهاية آخر فترة مغلقة (مسموح البداية من نفس اليوم)
   const minAllowedDate = profitPeriods
@@ -473,6 +474,16 @@ const ProfitCalculation = () => {
             </div>
           </div>
 
+          <div style={{ margin: '16px 0' }}>
+            <input
+              type="text"
+              placeholder={language === 'ar' ? 'بحث بالاسم أو اليوزر أو الكود...' : 'Search by name, username or code...'}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
+            />
+          </div>
+
           <div className="profit-table-wrapper">
             <table className="profit-table">
               <thead>
@@ -480,6 +491,7 @@ const ProfitCalculation = () => {
                   <th>{language === 'ar' ? 'الترتيب' : 'Rank'}</th>
                   <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
                   <th>{language === 'ar' ? 'اسم المستخدم' : 'Username'}</th>
+                  <th>{language === 'ar' ? 'كود العضو' : 'Member Code'}</th>
                   <th>{language === 'ar' ? 'الرتبة' : 'Member Rank'}</th>
                   <th>{language === 'ar' ? 'النقاط الشخصية' : 'Personal Pts'}</th>
                   <th>{language === 'ar' ? 'نقاط الأجيال' : 'Generation Pts'}</th>
@@ -494,6 +506,13 @@ const ProfitCalculation = () => {
               </thead>
               <tbody>
                 {(displayData.membersProfits || [])
+                  .filter(m => {
+                    if (!searchTerm) return true;
+                    const s = searchTerm.toLowerCase();
+                    return (m.memberName || '').toLowerCase().includes(s) ||
+                           (m.username || '').toLowerCase().includes(s) ||
+                           (m.subscriberCode || '').toLowerCase().includes(s);
+                  })
                   .sort((a, b) => (b.profit?.totalProfit || b.profitAmount || 0) - (a.profit?.totalProfit || a.profitAmount || 0))
                   .map((member, index) => {
                     // 1. النقاط الشخصية
@@ -546,6 +565,7 @@ const ProfitCalculation = () => {
                         </td>
                         <td className="member-name">{member.memberName || member.name}</td>
                         <td className="member-username">@{member.username}</td>
+                        <td style={{fontSize:13,color:'#666'}}>{member.subscriberCode || '-'}</td>
                         <td>{language === 'ar' ? (member.rankName || '-') : (member.rankNameEn || '-')}</td>
                         <td className="text-center points-cell">{personalPts.toLocaleString()}</td>
                         <td className="text-center points-cell">{teamPts.toLocaleString()}</td>

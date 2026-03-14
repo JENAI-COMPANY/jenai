@@ -24,6 +24,9 @@ const newsSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  video: {
+    type: String
+  },
   category: {
     type: String,
     default: 'عام'

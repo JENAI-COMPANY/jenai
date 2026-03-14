@@ -35,7 +35,10 @@ const News = () => {
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState('');
   const fileInputRef = useRef();
+  const videoInputRef = useRef();
 
   const categories = ['عام', 'إعلانات', 'عروض', 'تحديثات', 'أحداث'];
 
@@ -79,6 +82,8 @@ const News = () => {
     setImageFiles([]);
     setImagePreviews([]);
     setExistingImages([]);
+    setVideoFile(null);
+    setVideoPreview('');
   };
 
   const handleEdit = (item) => {
@@ -97,6 +102,8 @@ const News = () => {
     setImageFiles([]);
     setImagePreviews([]);
     setExistingImages(item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []));
+    setVideoFile(null);
+    setVideoPreview(item.video || '');
     setShowForm(true);
     setShowModal(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -115,6 +122,7 @@ const News = () => {
       Object.entries(formData).forEach(([k, v]) => payload.append(k, v));
       imageFiles.forEach(f => payload.append('images', f));
       payload.append('existingImages', JSON.stringify(existingImages));
+      if (videoFile) payload.append('video', videoFile);
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' };
       if (editingNews) {
         await axios.put(`/api/news/${editingNews._id}`, payload, { headers });
@@ -275,6 +283,28 @@ const News = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+                <div className="news-form-group news-full-width">
+                  <label>فيديو الخبر (اختياري)</label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    ref={videoInputRef}
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files[0];
+                      if (file) { setVideoFile(file); setVideoPreview(URL.createObjectURL(file)); }
+                    }}
+                  />
+                  <button type="button" className="news-upload-btn" onClick={() => videoInputRef.current.click()}>
+                    🎥 اختر فيديو
+                  </button>
+                  {videoPreview && (
+                    <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
+                      <video src={videoPreview} controls style={{ maxHeight: 160, maxWidth: '100%', borderRadius: 8, border: '1px solid #ddd' }} />
+                      <button type="button" onClick={() => { setVideoFile(null); setVideoPreview(''); }} style={{ position: 'absolute', top: 4, left: 4, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 13 }}>✕</button>
+                    </div>
+                  )}
                 </div>
                 <div className="news-form-group news-full-width">
                   <label>محتوى الخبر بالعربية *</label>

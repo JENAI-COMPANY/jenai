@@ -28,15 +28,18 @@ router.get('/', optionalAuth, async (req, res) => {
 });
 
 // POST create news (super_admin only)
-router.post('/', protect, uploadNews.array('images', 10), async (req, res) => {
+router.post('/', protect, uploadNews.fields([{ name: 'images', maxCount: 10 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'غير مصرح' });
     }
     const data = { ...req.body };
-    if (req.files && req.files.length > 0) {
-      data.images = req.files.map(f => `/uploads/news/${f.filename}`);
+    if (req.files?.images) {
+      data.images = req.files.images.map(f => `/uploads/news/${f.filename}`);
       data.image = data.images[0];
+    }
+    if (req.files?.video?.[0]) {
+      data.video = `/uploads/news/${req.files.video[0].filename}`;
     }
     const news = await News.create(data);
     res.status(201).json({ success: true, news });
@@ -46,20 +49,23 @@ router.post('/', protect, uploadNews.array('images', 10), async (req, res) => {
 });
 
 // PUT update news (super_admin only)
-router.put('/:id', protect, uploadNews.array('images', 10), async (req, res) => {
+router.put('/:id', protect, uploadNews.fields([{ name: 'images', maxCount: 10 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'غير مصرح' });
     }
     const data = { ...req.body };
-    if (req.files && req.files.length > 0) {
-      const newImages = req.files.map(f => `/uploads/news/${f.filename}`);
+    if (req.files?.images) {
+      const newImages = req.files.images.map(f => `/uploads/news/${f.filename}`);
       const existing = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
       data.images = [...existing, ...newImages];
       data.image = data.images[0];
     } else if (req.body.existingImages) {
       data.images = JSON.parse(req.body.existingImages);
       data.image = data.images[0] || '';
+    }
+    if (req.files?.video?.[0]) {
+      data.video = `/uploads/news/${req.files.video[0].filename}`;
     }
     const news = await News.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!news) return res.status(404).json({ success: false, message: 'الخبر غير موجود' });
