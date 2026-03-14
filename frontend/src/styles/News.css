@@ -624,6 +624,17 @@
   line-height: 1.9;
   margin-bottom: 12px;
 }
+.news-detail-body .news-modal-admin-actions {
+  flex-direction: row;
+  margin-top: 20px;
+}
+.news-detail-body .news-edit-btn,
+.news-detail-body .news-delete-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  height: auto;
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -664,5 +675,5 @@
     color: #fff;
     z-index: 1100;
   }
-  .news-modal-admin-actions { flex-direction: column; }
+  .news-modal-admin-actions { flex-direction: row; }
 }
