@@ -14,6 +14,10 @@ const MemberProfitSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  subscriberCode: {
+    type: String,
+    default: ''
+  },
   memberRank: {
     type: Number,
     required: true
