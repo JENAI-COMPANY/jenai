@@ -8,6 +8,7 @@ const News = () => {
   const { user } = useContext(AuthContext);
   const { language } = useLanguage();
   const isSuperAdmin = user?.role === 'super_admin';
+  const isMobile = window.innerWidth <= 1024;
 
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -447,47 +448,83 @@ const News = () => {
 
       {/* News Detail Modal */}
       {showModal && selectedNews && (
-        <div className="news-detail-page" dir="rtl">
-          <div className="news-detail-header">
-            <button className="news-detail-back" onClick={() => setShowModal(false)}>
-              ← رجوع
-            </button>
-          </div>
-          {selectedNews.video && (
-            <video src={selectedNews.video} controls className="news-detail-video" />
-          )}
-          {!selectedNews.video && selectedNews.image && (
-            <img src={selectedNews.image} alt={selectedNews.titleAr} className="news-detail-img" />
-          )}
-          {selectedNews.images && selectedNews.images.length > 1 && (
-            <div className="news-detail-images-row">
-              {selectedNews.images.map((src, i) => (
-                <img key={i} src={src} alt="" />
-              ))}
+        isMobile ? (
+          /* موبايل/تابلت: صفحة كاملة */
+          <div className="news-detail-page" dir="rtl">
+            <div className="news-detail-header">
+              <button className="news-detail-back" onClick={() => setShowModal(false)}>← رجوع</button>
             </div>
-          )}
-          <div className="news-detail-body">
-            <div className="news-detail-meta">
-              <span className="news-badge">{selectedNews.category}</span>
-              {selectedNews.isPinned && <span className="news-badge news-badge-pinned">📌 مثبت</span>}
-              <span className="news-date">🗓 {formatDate(selectedNews.createdAt)}</span>
-              <span className="news-author">✍️ {selectedNews.author}</span>
-            </div>
-            <h1 className="news-detail-title">
-              {language === 'ar' ? selectedNews.titleAr : (selectedNews.titleEn || selectedNews.titleAr)}
-            </h1>
-            <div className="news-detail-content">
-              {(language === 'ar' ? selectedNews.contentAr : (selectedNews.contentEn || selectedNews.contentAr))
-                .split('\n').map((para, i) => para.trim() && <p key={i}>{para}</p>)}
-            </div>
-            {isSuperAdmin && (
-              <div className="news-modal-admin-actions">
-                <button className="news-edit-btn" onClick={() => handleEdit(selectedNews)}>✏️ تعديل</button>
-                <button className="news-delete-btn" onClick={() => handleDelete(selectedNews._id)}>🗑 حذف</button>
+            {selectedNews.video && <video src={selectedNews.video} controls className="news-detail-video" />}
+            {!selectedNews.video && selectedNews.image && <img src={selectedNews.image} alt={selectedNews.titleAr} className="news-detail-img" />}
+            {selectedNews.images && selectedNews.images.length > 1 && (
+              <div className="news-detail-images-row">
+                {selectedNews.images.map((src, i) => <img key={i} src={src} alt="" />)}
               </div>
             )}
+            <div className="news-detail-body">
+              <div className="news-detail-meta">
+                <span className="news-badge">{selectedNews.category}</span>
+                {selectedNews.isPinned && <span className="news-badge news-badge-pinned">📌 مثبت</span>}
+                <span className="news-date">🗓 {formatDate(selectedNews.createdAt)}</span>
+                <span className="news-author">✍️ {selectedNews.author}</span>
+              </div>
+              <h1 className="news-detail-title">{language === 'ar' ? selectedNews.titleAr : (selectedNews.titleEn || selectedNews.titleAr)}</h1>
+              <div className="news-detail-content">
+                {(language === 'ar' ? selectedNews.contentAr : (selectedNews.contentEn || selectedNews.contentAr))
+                  .split('\n').map((para, i) => para.trim() && <p key={i}>{para}</p>)}
+              </div>
+              {isSuperAdmin && (
+                <div className="news-detail-admin-actions">
+                  <button className="news-edit-btn" onClick={() => handleEdit(selectedNews)}>✏️ تعديل</button>
+                  <button className="news-delete-btn" onClick={() => handleDelete(selectedNews._id)}>🗑 حذف</button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* ديسكتوب: modal */
+          <div className="news-modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="news-modal" onClick={e => e.stopPropagation()}>
+              <button className="news-modal-close" onClick={() => setShowModal(false)}>✕</button>
+              {selectedNews.video && (
+                <div className="news-modal-image">
+                  <video src={selectedNews.video} controls style={{ width: '100%', maxHeight: 320, borderRadius: 8 }} />
+                </div>
+              )}
+              {!selectedNews.video && selectedNews.image && (
+                <div className="news-modal-image">
+                  <img src={selectedNews.image} alt={selectedNews.titleAr} />
+                </div>
+              )}
+              {selectedNews.images && selectedNews.images.length > 1 && (
+                <div style={{ display: 'flex', gap: 8, padding: '8px 16px', overflowX: 'auto' }}>
+                  {selectedNews.images.map((src, i) => (
+                    <img key={i} src={src} alt="" style={{ height: 80, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                  ))}
+                </div>
+              )}
+              <div className="news-modal-body">
+                <div className="news-modal-meta">
+                  <span className="news-badge">{selectedNews.category}</span>
+                  {selectedNews.isPinned && <span className="news-badge news-badge-pinned">📌 مثبت</span>}
+                  <span className="news-date">🗓 {formatDate(selectedNews.createdAt)}</span>
+                  <span className="news-author">✍️ {selectedNews.author}</span>
+                </div>
+                <h2 className="news-modal-title">{language === 'ar' ? selectedNews.titleAr : (selectedNews.titleEn || selectedNews.titleAr)}</h2>
+                <div className="news-modal-content">
+                  {(language === 'ar' ? selectedNews.contentAr : (selectedNews.contentEn || selectedNews.contentAr))
+                    .split('\n').map((para, i) => para.trim() && <p key={i}>{para}</p>)}
+                </div>
+                {isSuperAdmin && (
+                  <div className="news-modal-admin-actions">
+                    <button className="news-edit-btn" onClick={() => handleEdit(selectedNews)}>✏️ تعديل</button>
+                    <button className="news-delete-btn" onClick={() => handleDelete(selectedNews._id)}>🗑 حذف</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
       )}
     </div>
   );

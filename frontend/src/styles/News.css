@@ -624,16 +624,24 @@
   line-height: 1.9;
   margin-bottom: 12px;
 }
-.news-detail-body .news-modal-admin-actions {
+.news-detail-admin-actions {
+  display: flex;
   flex-direction: row;
+  gap: 12px;
   margin-top: 20px;
+  padding-top: 16px;
+  border-top: 2px solid #f0f0f0;
 }
-.news-detail-body .news-edit-btn,
-.news-detail-body .news-delete-btn {
+.news-detail-admin-actions .news-edit-btn,
+.news-detail-admin-actions .news-delete-btn {
   flex: 1;
   padding: 12px 16px;
   font-size: 14px;
-  height: auto;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 /* Responsive */
