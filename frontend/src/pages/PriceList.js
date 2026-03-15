@@ -27,7 +27,7 @@ const PriceList = () => {
     const fetchProducts = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('/api/products?limit=1000&isActive=true', {
+        const res = await axios.get('/api/products?limit=1000', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProducts(res.data.products || res.data || []);
