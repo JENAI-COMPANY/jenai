@@ -1788,6 +1788,9 @@ const ProductManagement = () => {
                 // Category filter
                 if (categoryFilter !== 'all' && product.category !== categoryFilter) return false;
 
+                // Name search
+                if (nameSearch.trim() && !product.name?.toLowerCase().includes(nameSearch.toLowerCase())) return false;
+
                 return true;
               }).map(product => (
                 <tr key={product.id || product._id}>
