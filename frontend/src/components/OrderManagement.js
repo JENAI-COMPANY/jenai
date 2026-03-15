@@ -587,6 +587,7 @@ const OrderManagement = () => {
             <tr>
               <th>{language === 'ar' ? 'رقم الطلب' : 'Order #'}</th>
               <th>{language === 'ar' ? 'العميل' : 'Customer'}</th>
+              <th>{language === 'ar' ? 'كود العضو' : 'Code'}</th>
               <th>{language === 'ar' ? 'الهاتف' : 'Phone'}</th>
               <th>{language === 'ar' ? 'النوع' : 'Type'}</th>
               <th>{language === 'ar' ? 'المبلغ' : 'Total'}</th>
@@ -598,7 +599,7 @@ const OrderManagement = () => {
           <tbody>
             {filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan="7" className="om-no-data">
+                <td colSpan="8" className="om-no-data">
                   {language === 'ar' ? 'لا توجد طلبات' : 'No orders found'}
                 </td>
               </tr>
@@ -607,6 +608,11 @@ const OrderManagement = () => {
                 <tr key={order._id} className={order.isCustomOrder ? 'om-custom-order-row' : ''}>
                   <td className="om-order-number">{order.orderNumber}</td>
                   <td>{order.user?.name || 'N/A'}</td>
+                  <td>
+                    {order.user?.subscriberCode
+                      ? <span style={{fontWeight:700,color:'#1a4731'}}>{order.user.subscriberCode}</span>
+                      : <span style={{textDecoration:'line-through',color:'#bbb',fontSize:'12px'}}>زبون</span>}
+                  </td>
                   <td>{order.contactPhone}</td>
                   <td>
                     {order.isCustomOrder ? (
