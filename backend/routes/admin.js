@@ -3465,4 +3465,55 @@ router.post('/migrate-points', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/recalculate-cumulative-points
+// @desc    إعادة احتساب النقاط التراكمية (user.points) لجميع الأعضاء من سجلات PointTransaction
+// @access  Private/Super Admin
+router.post('/recalculate-cumulative-points', protect, isSuperAdmin, async (req, res) => {
+  try {
+    // جمع إجمالي نقاط كل عضو من معاملاته الشخصية (personal + bonus)
+    const personalTotals = await PointTransaction.aggregate([
+      { $match: { type: { $in: ['personal', 'bonus'] } } },
+      { $group: { _id: '$memberId', total: { $sum: '$points' } } }
+    ]);
+
+    if (personalTotals.length === 0) {
+      return res.json({ success: true, message: 'لا توجد معاملات نقاط لإعادة الاحتساب', updated: 0 });
+    }
+
+    // تصفير user.points لجميع الأعضاء أولاً
+    await User.updateMany({ role: 'member' }, { $set: { points: 0 } });
+
+    let updatedCount = 0;
+
+    for (const { _id: memberId, total } of personalTotals) {
+      // إضافة النقاط للعضو نفسه
+      await User.updateOne({ _id: memberId }, { $inc: { points: total } });
+      updatedCount++;
+
+      // إضافة نفس النقاط للأعضاء العلويين (5 مستويات)
+      let current = await User.findById(memberId).select('referredBy role');
+      for (let level = 0; level < 5; level++) {
+        if (!current || !current.referredBy) break;
+        const upline = await User.findOne({ _id: current.referredBy, role: 'member' }).select('_id referredBy');
+        if (!upline) break;
+        await User.updateOne({ _id: upline._id }, { $inc: { points: total } });
+        current = upline;
+      }
+    }
+
+    // تحديث الرتب بعد إعادة الاحتساب
+    const { updateAllMembersRanks } = require('../config/memberRanks');
+    await updateAllMembersRanks(User);
+
+    res.json({
+      success: true,
+      message: `تم إعادة احتساب النقاط التراكمية لـ ${updatedCount} عضو وتحديث الرتب`,
+      updated: updatedCount
+    });
+  } catch (error) {
+    console.error('Error recalculating cumulative points:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
