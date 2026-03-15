@@ -260,6 +260,7 @@ const OrderManagement = () => {
         <div class="section">
           <h3>${isArabic ? 'معلومات العميل' : 'Customer Information'}</h3>
           <p><strong>${isArabic ? 'الاسم:' : 'Name:'}</strong> ${order.user?.name || 'N/A'}</p>
+          <p><strong>${isArabic ? 'كود العضو:' : 'Member Code:'}</strong> ${order.user?.subscriberCode ? `<strong style="color:#1a4731">${order.user.subscriberCode}</strong>` : '<s style="color:#aaa">زبون عادي</s>'}</p>
           <p><strong>${isArabic ? 'الهاتف:' : 'Phone:'}</strong> ${order.contactPhone}</p>
           ${order.alternatePhone ? `<p><strong>${isArabic ? 'هاتف بديل:' : 'Alternate Phone:'}</strong> ${order.alternatePhone}</p>` : ''}
         </div>
@@ -692,6 +693,11 @@ const OrderManagement = () => {
             <div className="om-detail-section">
               <h4>{language === 'ar' ? 'معلومات العميل' : 'Customer Information'}</h4>
               <p><strong>{language === 'ar' ? 'الاسم:' : 'Name:'}</strong> {selectedOrder.user?.name}</p>
+              <p><strong>{language === 'ar' ? 'كود العضو:' : 'Member Code:'}</strong>{' '}
+                {selectedOrder.user?.subscriberCode
+                  ? <span style={{fontWeight:700,color:'#1a4731'}}>{selectedOrder.user.subscriberCode}</span>
+                  : <span style={{textDecoration:'line-through',color:'#aaa'}}>زبون عادي</span>}
+              </p>
               <p><strong>{language === 'ar' ? 'الهاتف:' : 'Phone:'}</strong> {selectedOrder.contactPhone}</p>
               {selectedOrder.alternatePhone && (
                 <p><strong>{language === 'ar' ? 'هاتف بديل:' : 'Alternate Phone:'}</strong> {selectedOrder.alternatePhone}</p>
@@ -863,6 +869,11 @@ const OrderManagement = () => {
               <div className="om-detail-section">
                 <h4>{language === 'ar' ? 'معلومات العميل' : 'Customer Information'}</h4>
                 <p><strong>{language === 'ar' ? 'الاسم:' : 'Name:'}</strong> {selectedOrder.user?.name}</p>
+                <p><strong>{language === 'ar' ? 'كود العضو:' : 'Member Code:'}</strong>{' '}
+                  {selectedOrder.user?.subscriberCode
+                    ? <span style={{fontWeight:700,color:'#1a4731'}}>{selectedOrder.user.subscriberCode}</span>
+                    : <span style={{textDecoration:'line-through',color:'#aaa'}}>زبون عادي</span>}
+                </p>
                 <p><strong>{language === 'ar' ? 'الهاتف:' : 'Phone:'}</strong> {selectedOrder.contactPhone}</p>
                 {selectedOrder.alternatePhone && (
                   <p><strong>{language === 'ar' ? 'هاتف بديل:' : 'Alternate Phone:'}</strong> {selectedOrder.alternatePhone}</p>
