@@ -182,7 +182,7 @@ const PriceList = () => {
                           </span>
                         </td>
                         <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: '#2d7a52', fontSize: 15 }}>
-                          ₪{(p.memberPrice ?? p.price ?? 0).toFixed(2)}
+                          ₪{(p.subscriberPrice ?? p.memberPrice ?? p.price ?? 0).toFixed(2)}
                         </td>
                         <td style={{ ...tdStyle, textAlign: 'center', color: '#888', fontSize: 14, textDecoration: 'line-through' }}>
                           ₪{(p.customerPrice ?? p.price ?? 0).toFixed(2)}

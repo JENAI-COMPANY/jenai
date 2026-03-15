@@ -93,6 +93,20 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+.pm-name-search {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+.pm-name-search:focus { border-color: #2d7a52; }
+
 .pm-filter-btn {
   padding: 0.5rem 1rem;
   border: none;

@@ -85,6 +85,7 @@ const ProductManagement = () => {
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [stockFilter, setStockFilter] = useState('all'); // all, inStock, outOfStock
   const [categoryFilter, setCategoryFilter] = useState('all'); // all, or specific category
+  const [nameSearch, setNameSearch] = useState('');
   const [newColor, setNewColor] = useState('');
   const [newSize, setNewSize] = useState('');
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -716,6 +717,14 @@ const ProductManagement = () => {
               ))}
             </select>
           )}
+
+          <input
+            type="text"
+            placeholder={language === 'ar' ? '🔍 ابحث باسم المنتج...' : '🔍 Search by name...'}
+            value={nameSearch}
+            onChange={e => setNameSearch(e.target.value)}
+            className="pm-name-search"
+          />
 
           <button className="pm-print-btn" onClick={handlePrint} title={language === 'ar' ? 'طباعة القائمة الحالية' : 'Print current list'}>
             🖨️ {language === 'ar' ? 'طباعة' : 'Print'}
@@ -1759,6 +1768,9 @@ const ProductManagement = () => {
 
               // Category filter
               if (categoryFilter !== 'all' && product.category !== categoryFilter) return false;
+
+              // Name search
+              if (nameSearch.trim() && !product.name?.toLowerCase().includes(nameSearch.toLowerCase())) return false;
 
               return true;
             }).length === 0 ? (
