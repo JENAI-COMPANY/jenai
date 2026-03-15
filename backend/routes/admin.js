@@ -1590,7 +1590,7 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
       .limit(5);
 
     const recentOrders = await Order.find(orderQuery)
-      .populate('user', 'name username')
+      .populate('user', 'name username subscriberCode')
       .select('orderNumber totalAmount status createdAt')
       .sort('-createdAt')
       .limit(5);
@@ -1798,7 +1798,7 @@ router.get('/orders', protect, isAdmin, canViewOrders, async (req, res) => {
     }
 
     let orders = await Order.find(query)
-      .populate('user', 'username name')
+      .populate('user', 'username name subscriberCode')
       .populate('orderItems.product', 'name price category images')
       .sort('-createdAt');
 

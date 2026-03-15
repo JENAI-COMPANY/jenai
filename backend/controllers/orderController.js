@@ -156,7 +156,7 @@ exports.createOrder = async (req, res) => {
 
     // Populate order with product details including images
     const populatedOrder = await Order.findById(order._id)
-      .populate('user', 'name email username')
+      .populate('user', 'name email username subscriberCode')
       .populate('orderItems.product', 'name nameAr images price points');
 
     res.status(201).json({
@@ -328,7 +328,7 @@ exports.distributeCommissions = distributeCommissions;
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('user', 'name email')
+      .populate('user', 'name email subscriberCode')
       .populate('orderItems.product');
 
     if (!order) {
@@ -383,7 +383,7 @@ exports.getAllOrders = async (req, res) => {
     }
 
     const orders = await Order.find(query)
-      .populate('user', 'name email')
+      .populate('user', 'name email subscriberCode')
       .populate('orderItems.product')
       .sort({ createdAt: -1 });
 
@@ -546,7 +546,7 @@ exports.confirmCustomOrderSpecs = async (req, res) => {
     console.log('📦 Order ID:', req.params.id);
     console.log('📝 Request body:', req.body);
 
-    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone subscriberCode');
 
     if (!order) {
       console.log('❌ Order not found');
