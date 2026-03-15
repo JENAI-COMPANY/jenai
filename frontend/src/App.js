@@ -41,6 +41,7 @@ import Favorites from './pages/Favorites';
 import MemberTeamPage from './pages/MemberTeamPage';
 import WelcomeMember from './pages/WelcomeMember';
 import VerifyPage from './pages/VerifyPage';
+import PriceList from './pages/PriceList';
 import './styles/App.css';
 import './styles/AdminResponsive.css';
 
@@ -59,6 +60,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/products-page" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
+                <Route path="/price-list" element={<PriceList />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/about" element={<About />} />

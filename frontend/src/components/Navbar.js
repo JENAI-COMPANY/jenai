@@ -146,6 +146,15 @@ const Navbar = () => {
                   >
                     {language === 'ar' ? 'جميع المنتجات' : 'All Products'}
                   </Link>
+                  {(isSubscriber || isAdmin) && (
+                    <Link
+                      to="/price-list"
+                      className="dropdown-item"
+                      onClick={closeMobileMenu}
+                    >
+                      {language === 'ar' ? '📋 قائمة الأسعار' : '📋 Price List'}
+                    </Link>
+                  )}
                   {categories.length > 0 && (
                     <>
                       <div className="dropdown-divider"></div>
