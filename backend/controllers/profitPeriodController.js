@@ -458,8 +458,11 @@ exports.updateProfitPeriodStatus = async (req, res) => {
       });
     }
 
-    // عند إغلاق الدورة: طرح النقاط المحتسبة في هذه الدورة فقط (وليس تصفير الكل)
-    // هذا يحافظ على النقاط الجديدة التي أُضيفت بعد احتساب الدورة
+    // عند إغلاق الدورة: طرح النقاط الشخصية المحتسبة فقط
+    // ملاحظة مهمة:
+    //   - user.points (التراكمي) لا يُلمَس أبداً — مسؤول عن الرتب
+    //   - generation1-5Points تُخصم بنسبتها الصحيحة (11%,8%,6%,3%,2%) من النقاط الخام
+    //     لأن هذه الحقول تخزّن مبلغ العمولة وليس النقاط الخام
     if (status === 'paid' && period.status !== 'paid') {
       const bulkOps = period.membersProfits.map(mp => ({
         updateOne: {
@@ -467,12 +470,13 @@ exports.updateProfitPeriodStatus = async (req, res) => {
           update: [{
             $set: {
               monthlyPoints:    { $max: [0, { $subtract: ['$monthlyPoints',    mp.points.personal    || 0] }] },
-              generation1Points:{ $max: [0, { $subtract: ['$generation1Points', mp.points.generation1 || 0] }] },
-              generation2Points:{ $max: [0, { $subtract: ['$generation2Points', mp.points.generation2 || 0] }] },
-              generation3Points:{ $max: [0, { $subtract: ['$generation3Points', mp.points.generation3 || 0] }] },
-              generation4Points:{ $max: [0, { $subtract: ['$generation4Points', mp.points.generation4 || 0] }] },
-              generation5Points:{ $max: [0, { $subtract: ['$generation5Points', mp.points.generation5 || 0] }] },
+              generation1Points:{ $max: [0, { $subtract: ['$generation1Points', (mp.points.generation1 || 0) * 0.11] }] },
+              generation2Points:{ $max: [0, { $subtract: ['$generation2Points', (mp.points.generation2 || 0) * 0.08] }] },
+              generation3Points:{ $max: [0, { $subtract: ['$generation3Points', (mp.points.generation3 || 0) * 0.06] }] },
+              generation4Points:{ $max: [0, { $subtract: ['$generation4Points', (mp.points.generation4 || 0) * 0.03] }] },
+              generation5Points:{ $max: [0, { $subtract: ['$generation5Points', (mp.points.generation5 || 0) * 0.02] }] },
               profitPoints:     { $max: [0, { $subtract: ['$profitPoints',      mp.points.profitPoints || 0] }] }
+              // user.points (التراكمي) لا يُخصم — ينمو فقط ولا ينقص أبداً
             }
           }]
         }
@@ -480,7 +484,7 @@ exports.updateProfitPeriodStatus = async (req, res) => {
 
       await User.bulkWrite(bulkOps);
 
-      console.log(`✅ تم طرح نقاط ${period.membersProfits.length} عضو عند إغلاق الدورة ${period.periodName}`);
+      console.log(`✅ تم طرح النقاط الشهرية لـ ${period.membersProfits.length} عضو عند إغلاق الدورة ${period.periodName} — النقاط التراكمية لم تُمَس`);
     }
 
     period.status = status;

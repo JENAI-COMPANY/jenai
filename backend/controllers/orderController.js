@@ -235,6 +235,9 @@ const distributeCommissions = async (buyer, productPoints) => {
       const genFieldName = `generation${generationLevel + 1}Points`;
       currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
 
+      // تحديث النقاط التراكمية للعضو العلوي (كاملة بدون نسبة - لتحديد الرتبة)
+      currentMember.points = (currentMember.points || 0) + productPoints;
+
       // تحديث الربح (عمولة الأجيال فقط - عمولة القيادة تُحسب بشكل منفصل)
       currentMember.totalCommission = (currentMember.totalCommission || 0) + profit;
       currentMember.availableCommission = (currentMember.availableCommission || 0) + profit;
