@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 const isMobileDevice = () => window.innerWidth <= 768;
+const getFirstImage = (p) => (p.images && p.images.length > 0 ? p.images[0] : p.image) || null;
 
 const PriceList = () => {
   const { user } = useContext(AuthContext);
@@ -49,14 +50,17 @@ const PriceList = () => {
   const now = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const handlePrint = () => {
-    const rows = filtered.map((p, i) => `
+    const rows = filtered.map((p, i) => {
+      const img = getFirstImage(p);
+      return `
       <tr>
         <td class="num">${i + 1}</td>
-        <td><strong>${p.nameAr || p.name}</strong><br/><small>${p.category || ''}</small></td>
+        <td class="img-cell">${img ? `<img src="${img}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #eee;vertical-align:middle;margin-left:8px"/>` : '<div style="width:44px;height:44px;background:#f0f0f0;border-radius:6px;display:inline-block;vertical-align:middle;margin-left:8px"></div>'}<span><strong>${p.nameAr || p.name}</strong><br/><small style="color:#999">${p.category || ''}</small></span></td>
         <td class="num"><span class="pts">${p.points ?? 0} نقطة</span></td>
         <td class="num" style="color:#2d7a52;font-weight:700">₪${(p.subscriberPrice ?? p.memberPrice ?? p.price ?? 0).toFixed(2)}</td>
         <td class="num" style="text-decoration:line-through;color:#aaa">₪${(p.customerPrice ?? p.price ?? 0).toFixed(2)}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"/>
       <title>قائمة أسعار جيناي</title>
@@ -65,10 +69,11 @@ const PriceList = () => {
       .sub{text-align:center;color:#888;font-size:12px;margin-bottom:18px}
       table{width:100%;border-collapse:collapse;font-size:12px}
       th{background:#1a4731;color:#fff;padding:9px 10px;text-align:right}
-      td{padding:8px 10px;border-bottom:1px solid #eee}
+      td{padding:8px 10px;border-bottom:1px solid #eee;vertical-align:middle}
       tr:nth-child(even) td{background:#f7faf8}
       .num{text-align:center}.pts{background:#e8f4ee;color:#1a4731;padding:2px 8px;border-radius:10px;font-weight:700;font-size:11px}
-      @media print{body{padding:10px}}</style></head>
+      .img-cell{display:flex;align-items:center}
+      @media print{body{padding:10px}img{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head>
       <body><h1>قائمة أسعار منتجات جيناي</h1>
       <p class="sub">تاريخ الطباعة: ${now} — خاص بأعضاء جيناي</p>
       <table><thead><tr><th>#</th><th>اسم المنتج</th><th>النقاط</th><th>سعر العضو</th><th>سعر الزبون</th></tr></thead>
@@ -142,8 +147,8 @@ const PriceList = () => {
                 <div style={{ color: '#ccc', fontSize: 12, fontWeight: 700, minWidth: 22, textAlign: 'center' }}>{i + 1}</div>
 
                 {/* صورة */}
-                {p.image ? (
-                  <img src={p.image} alt={p.nameAr || p.name} style={{
+                {getFirstImage(p) ? (
+                  <img src={getFirstImage(p)} alt={p.nameAr || p.name} style={{
                     width: 56, height: 56, borderRadius: 10, objectFit: 'cover',
                     border: '1px solid #eee', flexShrink: 0
                   }} />
@@ -203,7 +208,7 @@ const PriceList = () => {
                       <td style={{ ...tdStyle, color: '#aaa', fontSize: 12, width: 44, textAlign: 'center' }}>{i + 1}</td>
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {p.image && <img src={p.image} alt={p.nameAr || p.name} style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'cover', border: '1px solid #eee', flexShrink: 0 }} />}
+                          {getFirstImage(p) && <img src={getFirstImage(p)} alt={p.nameAr || p.name} style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid #eee', flexShrink: 0 }} />}
                           <div>
                             <div style={{ fontWeight: 700, color: '#1a2b1f', fontSize: 14 }}>{p.nameAr || p.name}</div>
                             {p.category && <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{p.category}</div>}
