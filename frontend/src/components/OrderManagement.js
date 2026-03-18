@@ -240,15 +240,21 @@ const OrderManagement = () => {
       return method;
     };
 
-    // Load logo as base64 so it shows in print window
+    // Load logo as base64 via canvas so it shows in print window
     let logoSrc = '';
     try {
-      const res = await fetch(`${window.location.origin}/black.png`);
-      const blob = await res.blob();
       logoSrc = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 200;
+          canvas.height = img.naturalHeight || 200;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve('');
+        img.src = `/black.png?t=${Date.now()}`;
       });
     } catch (e) { logoSrc = ''; }
 
