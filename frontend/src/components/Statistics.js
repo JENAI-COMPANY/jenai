@@ -194,10 +194,11 @@ const Statistics = () => {
           <div className="stat-icon">⭐</div>
           <div className="stat-content">
             <h3>{language === 'ar' ? 'النقاط' : 'Points'}</h3>
-            <div className="stat-number">{Math.round(stats.points.uncalculated || 0)}</div>
+            <div className="stat-number">{stats.points.total || 0}</div>
             <div className="stat-details">
               <div className="stat-detail-item">
                 <span className="detail-label">{language === 'ar' ? 'غير محتسبة بالأرباح' : 'Uncalculated'}:</span>
+                <span className="detail-value orange">{Math.round(stats.points.uncalculated || 0)}</span>
               </div>
             </div>
           </div>
