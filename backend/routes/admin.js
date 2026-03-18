@@ -3538,4 +3538,34 @@ router.post('/recalculate-cumulative-points', protect, isSuperAdmin, async (req,
   }
 });
 
+// ─── Settings (Logo) ───────────────────────────────────────────────────────
+const Settings = require('../models/Settings');
+const uploadSettings = require('../middleware/uploadSettings');
+
+// GET logo (public)
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await Settings.findOne({ key: 'global' });
+    res.json({ success: true, logo: settings?.logo || '' });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// POST upload logo (super admin)
+router.post('/settings/logo', protect, isSuperAdmin, uploadSettings.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+    const url = `/uploads/settings/${req.file.filename}`;
+    await Settings.findOneAndUpdate(
+      { key: 'global' },
+      { logo: url },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, logo: url });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 module.exports = router;
