@@ -55,9 +55,6 @@ const CategorySlider = () => {
                 {category.image && (
                   <img src={category.image} alt={language === 'ar' ? category.nameAr : category.nameEn} className="category-image" />
                 )}
-                <span className="category-name">
-                  {language === 'ar' ? category.nameAr : category.nameEn}
-                </span>
               </div>
             </Link>
           ))}

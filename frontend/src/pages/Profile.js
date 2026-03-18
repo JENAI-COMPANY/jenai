@@ -1447,7 +1447,7 @@ const Profile = () => {
                         {t.sourceType === 'order'
                           ? `${language === 'ar' ? 'طلب' : 'Order'} #${t.orderNumber || ''}${t.itemCount > 1 ? ` (${t.itemCount} ${language === 'ar' ? 'منتج' : 'items'})` : t.productName ? ` - ${t.productName}` : ''}`
                           : t.sourceType === 'admin_bonus'
-                            ? <span>{language === 'ar' ? 'مكافأة' : 'Bonus'}{t.description ? <span style={{ color: '#666', marginRight: '4px' }}> - {t.description}</span> : ''}</span>
+                            ? (t.description ? `${language === 'ar' ? 'مكافأة' : 'Bonus'} - ${t.description}` : (language === 'ar' ? 'مكافأة إدارية' : 'Admin Bonus'))
                           : t.sourceType === 'admin_compensation' ? (language === 'ar' ? 'تعويض إداري' : 'Admin Compensation')
                           : t.sourceType === 'first_order_bonus' ? (language === 'ar' ? 'مكافأة أول طلب' : 'First Order Bonus')
                           : (language === 'ar' ? 'أخرى' : 'Other')}
