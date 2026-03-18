@@ -633,6 +633,7 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
             points: bonusPointsToAdd,
             type: 'bonus',
             sourceType: 'admin_bonus',
+            description: req.body.bonusPointsReason || '',
             earnedAt: new Date()
           });
         } catch (ptErr) {

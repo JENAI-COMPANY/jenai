@@ -25,6 +25,10 @@ const pointTransactionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     default: null
   },
+  description: {
+    type: String,
+    default: ''
+  },
   earnedAt: {
     type: Date,
     default: Date.now,

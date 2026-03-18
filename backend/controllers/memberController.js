@@ -264,7 +264,7 @@ exports.getMyPointTransactions = async (req, res) => {
 
     const query = {
       memberId: req.user._id,
-      type: 'personal'
+      type: { $in: ['personal', 'bonus'] }
     };
 
     query.earnedAt = {};
@@ -301,7 +301,9 @@ exports.getMyPointTransactions = async (req, res) => {
       const order = t.sourceId ? orderMap[t.sourceId.toString()] : null;
       return {
         points: t.points,
+        type: t.type,
         sourceType: t.sourceType,
+        description: t.description || '',
         orderNumber: order?.orderNumber || null,
         productName: order?.orderItems?.[0]?.name || null,
         itemCount: order?.orderItems?.length || 0,
