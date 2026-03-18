@@ -169,8 +169,9 @@ const ServicesManagement = () => {
   };
 
   const handleServiceImagesChange = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedImages(files);
+    const newFiles = Array.from(e.target.files);
+    setSelectedImages(prev => [...prev, ...newFiles]);
+    e.target.value = '';
   };
 
   const handleInvoiceImagesChange = (e) => {
@@ -314,7 +315,18 @@ const ServicesManagement = () => {
                       onChange={handleServiceImagesChange}
                     />
                     {selectedImages.length > 0 && (
-                      <p>{language === 'ar' ? `تم اختيار ${selectedImages.length} صورة` : `${selectedImages.length} image(s) selected`}</p>
+                      <div style={{ marginTop: 8 }}>
+                        <p style={{ margin: '0 0 6px', fontSize: 13, color: '#16a34a' }}>{selectedImages.length} {language === 'ar' ? 'ملف محدد' : 'file(s) selected'}</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {selectedImages.map((f, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', background: '#f3f4f6', borderRadius: 6, padding: '3px 8px', fontSize: 12 }}>
+                              <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                              <button type="button" onClick={() => setSelectedImages(prev => prev.filter((_, j) => j !== i))}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', marginRight: 4, fontWeight: 'bold', fontSize: 14 }}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -457,7 +469,7 @@ const ServicesManagement = () => {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => setEditImages(Array.from(e.target.files))}
+                  onChange={(e) => { setEditImages(prev => [...prev, ...Array.from(e.target.files)]); e.target.value = ''; }}
                 />
                 {editImages.length > 0 && (
                   <p style={{ fontSize: '0.85rem', color: '#16a34a', marginTop: '0.25rem' }}>
