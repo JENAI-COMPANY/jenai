@@ -229,7 +229,7 @@ const OrderManagement = () => {
     }
   };
 
-  const handlePrintOrder = (order) => {
+  const handlePrintOrder = async (order) => {
     const isArabic = language === 'ar';
 
     // Get payment method label
@@ -240,7 +240,18 @@ const OrderManagement = () => {
       return method;
     };
 
-    const logoUrl = `${window.location.origin}/black.png`;
+    // Fetch logo and convert to base64 so it works in about:blank print window
+    let logoDataUrl = '';
+    try {
+      const res = await fetch('/black.png');
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      logoDataUrl = `data:image/png;base64,${btoa(binary)}`;
+    } catch (e) { logoDataUrl = ''; }
+
+    const logoUrl = logoDataUrl;
 
     const createInvoiceCopy = () => `
       <div class="invoice-copy">
@@ -352,21 +363,8 @@ const OrderManagement = () => {
           <div class="col">${createInvoiceCopy()}</div>
         </div>
         <script>
-          window.onload = function() {
-            var imgs = document.querySelectorAll('img');
-            var total = imgs.length;
-            if (total === 0) { window.print(); return; }
-            var loaded = 0;
-            function tryPrint() {
-              loaded++;
-              if (loaded >= total) { window.print(); }
-            }
-            imgs.forEach(function(img) {
-              if (img.complete) { tryPrint(); }
-              else { img.onload = tryPrint; img.onerror = tryPrint; }
-            });
-            window.onafterprint = function() { window.close(); };
-          };
+          window.onload = function() { window.print(); };
+          window.onafterprint = function() { window.close(); };
         </script>
       </body>
       </html>
