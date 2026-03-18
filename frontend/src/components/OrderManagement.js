@@ -365,12 +365,13 @@ const OrderManagement = () => {
             font-size: 11px;
           }
           .invoice-copy {
-            padding: 15px;
-            height: 297mm;
-            page-break-after: always;
+            padding: 10px 15px;
+            height: 148mm;
+            overflow: hidden;
+            border-bottom: 1px dashed #999;
           }
           .invoice-copy:last-child {
-            page-break-after: auto;
+            border-bottom: none;
           }
           .header {
             text-align: center;
@@ -427,7 +428,7 @@ const OrderManagement = () => {
           }
           @media print {
             @page {
-              size: 210mm 594mm;
+              size: 210mm 297mm;
               margin: 0;
             }
             body {
@@ -435,14 +436,14 @@ const OrderManagement = () => {
               font-size: 10px;
             }
             .invoice-copy {
-              padding: 15px;
-              height: 297mm;
+              padding: 10px 15px;
+              height: 148mm;
             }
             .header h1 {
-              font-size: 14px;
+              font-size: 13px;
             }
             .section h3 {
-              font-size: 12px;
+              font-size: 11px;
             }
           }
         </style>
