@@ -367,67 +367,14 @@ const ServicesManagement = () => {
           {false && (
             <div>
               <table className="data-table">
-                <thead>
-                  <tr>
+                <thead><tr><th></th></tr></thead>
                 <tbody>
                   {serviceUsages.map((usage) => (
                     <tr key={usage._id}>
-                      <td>{usage.service?.name || 'N/A'}</td>
-                      <td>{usage.user?.name || 'N/A'}</td>
-                      <td>${usage.invoiceAmount}</td>
-                      <td>{usage.pointsEarned} {language === 'ar' ? 'نقطة' : 'pts'}</td>
-                      <td>{new Date(usage.invoiceDate).toLocaleDateString()}</td>
                       <td>
-                        {usage.receiptImage ? (
-                          <button
-                            className="view-btn"
-                            onClick={() => handleImageClick(usage.receiptImage)}
-                          >
-                            {language === 'ar' ? 'عرض' : 'View'}
-                          </button>
-                        ) : 'N/A'}
-                      </td>
-                      <td>
-                        <span className={`status ${usage.status}`}>
-                          {usage.status === 'pending' && (language === 'ar' ? 'قيد الانتظار' : 'Pending')}
-                          {usage.status === 'approved' && (language === 'ar' ? 'مقبول' : 'Approved')}
-                          {usage.status === 'rejected' && (language === 'ar' ? 'مرفوض' : 'Rejected')}
+                        <span>
+                          {usage.status}
                         </span>
-                      </td>
-                      <td>
-                        {usage.status === 'pending' && (
-                          <div>
-                            <div className="form-group" style={{ marginBottom: '10px' }}>
-                              <label style={{ fontSize: '12px', display: 'block', marginBottom: '5px' }}>
-                                {language === 'ar' ? 'صور الفاتورة (اختياري)' : 'Invoice Images (Optional)'}
-                              </label>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={handleInvoiceImagesChange}
-                                style={{ fontSize: '12px' }}
-                              />
-                            </div>
-                            <div className="action-buttons">
-                              <button
-                                onClick={() => handleReviewUsage(usage._id, 'approved')}
-                                className="approve-btn"
-                              >
-                                {language === 'ar' ? 'قبول' : 'Approve'}
-                              </button>
-                              <button
-                                onClick={() => handleReviewUsage(usage._id, 'rejected')}
-                                className="reject-btn"
-                              >
-                                {language === 'ar' ? 'رفض' : 'Reject'}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {usage.status !== 'pending' && (
-                          <span>{language === 'ar' ? 'تمت المراجعة' : 'Reviewed'}</span>
-                        )}
                       </td>
                     </tr>
                   ))}
