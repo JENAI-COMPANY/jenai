@@ -16,27 +16,12 @@ const serviceSchema = new mongoose.Schema({
     required: [true, 'Please provide service category'],
     trim: true
   },
-  // Owner information
-  ownerName: {
-    type: String,
-    required: [true, 'Please provide owner name'],
-    trim: true
-  },
-  ownerPhone: {
-    type: String,
-    trim: true
-  },
-  ownerEmail: {
-    type: String,
-    trim: true,
-    lowercase: true
-  },
+  // Owner information (optional)
+  ownerName: { type: String, trim: true },
+  ownerPhone: { type: String, trim: true },
+  ownerEmail: { type: String, trim: true, lowercase: true },
   // Business information
-  address: {
-    type: String,
-    required: [true, 'Please provide service address'],
-    trim: true
-  },
+  address: { type: String, trim: true },
   branches: [{
     name: String,
     address: String,
@@ -50,9 +35,8 @@ const serviceSchema = new mongoose.Schema({
   socialMedia: {
     facebook: { type: String, trim: true },
     instagram: { type: String, trim: true },
-    twitter: { type: String, trim: true },
     tiktok: { type: String, trim: true },
-    website: { type: String, trim: true }
+    whatsapp: { type: String, trim: true }
   },
   // Discount and points (visible to different user types)
   discountPercentage: {

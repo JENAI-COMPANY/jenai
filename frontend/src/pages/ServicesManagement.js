@@ -21,16 +21,13 @@ const ServicesManagement = () => {
     name: '',
     description: '',
     category: '',
-    ownerName: '',
-    ownerPhone: '',
-    ownerEmail: '',
     address: '',
     discountPercentage: '',
     pointsPercentage: '',
     facebook: '',
     instagram: '',
-    twitter: '',
-    website: ''
+    tiktok: '',
+    whatsapp: ''
   });
 
   useEffect(() => {
@@ -66,8 +63,8 @@ const ServicesManagement = () => {
         socialMedia: {
           facebook: newService.facebook,
           instagram: newService.instagram,
-          twitter: newService.twitter,
-          website: newService.website
+          tiktok: newService.tiktok,
+          whatsapp: newService.whatsapp
         },
         images: selectedImages
       };
@@ -78,16 +75,13 @@ const ServicesManagement = () => {
         name: '',
         description: '',
         category: '',
-        ownerName: '',
-        ownerPhone: '',
-        ownerEmail: '',
         address: '',
         discountPercentage: '',
         pointsPercentage: '',
         facebook: '',
         instagram: '',
-        twitter: '',
-        website: ''
+        tiktok: '',
+        whatsapp: ''
       });
       setSelectedImages([]);
       fetchData();
@@ -105,17 +99,14 @@ const ServicesManagement = () => {
       name: service.name || '',
       description: service.description || '',
       category: service.category || '',
-      ownerName: service.ownerName || '',
-      ownerPhone: service.ownerPhone || '',
-      ownerEmail: service.ownerEmail || '',
       address: service.address || '',
       discountPercentage: service.discountPercentage || '',
       pointsPercentage: service.pointsPercentage || '',
       isActive: service.isActive !== false,
       facebook: service.socialMedia?.facebook || '',
       instagram: service.socialMedia?.instagram || '',
-      twitter: service.socialMedia?.twitter || '',
-      website: service.socialMedia?.website || ''
+      tiktok: service.socialMedia?.tiktok || '',
+      whatsapp: service.socialMedia?.whatsapp || ''
     });
   };
 
@@ -132,8 +123,8 @@ const ServicesManagement = () => {
         socialMedia: {
           facebook: editForm.facebook,
           instagram: editForm.instagram,
-          twitter: editForm.twitter,
-          website: editForm.website
+          tiktok: editForm.tiktok,
+          whatsapp: editForm.whatsapp
         },
         ...(editImages.length > 0 && { images: editImages })
       };
@@ -199,27 +190,12 @@ const ServicesManagement = () => {
     <div className="admin-container">
       <h2>{language === 'ar' ? 'إدارة الخدمات' : 'Services Management'}</h2>
 
-      <div className="admin-tabs">
-        <button
-          className={activeTab === 'services' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('services')}
-        >
-          {language === 'ar' ? 'الخدمات' : 'Services'}
-        </button>
-        <button
-          className={activeTab === 'usage' ? 'tab-active' : ''}
-          onClick={() => setActiveTab('usage')}
-        >
-          {language === 'ar' ? 'طلبات الاستخدام' : 'Usage Requests'}
-        </button>
-      </div>
 
       {loading ? (
         <div className="loading">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
       ) : (
         <div className="tab-content">
-          {activeTab === 'services' && (
-            <div>
+          <div>
               <div className="tab-header">
                 <h3>{language === 'ar' ? 'إدارة الخدمات' : 'Services Management'}</h3>
                 <button onClick={() => setShowServiceForm(!showServiceForm)} className="add-btn">
@@ -258,39 +234,12 @@ const ServicesManagement = () => {
                     required
                   />
 
-                  <h4>{language === 'ar' ? 'معلومات المالك' : 'Owner Information'}</h4>
-                  <div className="form-grid">
-                    <input
-                      type="text"
-                      name="ownerName"
-                      placeholder={language === 'ar' ? 'اسم المالك' : 'Owner Name'}
-                      value={newService.ownerName}
-                      onChange={handleServiceChange}
-                      required
-                    />
-                    <input
-                      type="tel"
-                      name="ownerPhone"
-                      placeholder={language === 'ar' ? 'هاتف المالك' : 'Owner Phone'}
-                      value={newService.ownerPhone}
-                      onChange={handleServiceChange}
-                    />
-                    <input
-                      type="email"
-                      name="ownerEmail"
-                      placeholder={language === 'ar' ? 'بريد المالك' : 'Owner Email'}
-                      value={newService.ownerEmail}
-                      onChange={handleServiceChange}
-                    />
-                  </div>
-
                   <h4>{language === 'ar' ? 'العنوان' : 'Address'}</h4>
                   <textarea
                     name="address"
                     placeholder={language === 'ar' ? 'العنوان الكامل' : 'Full Address'}
                     value={newService.address}
                     onChange={handleServiceChange}
-                    required
                   />
 
                   <h4>{language === 'ar' ? 'نسب الخصم والنقاط' : 'Discount & Points Percentages'}</h4>
@@ -341,26 +290,26 @@ const ServicesManagement = () => {
                     />
                     <input
                       type="url"
-                      name="twitter"
-                      placeholder="Twitter URL"
-                      value={newService.twitter}
+                      name="tiktok"
+                      placeholder="TikTok URL"
+                      value={newService.tiktok}
                       onChange={handleServiceChange}
                     />
                     <input
-                      type="url"
-                      name="website"
-                      placeholder={language === 'ar' ? 'الموقع الإلكتروني' : 'Website URL'}
-                      value={newService.website}
+                      type="text"
+                      name="whatsapp"
+                      placeholder={language === 'ar' ? 'رقم واتساب' : 'WhatsApp Number'}
+                      value={newService.whatsapp}
                       onChange={handleServiceChange}
                     />
                   </div>
 
-                  <h4>{language === 'ar' ? 'صور الخدمة' : 'Service Images'}</h4>
+                  <h4>{language === 'ar' ? 'صور وفيديوهات الخدمة' : 'Service Images & Videos'}</h4>
                   <div className="form-group">
-                    <label>{language === 'ar' ? 'اختر صور الخدمة (حتى 5 صور)' : 'Select Service Images (up to 5)'}</label>
+                    <label>{language === 'ar' ? 'اختر صور وفيديوهات الخدمة' : 'Select Service Images & Videos'}</label>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
                       onChange={handleServiceImagesChange}
                     />
@@ -380,7 +329,6 @@ const ServicesManagement = () => {
                   <tr>
                     <th>{language === 'ar' ? 'الاسم' : 'Name'}</th>
                     <th>{language === 'ar' ? 'الفئة' : 'Category'}</th>
-                    <th>{language === 'ar' ? 'المالك' : 'Owner'}</th>
                     <th>{language === 'ar' ? 'الخصم %' : 'Discount %'}</th>
                     <th>{language === 'ar' ? 'النقاط %' : 'Points %'}</th>
                     <th>{language === 'ar' ? 'مرات الاستخدام' : 'Total Usage'}</th>
@@ -393,7 +341,6 @@ const ServicesManagement = () => {
                     <tr key={service._id}>
                       <td>{service.name}</td>
                       <td>{service.category}</td>
-                      <td>{service.ownerName}</td>
                       <td>{service.discountPercentage}%</td>
                       <td>{service.pointsPercentage}%</td>
                       <td>{service.totalUsage || 0}</td>
@@ -417,24 +364,11 @@ const ServicesManagement = () => {
                 </tbody>
               </table>
             </div>
-          )}
-
-          {activeTab === 'usage' && (
+          {false && (
             <div>
-              <h3>{language === 'ar' ? 'طلبات استخدام الخدمات' : 'Service Usage Requests'}</h3>
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>{language === 'ar' ? 'الخدمة' : 'Service'}</th>
-                    <th>{language === 'ar' ? 'العضو' : 'Member'}</th>
-                    <th>{language === 'ar' ? 'المبلغ' : 'Amount'}</th>
-                    <th>{language === 'ar' ? 'النقاط المكتسبة' : 'Points Earned'}</th>
-                    <th>{language === 'ar' ? 'التاريخ' : 'Date'}</th>
-                    <th>{language === 'ar' ? 'الفاتورة' : 'Receipt'}</th>
-                    <th>{language === 'ar' ? 'الحالة' : 'Status'}</th>
-                    <th>{language === 'ar' ? 'الإجراءات' : 'Actions'}</th>
-                  </tr>
-                </thead>
                 <tbody>
                   {serviceUsages.map((usage) => (
                     <tr key={usage._id}>
@@ -520,15 +454,8 @@ const ServicesManagement = () => {
               </div>
               <textarea name="description" placeholder={language === 'ar' ? 'وصف الخدمة' : 'Service Description'} value={editForm.description} onChange={handleEditFormChange} required />
 
-              <h4>{language === 'ar' ? 'معلومات المالك' : 'Owner Information'}</h4>
-              <div className="form-grid">
-                <input type="text" name="ownerName" placeholder={language === 'ar' ? 'اسم المالك' : 'Owner Name'} value={editForm.ownerName} onChange={handleEditFormChange} required />
-                <input type="tel" name="ownerPhone" placeholder={language === 'ar' ? 'هاتف المالك' : 'Owner Phone'} value={editForm.ownerPhone} onChange={handleEditFormChange} />
-                <input type="email" name="ownerEmail" placeholder={language === 'ar' ? 'بريد المالك' : 'Owner Email'} value={editForm.ownerEmail} onChange={handleEditFormChange} />
-              </div>
-
               <h4>{language === 'ar' ? 'العنوان' : 'Address'}</h4>
-              <textarea name="address" placeholder={language === 'ar' ? 'العنوان الكامل' : 'Full Address'} value={editForm.address} onChange={handleEditFormChange} required />
+              <textarea name="address" placeholder={language === 'ar' ? 'العنوان الكامل' : 'Full Address'} value={editForm.address} onChange={handleEditFormChange} />
 
               <h4>{language === 'ar' ? 'نسب الخصم والنقاط' : 'Discount & Points Percentages'}</h4>
               <div className="form-grid">
@@ -546,8 +473,8 @@ const ServicesManagement = () => {
               <div className="form-grid">
                 <input type="url" name="facebook" placeholder="Facebook URL" value={editForm.facebook} onChange={handleEditFormChange} />
                 <input type="url" name="instagram" placeholder="Instagram URL" value={editForm.instagram} onChange={handleEditFormChange} />
-                <input type="url" name="twitter" placeholder="Twitter URL" value={editForm.twitter} onChange={handleEditFormChange} />
-                <input type="url" name="website" placeholder={language === 'ar' ? 'الموقع الإلكتروني' : 'Website URL'} value={editForm.website} onChange={handleEditFormChange} />
+                <input type="url" name="tiktok" placeholder="TikTok URL" value={editForm.tiktok} onChange={handleEditFormChange} />
+                <input type="text" name="whatsapp" placeholder={language === 'ar' ? 'رقم واتساب' : 'WhatsApp Number'} value={editForm.whatsapp} onChange={handleEditFormChange} />
               </div>
 
               <h4>{language === 'ar' ? 'الحالة' : 'Status'}</h4>
