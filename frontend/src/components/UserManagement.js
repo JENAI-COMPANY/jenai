@@ -19,6 +19,8 @@ const UserManagement = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterCountry, setFilterCountry] = useState('all');
   const [showLocationStats, setShowLocationStats] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showNewConfirmPass, setShowNewConfirmPass] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -1514,25 +1516,33 @@ const UserManagement = () => {
                 </div>
 
                 <div className="um-form-row">
-                  <div className="um-form-group">
+                  <div className="um-form-group password-group">
                     <label>{language === 'ar' ? 'كلمة المرور *' : 'Password *'}</label>
                     <input
-                      type="password"
+                      type={showNewPass ? 'text' : 'password'}
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       minLength="6"
                       required
+                      className="password-input"
                     />
+                    <button type="button" className="password-toggle-btn" onClick={() => setShowNewPass(v => !v)}>
+                      {showNewPass ? '👁️' : '👁️‍🗨️'}
+                    </button>
                   </div>
-                  <div className="um-form-group">
+                  <div className="um-form-group password-group">
                     <label>{language === 'ar' ? 'تأكيد كلمة المرور *' : 'Confirm Password *'}</label>
                     <input
-                      type="password"
+                      type={showNewConfirmPass ? 'text' : 'password'}
                       value={newUser.confirmPassword}
                       onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                       minLength="6"
                       required
+                      className="password-input"
                     />
+                    <button type="button" className="password-toggle-btn" onClick={() => setShowNewConfirmPass(v => !v)}>
+                      {showNewConfirmPass ? '👁️' : '👁️‍🗨️'}
+                    </button>
                   </div>
                 </div>
 
@@ -1693,25 +1703,33 @@ const UserManagement = () => {
                 </div>
 
                 <div className="um-form-row">
-                  <div className="um-form-group">
+                  <div className="um-form-group password-group">
                     <label>{language === 'ar' ? 'كلمة المرور *' : 'Password *'}</label>
                     <input
-                      type="password"
+                      type={showNewPass ? 'text' : 'password'}
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       minLength="6"
                       required
+                      className="password-input"
                     />
+                    <button type="button" className="password-toggle-btn" onClick={() => setShowNewPass(v => !v)}>
+                      {showNewPass ? '👁️' : '👁️‍🗨️'}
+                    </button>
                   </div>
-                  <div className="um-form-group">
+                  <div className="um-form-group password-group">
                     <label>{language === 'ar' ? 'تأكيد كلمة المرور *' : 'Confirm Password *'}</label>
                     <input
-                      type="password"
+                      type={showNewConfirmPass ? 'text' : 'password'}
                       value={newUser.confirmPassword}
                       onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                       minLength="6"
                       required
+                      className="password-input"
                     />
+                    <button type="button" className="password-toggle-btn" onClick={() => setShowNewConfirmPass(v => !v)}>
+                      {showNewConfirmPass ? '👁️' : '👁️‍🗨️'}
+                    </button>
                   </div>
                 </div>
 

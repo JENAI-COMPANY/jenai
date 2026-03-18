@@ -38,6 +38,8 @@ const Register = () => {
   const [error, setError] = useState('');
   const [referrerName, setReferrerName] = useState('');
   const [checkingReferrer, setCheckingReferrer] = useState(false);
+  const [showRegPass, setShowRegPass] = useState(false);
+  const [showRegConfirmPass, setShowRegConfirmPass] = useState(false);
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -480,29 +482,37 @@ const Register = () => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group password-group">
             <label>{t('password')} *</label>
             <input
-              type="password"
+              type={showRegPass ? 'text' : 'password'}
               name="password"
               placeholder={t('password')}
               value={formData.password}
               onChange={handleChange}
               minLength="6"
               required
+              className="password-input"
             />
+            <button type="button" className="password-toggle-btn" onClick={() => setShowRegPass(v => !v)}>
+              {showRegPass ? '👁️' : '👁️‍🗨️'}
+            </button>
           </div>
 
-          <div className="form-group">
+          <div className="form-group password-group">
             <label>{t('confirmPassword')} *</label>
             <input
-              type="password"
+              type={showRegConfirmPass ? 'text' : 'password'}
               name="confirmPassword"
               placeholder={t('confirmPassword')}
               value={formData.confirmPassword}
               onChange={handleChange}
               required
+              className="password-input"
             />
+            <button type="button" className="password-toggle-btn" onClick={() => setShowRegConfirmPass(v => !v)}>
+              {showRegConfirmPass ? '👁️' : '👁️‍🗨️'}
+            </button>
           </div>
 
           <div className="form-group sponsor-section">

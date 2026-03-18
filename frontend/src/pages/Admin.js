@@ -32,6 +32,7 @@ import { getRankImage, getRankName } from '../utils/rankHelpers';
 const Admin = () => {
   const { user, isSuperAdmin, isCategoryAdmin } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('statistics');
+  const [showPass, setShowPass] = useState({});
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
@@ -1044,29 +1045,37 @@ const Admin = () => {
                         required
                       />
                     </div>
-                    <div className="form-group">
+                    <div className="form-group password-group">
                       <label>كلمة المرور *</label>
                       <input
-                        type="password"
+                        type={showPass.memberPass ? 'text' : 'password'}
                         name="password"
                         placeholder="كلمة المرور"
                         value={newMember.password}
                         onChange={handleMemberChange}
                         minLength="6"
                         required
+                        className="password-input"
                       />
+                      <button type="button" className="password-toggle-btn" onClick={() => setShowPass(p => ({ ...p, memberPass: !p.memberPass }))}>
+                        {showPass.memberPass ? '👁️' : '👁️‍🗨️'}
+                      </button>
                     </div>
-                    <div className="form-group">
+                    <div className="form-group password-group">
                       <label>تأكيد كلمة المرور *</label>
                       <input
-                        type="password"
+                        type={showPass.memberConfirm ? 'text' : 'password'}
                         name="confirmPassword"
                         placeholder="تأكيد كلمة المرور"
                         value={newMember.confirmPassword}
                         onChange={handleMemberChange}
                         minLength="6"
                         required
+                        className="password-input"
                       />
+                      <button type="button" className="password-toggle-btn" onClick={() => setShowPass(p => ({ ...p, memberConfirm: !p.memberConfirm }))}>
+                        {showPass.memberConfirm ? '👁️' : '👁️‍🗨️'}
+                      </button>
                     </div>
                     <div className="form-group">
                       <label>رقم الهاتف</label>
@@ -1296,29 +1305,37 @@ const Admin = () => {
                             required
                           />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group password-group">
                           <label>كلمة المرور *</label>
                           <input
-                            type="password"
+                            type={showPass.supplierPass ? 'text' : 'password'}
                             name="password"
                             placeholder="كلمة المرور"
                             value={newSupplier.password}
                             onChange={handleSupplierChange}
                             minLength="6"
                             required
+                            className="password-input"
                           />
+                          <button type="button" className="password-toggle-btn" onClick={() => setShowPass(p => ({ ...p, supplierPass: !p.supplierPass }))}>
+                            {showPass.supplierPass ? '👁️' : '👁️‍🗨️'}
+                          </button>
                         </div>
-                        <div className="form-group">
+                        <div className="form-group password-group">
                           <label>تأكيد كلمة المرور *</label>
                           <input
-                            type="password"
+                            type={showPass.supplierConfirm ? 'text' : 'password'}
                             name="confirmPassword"
                             placeholder="تأكيد كلمة المرور"
                             value={newSupplier.confirmPassword}
                             onChange={handleSupplierChange}
                             minLength="6"
                             required
+                            className="password-input"
                           />
+                          <button type="button" className="password-toggle-btn" onClick={() => setShowPass(p => ({ ...p, supplierConfirm: !p.supplierConfirm }))}>
+                            {showPass.supplierConfirm ? '👁️' : '👁️‍🗨️'}
+                          </button>
                         </div>
                       </>
                     )}
@@ -1571,26 +1588,34 @@ const Admin = () => {
                   </div>
 
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className="form-group password-group">
                       <label>كلمة المرور *</label>
                       <input
-                        type="password"
+                        type={showPass.catPass ? 'text' : 'password'}
                         name="password"
                         value={newCategoryAdmin.password}
                         onChange={handleCategoryAdminChange}
                         required
+                        className="password-input"
                       />
+                      <button type="button" className="password-toggle-btn" onClick={() => setShowPass(p => ({ ...p, catPass: !p.catPass }))}>
+                        {showPass.catPass ? '👁️' : '👁️‍🗨️'}
+                      </button>
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group password-group">
                       <label>تأكيد كلمة المرور *</label>
                       <input
-                        type="password"
+                        type={showPass.catConfirm ? 'text' : 'password'}
                         name="confirmPassword"
                         value={newCategoryAdmin.confirmPassword}
                         onChange={handleCategoryAdminChange}
                         required
+                        className="password-input"
                       />
+                      <button type="button" className="password-toggle-btn" onClick={() => setShowPass(p => ({ ...p, catConfirm: !p.catConfirm }))}>
+                        {showPass.catConfirm ? '👁️' : '👁️‍🗨️'}
+                      </button>
                     </div>
                   </div>
 
