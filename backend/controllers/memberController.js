@@ -267,15 +267,22 @@ exports.getMyPointTransactions = async (req, res) => {
       type: 'personal'
     };
 
-    if (startDate || endDate) {
-      query.earnedAt = {};
-      if (startDate) query.earnedAt.$gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        query.earnedAt.$lte = end;
+    query.earnedAt = {};
+    if (startDate) {
+      query.earnedAt.$gte = new Date(startDate);
+    } else {
+      // بدون تاريخ محدد: نعرض فقط من آخر إعادة تعيين للنقاط
+      const member = await require('../models/User').findById(req.user._id).select('lastPointsReset').lean();
+      if (member?.lastPointsReset) {
+        query.earnedAt.$gte = new Date(member.lastPointsReset);
       }
     }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.earnedAt.$lte = end;
+    }
+    if (Object.keys(query.earnedAt).length === 0) delete query.earnedAt;
 
     const transactions = await PointTransaction.find(query)
       .sort({ earnedAt: -1 })
