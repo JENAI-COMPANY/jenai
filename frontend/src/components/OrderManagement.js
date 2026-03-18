@@ -240,106 +240,48 @@ const OrderManagement = () => {
       return method;
     };
 
-    // Create invoice content function
-    const createInvoiceContent = () => `
+    const logoUrl = `${window.location.origin}/black.png`;
+
+    const createInvoiceCopy = () => `
       <div class="invoice-copy">
         <div class="header">
-          <h1>${isArabic ? 'فاتورة الطلب' : 'Order Invoice'}</h1>
-          <p>Jenai for Cooperative Marketing</p>
-          <p>jenai-4u.com</p>
+          <img src="${logoUrl}" alt="Logo" class="logo" />
+          <div class="header-info">
+            <div class="order-num">${order.orderNumber}</div>
+            <div class="order-meta">${new Date(order.createdAt).toLocaleDateString(isArabic ? 'ar-EG' : 'en-US')} | ${getPaymentMethodLabel(order.paymentMethod)}</div>
+            <div class="order-meta">${isArabic ? 'الاسم:' : 'Name:'} ${order.user?.name || 'N/A'} | ${isArabic ? 'هاتف:' : 'Tel:'} ${order.contactPhone || ''}</div>
+            <div class="order-meta">${isArabic ? 'العنوان:' : 'Addr:'} ${order.shippingAddress?.street || ''}, ${order.shippingAddress?.city || ''}</div>
+            ${order.user?.subscriberCode ? `<div class="order-meta">${isArabic ? 'كود العضو:' : 'Code:'} <strong>${order.user.subscriberCode}</strong></div>` : ''}
+          </div>
         </div>
-
-        <div class="section">
-          <h3>${isArabic ? 'معلومات الطلب' : 'Order Information'}</h3>
-          <p><strong>${isArabic ? 'رقم الطلب:' : 'Order Number:'}</strong> ${order.orderNumber}</p>
-          <p><strong>${isArabic ? 'الحالة:' : 'Status:'}</strong> ${getStatusLabel(order.status)}</p>
-          <p><strong>${isArabic ? 'التاريخ:' : 'Date:'}</strong> ${new Date(order.createdAt).toLocaleString(isArabic ? 'ar-EG' : 'en-US')}</p>
-          <p><strong>${isArabic ? 'طريقة الدفع:' : 'Payment Method:'}</strong> ${getPaymentMethodLabel(order.paymentMethod)}</p>
-        </div>
-
-        <div class="section">
-          <h3>${isArabic ? 'معلومات العميل' : 'Customer Information'}</h3>
-          <p><strong>${isArabic ? 'الاسم:' : 'Name:'}</strong> ${order.user?.name || 'N/A'}</p>
-          <p><strong>${isArabic ? 'كود العضو:' : 'Member Code:'}</strong> ${order.user?.subscriberCode ? `<strong style="color:#1a4731">${order.user.subscriberCode}</strong>` : '<s style="color:#aaa">زبون عادي</s>'}</p>
-          <p><strong>${isArabic ? 'الهاتف:' : 'Phone:'}</strong> ${order.contactPhone}</p>
-          ${order.alternatePhone ? `<p><strong>${isArabic ? 'هاتف بديل:' : 'Alternate Phone:'}</strong> ${order.alternatePhone}</p>` : ''}
-        </div>
-
-        <div class="section">
-          <h3>${isArabic ? 'عنوان الشحن' : 'Shipping Address'}</h3>
-          <p>${order.shippingAddress?.street || ''}</p>
-          <p>${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.zipCode || ''}</p>
-          <p>${order.shippingAddress?.country || ''}</p>
-        </div>
-
-        <div class="section">
-          <h3>${isArabic ? 'المنتجات' : 'Products'}</h3>
-          <table>
-            <thead>
+        <table>
+          <thead>
+            <tr>
+              <th>${isArabic ? 'الصنف' : 'Item'}</th>
+              <th>${isArabic ? 'الكمية' : 'Qty'}</th>
+              <th>${isArabic ? 'النقاط' : 'Pts'}</th>
+              <th>${isArabic ? 'سعر الوحدة' : 'Unit'}</th>
+              <th>${isArabic ? 'سعر الكل' : 'Total'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(order.orderItems || []).map(item => `
               <tr>
-                <th>${isArabic ? 'الصورة' : 'Image'}</th>
-                <th>${isArabic ? 'المنتج' : 'Product'}</th>
-                <th style="text-align: center;">${isArabic ? 'الكمية' : 'Quantity'}</th>
-                <th>${isArabic ? 'السعر' : 'Price'}</th>
-                <th style="text-align: center;">${isArabic ? 'النقاط' : 'Points'}</th>
+                <td>${item.name}${item.selectedColor ? ` / ${item.selectedColor}` : ''}${item.selectedSize ? ` / ${item.selectedSize}` : ''}</td>
+                <td style="text-align:center">${item.quantity}</td>
+                <td style="text-align:center">${item.points || 0}</td>
+                <td>₪${item.price?.toFixed(2)}</td>
+                <td>₪${(item.price * item.quantity)?.toFixed(2)}</td>
               </tr>
-            </thead>
-            <tbody>
-              ${order.orderItems?.map(item => `
-                <tr>
-                  <td style="text-align: center;">
-                    ${item.product?.images?.[0]
-                      ? `<img src="${window.location.origin}${item.product.images[0]}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; background-color: #f5f5f5;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2250%22 rx=%224%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E';" />`
-                      : `<div style="width: 50px; height: 50px; background-color: #f0f0f0; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px;">📦</div>`
-                    }
-                  </td>
-                  <td>
-                    ${item.name}
-                    ${item.selectedColor ? `<br/><small style="color: #666;">🎨 ${isArabic ? 'اللون:' : 'Color:'} ${item.selectedColor}</small>` : ''}
-                    ${item.selectedSize ? `<br/><small style="color: #666;">📏 ${isArabic ? 'النمرة:' : 'Size:'} ${item.selectedSize}</small>` : ''}
-                  </td>
-                  <td style="text-align: center;">${item.quantity}</td>
-                  <td>₪${item.price?.toFixed(2)}</td>
-                  <td style="text-align: center;">${item.points || 0} ${isArabic ? 'نقطة' : 'pts'}</td>
-                </tr>
-              `).join('') || ''}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <h3>${isArabic ? 'ملخص الطلب' : 'Order Summary'}</h3>
-          <p><strong>${isArabic ? 'المجموع الفرعي:' : 'Subtotal:'}</strong> ₪${order.itemsPrice?.toFixed(2)}</p>
-          <p><strong>${isArabic ? 'الشحن:' : 'Shipping:'}</strong> ₪${order.shippingPrice?.toFixed(2)}</p>
-          <p><strong>${isArabic ? 'الضريبة:' : 'Tax:'}</strong> ₪${order.taxPrice?.toFixed(2)}</p>
-          ${order.discountAmount > 0 ? `<p><strong>${isArabic ? 'الخصم:' : 'Discount:'}</strong> -₪${order.discountAmount?.toFixed(2)}</p>` : ''}
-          <p class="total">
-            <strong>${isArabic ? 'الإجمالي:' : 'Total:'}</strong>
-            <span class="total-amount">₪${order.totalPrice?.toFixed(2)}</span>
-          </p>
-          ${order.totalPoints ? `<p style="color: #10b981; font-weight: bold; margin-top: 8px;"><strong>${isArabic ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> ${order.totalPoints}</p>` : ''}
-        </div>
-
-        ${order.isCustomOrder && order.customOrderDetails ? `
-          <div class="section">
-            <h3>${isArabic ? 'تفاصيل الطلب المخصص' : 'Custom Order Details'}</h3>
-            ${order.customOrderDetails.specifications ? `
-              <p><strong>${isArabic ? 'المواصفات:' : 'Specifications:'}</strong> ${order.customOrderDetails.specifications}</p>
-            ` : ''}
-            ${order.customOrderDetails.confirmedPrice ? `
-              <p><strong>${isArabic ? 'السعر المؤكد:' : 'Confirmed Price:'}</strong> ₪${order.customOrderDetails.confirmedPrice.toFixed(2)}</p>
-            ` : ''}
-            ${order.customOrderDetails.adminResponse ? `
-              <p><strong>${isArabic ? 'رد الإدارة:' : 'Admin Response:'}</strong> ${order.customOrderDetails.adminResponse}</p>
-            ` : ''}
-          </div>
-        ` : ''}
-
-        ${order.notes ? `
-          <div class="section">
-            <p><strong>${isArabic ? 'ملاحظات العميل:' : 'Customer Notes:'}</strong> ${order.notes}</p>
-          </div>
-        ` : ''}
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4" style="text-align:${isArabic ? 'left' : 'right'}">${isArabic ? 'المجموع' : 'Total'}</td>
+              <td>₪${order.totalPrice?.toFixed(2)}</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     `;
 
@@ -353,110 +295,65 @@ const OrderManagement = () => {
         <meta charset="UTF-8">
         <title>Order ${order.orderNumber}</title>
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
             font-family: Arial, sans-serif;
-            padding: 0;
             direction: ${isArabic ? 'rtl' : 'ltr'};
-            font-size: 11px;
-          }
-          .invoice-copy {
-            padding: 10px 15px;
-            height: 148mm;
-            overflow: hidden;
-            border-bottom: 1px dashed #999;
-          }
-          .invoice-copy:last-child {
-            border-bottom: none;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 10px;
-          }
-          .header h1 {
-            color: #10b981;
-            margin-bottom: 5px;
-            font-size: 16px;
-          }
-          .header p {
             font-size: 10px;
-            margin: 2px 0;
+            width: 210mm;
+            height: 297mm;
+            overflow: hidden;
           }
-          .section {
-            margin-bottom: 12px;
+          .page {
+            display: flex;
+            flex-direction: row;
+            width: 210mm;
+            height: 297mm;
           }
-          .section h3 {
-            color: #10b981;
-            border-bottom: 1.5px solid #10b981;
-            padding-bottom: 3px;
-            margin-bottom: 6px;
-            font-size: 13px;
+          .col {
+            width: 50%;
+            padding: 12px 10px;
+            border-${isArabic ? 'left' : 'right'}: 1px dashed #999;
+            overflow: hidden;
           }
-          .section p {
-            margin: 3px 0;
-            line-height: 1.4;
-            font-size: 11px;
+          .col:last-child { border: none; }
+          .invoice-copy { width: 100%; }
+          .header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 8px;
           }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-          }
+          .logo { width: 48px; height: 48px; object-fit: contain; flex-shrink: 0; }
+          .header-info { flex: 1; }
+          .order-num { font-size: 13px; font-weight: bold; color: #10b981; margin-bottom: 2px; }
+          .order-meta { font-size: 9px; color: #444; margin-bottom: 1px; line-height: 1.4; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
           th, td {
             border: 1px solid #ddd;
-            padding: 5px;
+            padding: 4px 5px;
             text-align: ${isArabic ? 'right' : 'left'};
-            font-size: 10px;
+            font-size: 9px;
           }
-          th {
-            background-color: #10b981;
-            color: white;
-          }
-          .total {
-            font-size: 13px;
-            margin-top: 8px;
-            font-weight: bold;
-          }
-          .total-amount {
-            color: #10b981;
-          }
+          th { background-color: #10b981; color: white; }
+          .total-row td { font-weight: bold; background: #f0fdf4; }
           @media print {
-            @page {
-              size: 210mm 297mm;
-              margin: 0;
-            }
-            body {
-              padding: 0;
-              font-size: 10px;
-            }
-            .invoice-copy {
-              padding: 10px 15px;
-              height: 148mm;
-            }
-            .header h1 {
-              font-size: 13px;
-            }
-            .section h3 {
-              font-size: 11px;
-            }
+            @page { size: 210mm 297mm; margin: 0; }
+            body { width: 210mm; height: 297mm; }
           }
         </style>
       </head>
       <body>
-        ${createInvoiceContent()}
-        ${createInvoiceContent()}
+        <div class="page">
+          <div class="col">${createInvoiceCopy()}</div>
+          <div class="col">${createInvoiceCopy()}</div>
+        </div>
         <script>
           window.onload = function() {
             window.print();
-            window.onafterprint = function() {
-              window.close();
-            };
+            window.onafterprint = function() { window.close(); };
           };
         </script>
       </body>
