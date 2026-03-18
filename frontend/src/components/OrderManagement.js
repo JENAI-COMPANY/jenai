@@ -229,7 +229,7 @@ const OrderManagement = () => {
     }
   };
 
-  const handlePrintOrder = (order) => {
+  const handlePrintOrder = async (order) => {
     const isArabic = language === 'ar';
 
     // Get payment method label
@@ -240,16 +240,27 @@ const OrderManagement = () => {
       return method;
     };
 
-    const logoUrl = `${window.location.origin}/black.png`;
+    // Load logo as base64 so it shows in print window
+    let logoSrc = '';
+    try {
+      const res = await fetch(`${window.location.origin}/black.png`);
+      const blob = await res.blob();
+      logoSrc = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) { logoSrc = ''; }
 
     const createInvoiceCopy = () => `
       <div class="invoice-copy">
         <div class="header">
-          <img src="${logoUrl}" alt="Logo" class="logo" />
+          ${logoSrc ? `<img src="${logoSrc}" alt="" class="logo" />` : ''}
           <div class="header-info">
             <div class="order-num">${order.orderNumber}</div>
             <div class="order-meta">${new Date(order.createdAt).toLocaleDateString(isArabic ? 'ar-EG' : 'en-US')} | ${getPaymentMethodLabel(order.paymentMethod)}</div>
             <div class="order-meta">${isArabic ? 'الاسم:' : 'Name:'} ${order.user?.name || 'N/A'} | ${isArabic ? 'هاتف:' : 'Tel:'} ${order.contactPhone || ''}</div>
+            ${order.alternatePhone ? `<div class="order-meta">${isArabic ? 'هاتف بديل:' : 'Alt Tel:'} ${order.alternatePhone}</div>` : ''}
             <div class="order-meta">${isArabic ? 'العنوان:' : 'Addr:'} ${order.shippingAddress?.street || ''}, ${order.shippingAddress?.city || ''}</div>
             ${order.user?.subscriberCode ? `<div class="order-meta">${isArabic ? 'كود العضو:' : 'Code:'} <strong>${order.user.subscriberCode}</strong></div>` : ''}
           </div>
