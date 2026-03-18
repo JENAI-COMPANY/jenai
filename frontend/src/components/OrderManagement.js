@@ -229,7 +229,7 @@ const OrderManagement = () => {
     }
   };
 
-  const handlePrintOrder = async (order) => {
+  const handlePrintOrder = (order) => {
     const isArabic = language === 'ar';
 
     // Get payment method label
@@ -240,28 +240,12 @@ const OrderManagement = () => {
       return method;
     };
 
-    // Load logo as base64 via canvas so it shows in print window
-    let logoSrc = '';
-    try {
-      logoSrc = await new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || 200;
-          canvas.height = img.naturalHeight || 200;
-          canvas.getContext('2d').drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve('');
-        img.src = `/black.png?t=${Date.now()}`;
-      });
-    } catch (e) { logoSrc = ''; }
+    const logoUrl = `${window.location.origin}/black.png`;
 
     const createInvoiceCopy = () => `
       <div class="invoice-copy">
         <div class="header">
-          ${logoSrc ? `<img src="${logoSrc}" alt="" class="logo" />` : ''}
+          <img src="${logoUrl}" alt="" class="logo" />
           <div class="header-info">
             <div class="order-num">${order.orderNumber}</div>
             <div class="order-meta">${new Date(order.createdAt).toLocaleDateString(isArabic ? 'ar-EG' : 'en-US')} | ${getPaymentMethodLabel(order.paymentMethod)}</div>
@@ -369,7 +353,18 @@ const OrderManagement = () => {
         </div>
         <script>
           window.onload = function() {
-            window.print();
+            var imgs = document.querySelectorAll('img');
+            var total = imgs.length;
+            if (total === 0) { window.print(); return; }
+            var loaded = 0;
+            function tryPrint() {
+              loaded++;
+              if (loaded >= total) { window.print(); }
+            }
+            imgs.forEach(function(img) {
+              if (img.complete) { tryPrint(); }
+              else { img.onload = tryPrint; img.onerror = tryPrint; }
+            });
             window.onafterprint = function() { window.close(); };
           };
         </script>
