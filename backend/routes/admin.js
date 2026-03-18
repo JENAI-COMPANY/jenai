@@ -1535,6 +1535,26 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
       { $match: { ...userQuery, role: 'member' } },
       { $group: { _id: null, total: { $sum: '$monthlyPoints' } } }
     ]);
+    const totalUncalculatedPoints = await User.aggregate([
+      { $match: { ...userQuery, role: 'member' } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: {
+              $add: [
+                { $ifNull: ['$monthlyPoints', 0] },
+                { $ifNull: ['$generation1Points', 0] },
+                { $ifNull: ['$generation2Points', 0] },
+                { $ifNull: ['$generation3Points', 0] },
+                { $ifNull: ['$generation4Points', 0] },
+                { $ifNull: ['$generation5Points', 0] }
+              ]
+            }
+          }
+        }
+      }
+    ]);
 
     // Profit statistics - calculate company profit from completed orders
     let totalProfit = 0;
@@ -1711,7 +1731,8 @@ router.get('/stats', protect, isAdmin, async (req, res) => {
         },
         points: {
           total: totalPoints[0]?.total || 0,
-          monthly: totalMonthlyPoints[0]?.total || 0
+          monthly: totalMonthlyPoints[0]?.total || 0,
+          uncalculated: totalUncalculatedPoints[0]?.total || 0
         },
         profit: {
           total: totalProfit,

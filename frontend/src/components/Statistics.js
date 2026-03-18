@@ -200,6 +200,10 @@ const Statistics = () => {
                 <span className="detail-label">{language === 'ar' ? 'نقاط شهرية' : 'Monthly Points'}:</span>
                 <span className="detail-value blue">{stats.points.monthly || 0}</span>
               </div>
+              <div className="stat-detail-item">
+                <span className="detail-label">{language === 'ar' ? 'غير محتسبة بالأرباح' : 'Uncalculated'}:</span>
+                <span className="detail-value orange">{stats.points.uncalculated || 0}</span>
+              </div>
             </div>
           </div>
         </div>
