@@ -1423,7 +1423,11 @@ const Profile = () => {
             {ptModal.loading ? (
               <div style={{ textAlign: 'center', padding: '30px', color: '#666' }}>⏳ {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
             ) : ptModal.data.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: '#999' }}>{language === 'ar' ? 'لا توجد معاملات' : 'No transactions found'}</div>
+              <div style={{ textAlign: 'center', padding: '30px', color: '#999' }}>
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>📋</div>
+                <div>{language === 'ar' ? 'النقاط أُضيفت يدوياً من قبل الإدارة' : 'Points were added manually by admin'}</div>
+                <div style={{ fontSize: '12px', marginTop: '6px', color: '#bbb' }}>{language === 'ar' ? 'لا توجد سجلات تفصيلية' : 'No detailed records available'}</div>
+              </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
