@@ -240,14 +240,20 @@ const OrderManagement = () => {
       return method;
     };
 
-    // Fetch logo and convert to base64 so it works in about:blank print window
+    // Fetch logo URL from settings, then convert image to base64 for print window
     let logoDataUrl = '';
     try {
-      const res = await fetch('/black.png');
-      const buf = await res.arrayBuffer();
+      const settingsRes = await fetch('/api/admin/settings');
+      const settings = await settingsRes.json();
+      const imgPath = settings.logo || '/uploads/settings/logo.png';
+      const imgRes = await fetch(imgPath);
+      const buf = await imgRes.arrayBuffer();
       const bytes = new Uint8Array(buf);
+      const chunkSize = 8192;
       let binary = '';
-      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
       logoDataUrl = `data:image/png;base64,${btoa(binary)}`;
     } catch (e) { logoDataUrl = ''; }
 
