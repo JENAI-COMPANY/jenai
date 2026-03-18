@@ -160,6 +160,9 @@ const Profile = () => {
   const [profitPeriods, setProfitPeriods] = useState([]);
   const [loadingProfits, setLoadingProfits] = useState(false);
 
+  // State for point transactions modal
+  const [ptModal, setPtModal] = useState({ open: false, loading: false, data: [], title: '' });
+
   // State for team points view
   const [teamData, setTeamData] = useState(null);
   const [pointsView, setPointsView] = useState('monthly'); // 'monthly' or 'cumulative'
@@ -201,6 +204,22 @@ const Profile = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user?.role]);
+
+  const openPointsDetail = async (title, startDate, endDate) => {
+    setPtModal({ open: true, loading: true, data: [], title });
+    try {
+      const token = localStorage.getItem('token');
+      let url = '/api/member/point-transactions';
+      const params = [];
+      if (startDate) params.push(`startDate=${startDate}`);
+      if (endDate) params.push(`endDate=${endDate}`);
+      if (params.length) url += '?' + params.join('&');
+      const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      setPtModal(m => ({ ...m, loading: false, data: res.data.data || [] }));
+    } catch {
+      setPtModal(m => ({ ...m, loading: false }));
+    }
+  };
 
   const fetchProfitPeriods = async () => {
     try {
@@ -1108,12 +1127,16 @@ const Profile = () => {
                   <div className="points-grid">
                     {/* Show personal performance points only in "نقاطي" view */}
                     {pointsView === 'monthly' && (
-                      <div className="point-card">
+                      <div className="point-card" style={{ cursor: 'pointer' }}
+                        onClick={() => openPointsDetail(language === 'ar' ? 'تفاصيل نقاط الأداء الشخصي' : 'Personal Points Detail')}>
                         <div className="point-label">
                           {language === 'ar' ? 'نقاط الأداء الشخصي' : 'Personal Performance Points'}
                         </div>
                         <div className="point-value">
                           {user.monthlyPoints || 0}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+                          {language === 'ar' ? '👆 اضغط للتفاصيل' : '👆 Tap for details'}
                         </div>
                       </div>
                     )}
@@ -1267,6 +1290,19 @@ const Profile = () => {
                               <span>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</span>
                               <span className="ppc-total">₪{finalProfit}</span>
                             </div>
+                            {personalComm > 0 && (
+                              <div style={{ padding: '8px 12px', borderTop: '1px solid #eee', textAlign: 'center' }}>
+                                <button
+                                  onClick={() => openPointsDetail(
+                                    `${language === 'ar' ? 'نقاط الأداء الشخصي' : 'Personal Points'} - ${period.periodName}`,
+                                    period.startDate, period.endDate
+                                  )}
+                                  style={{ background: 'none', border: '1px solid #10b981', color: '#10b981', borderRadius: '6px', padding: '4px 12px', cursor: 'pointer', fontSize: '12px' }}
+                                >
+                                  {language === 'ar' ? '📋 تفاصيل النقاط الشخصية' : '📋 Personal Points Detail'}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1371,6 +1407,60 @@ const Profile = () => {
           setTimeout(() => setMessage(''), 3000);
         }}
       />
+    )}
+
+    {/* Point Transactions Modal */}
+    {ptModal.open && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        onClick={() => setPtModal(m => ({ ...m, open: false }))}>
+        <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#1a1a2e' }}>{ptModal.title}</h3>
+            <button onClick={() => setPtModal(m => ({ ...m, open: false }))} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}>×</button>
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1, padding: '12px 20px' }}>
+            {ptModal.loading ? (
+              <div style={{ textAlign: 'center', padding: '30px', color: '#666' }}>⏳ {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>
+            ) : ptModal.data.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px', color: '#999' }}>{language === 'ar' ? 'لا توجد معاملات' : 'No transactions found'}</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f8f8f8' }}>
+                    <th style={{ padding: '8px', textAlign: 'right', borderBottom: '2px solid #eee' }}>{language === 'ar' ? 'التاريخ' : 'Date'}</th>
+                    <th style={{ padding: '8px', textAlign: 'right', borderBottom: '2px solid #eee' }}>{language === 'ar' ? 'المصدر' : 'Source'}</th>
+                    <th style={{ padding: '8px', textAlign: 'right', borderBottom: '2px solid #eee' }}>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ptModal.data.map((t, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '7px 8px', color: '#666', whiteSpace: 'nowrap' }}>
+                        {new Date(t.earnedAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </td>
+                      <td style={{ padding: '7px 8px' }}>
+                        {t.sourceType === 'order'
+                          ? `${language === 'ar' ? 'طلب' : 'Order'} #${t.orderNumber || ''}${t.itemCount > 1 ? ` (${t.itemCount} ${language === 'ar' ? 'منتج' : 'items'})` : t.productName ? ` - ${t.productName}` : ''}`
+                          : t.sourceType === 'admin_bonus' ? (language === 'ar' ? 'مكافأة إدارية' : 'Admin Bonus')
+                          : t.sourceType === 'admin_compensation' ? (language === 'ar' ? 'تعويض إداري' : 'Admin Compensation')
+                          : t.sourceType === 'first_order_bonus' ? (language === 'ar' ? 'مكافأة أول طلب' : 'First Order Bonus')
+                          : (language === 'ar' ? 'أخرى' : 'Other')}
+                      </td>
+                      <td style={{ padding: '7px 8px', color: '#10b981', fontWeight: 'bold' }}>+{t.points}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #eee', textAlign: 'center', color: '#666', fontSize: '13px' }}>
+            {!ptModal.loading && ptModal.data.length > 0 && (
+              <strong>{language === 'ar' ? 'الإجمالي: ' : 'Total: '}{ptModal.data.reduce((s, t) => s + t.points, 0)} {language === 'ar' ? 'نقطة' : 'pts'}</strong>
+            )}
+          </div>
+        </div>
+      </div>
     )}
     </>
   );

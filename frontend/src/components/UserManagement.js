@@ -21,6 +21,7 @@ const UserManagement = () => {
   const [showLocationStats, setShowLocationStats] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showNewConfirmPass, setShowNewConfirmPass] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -307,6 +308,8 @@ const UserManagement = () => {
   };
 
   const handleSaveEdit = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       // Validate that when converting customer to member, country and city are provided for referral code generation
       const isConvertingToMember = editingUser.role === 'member' &&
@@ -417,6 +420,8 @@ const UserManagement = () => {
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update user');
       setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -827,8 +832,8 @@ const UserManagement = () => {
         title={language === 'ar' ? 'تعديل المستخدم' : 'Edit User'}
         footerButtons={
           <>
-            <button className="um-save-btn" onClick={handleSaveEdit}>
-              {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+            <button className="um-save-btn" onClick={handleSaveEdit} disabled={isSaving}>
+              {isSaving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}
             </button>
             <button className="um-cancel-btn" onClick={() => setEditingUser(null)}>
               {language === 'ar' ? 'إلغاء' : 'Cancel'}

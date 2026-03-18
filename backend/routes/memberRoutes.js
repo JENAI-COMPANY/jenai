@@ -11,6 +11,9 @@ const expectedProfitController = require('../controllers/expectedProfitControlle
 // الحصول على نقاطي وأرباحي
 router.get('/points', protect, memberOnly, memberController.getMyPoints);
 
+// الحصول على تفاصيل المعاملات النقطية الشخصية
+router.get('/point-transactions', protect, memberOnly, memberController.getMyPointTransactions);
+
 // الحصول على فريقي (5 أجيال) - قائمة مسطحة
 router.get('/team', protect, memberOnly, memberController.getMyTeam);
 

@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const PointTransaction = require('../models/PointTransaction');
+const Order = require('../models/Order');
 
 // ══════════════════════════════════════════════════════════════
 // الحصول على معلومات العضو ونقاطه
@@ -250,6 +252,59 @@ exports.getMyTeamTree = async (req, res) => {
       message: 'Error fetching team tree',
       messageAr: 'خطأ في جلب شجرة الفريق'
     });
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// الحصول على تفاصيل المعاملات النقطية الشخصية
+// ══════════════════════════════════════════════════════════════
+exports.getMyPointTransactions = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const query = {
+      memberId: req.user._id,
+      type: 'personal'
+    };
+
+    if (startDate || endDate) {
+      query.earnedAt = {};
+      if (startDate) query.earnedAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.earnedAt.$lte = end;
+      }
+    }
+
+    const transactions = await PointTransaction.find(query)
+      .sort({ earnedAt: -1 })
+      .limit(200)
+      .lean();
+
+    // جلب أرقام الطلبات
+    const orderIds = transactions.filter(t => t.sourceType === 'order' && t.sourceId).map(t => t.sourceId);
+    const orders = orderIds.length > 0
+      ? await Order.find({ _id: { $in: orderIds } }).select('orderNumber orderItems').lean()
+      : [];
+    const orderMap = {};
+    orders.forEach(o => { orderMap[o._id.toString()] = o; });
+
+    const result = transactions.map(t => {
+      const order = t.sourceId ? orderMap[t.sourceId.toString()] : null;
+      return {
+        points: t.points,
+        sourceType: t.sourceType,
+        orderNumber: order?.orderNumber || null,
+        productName: order?.orderItems?.[0]?.name || null,
+        itemCount: order?.orderItems?.length || 0,
+        earnedAt: t.earnedAt
+      };
+    });
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
