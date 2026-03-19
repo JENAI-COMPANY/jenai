@@ -29,6 +29,13 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const touchStartX = useRef(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 1024);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 1024);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // Deep-parse nested JSON strings (handles multiple JSON.stringify layers)
   const parseOptions = (options) => {
@@ -175,6 +182,275 @@ const ProductDetail = () => {
     );
   }
 
+
+  const mediaList = product
+    ? (product.media && product.media.length > 0
+        ? product.media
+        : (product.images || []).map(img => ({ type: 'image', url: img })))
+    : [];
+
+  const currentMedia = mediaList[selectedImage];
+  const currentMediaUrl = typeof currentMedia === 'string' ? currentMedia : currentMedia?.url;
+  const currentMediaType = typeof currentMedia === 'string' ? 'image' : currentMedia?.type;
+
+  const priceDisplay = () => {
+    if (!product) return null;
+    if (isSubscriber || isAdmin) {
+      if (product.subscriberDiscount?.enabled && product.subscriberDiscount?.discountedPrice) {
+        return (
+          <>
+            <span className="mpd-price">₪{product.subscriberDiscount.discountedPrice.toFixed(2)}</span>
+            <span className="mpd-original-price">₪{product.subscriberDiscount.originalPrice.toFixed(2)}</span>
+            <span className="mpd-discount-badge">-{product.subscriberDiscount.discountPercentage}%</span>
+          </>
+        );
+      }
+      return <span className="mpd-price">₪{(product.subscriberPrice || 0).toFixed(2)}</span>;
+    }
+    if (product.customerDiscount?.enabled && product.customerDiscount?.discountedPrice) {
+      return (
+        <>
+          <span className="mpd-price">₪{product.customerDiscount.discountedPrice.toFixed(2)}</span>
+          <span className="mpd-original-price">₪{product.customerDiscount.originalPrice.toFixed(2)}</span>
+          <span className="mpd-discount-badge">-{product.customerDiscount.discountPercentage}%</span>
+        </>
+      );
+    }
+    return <span className="mpd-price">₪{(product.customerPrice || 0).toFixed(2)}</span>;
+  };
+
+  if (isMobile && product) {
+    const colors = product.hasColorOptions && product.colors ? parseOptions(product.colors) : [];
+    const sizes = product.hasSizeOptions && product.sizes ? parseOptions(product.sizes) : [];
+
+    return (
+      <div className="mpd-page">
+        {/* Header */}
+        <div className="mpd-header">
+          <button className="mpd-back-btn" onClick={() => navigate(-1)}>‹</button>
+          <span className="mpd-header-title">{product.name}</span>
+          {isAuthenticated && (
+            <button
+              className={`mpd-fav-btn ${isFavorite(product._id) ? 'active' : ''}`}
+              onClick={() => toggleFavorite(product._id)}
+            >
+              {isFavorite(product._id) ? '❤️' : '🤍'}
+            </button>
+          )}
+        </div>
+
+        {/* Image carousel */}
+        <div className="mpd-image-wrap"
+          onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={e => {
+            if (touchStartX.current === null) return;
+            const diff = touchStartX.current - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 40) {
+              if (diff > 0) setSelectedImage(i => Math.min(i + 1, mediaList.length - 1));
+              else setSelectedImage(i => Math.max(i - 1, 0));
+            }
+            touchStartX.current = null;
+          }}
+        >
+          {currentMediaUrl ? (
+            currentMediaType === 'video'
+              ? <video src={currentMediaUrl} controls className="mpd-main-img" />
+              : <img src={currentMediaUrl} alt={product.name} className="mpd-main-img" />
+          ) : (
+            <div className="mpd-no-img">{language === 'ar' ? 'لا توجد صورة' : 'No Image'}</div>
+          )}
+
+          {mediaList.length > 1 && (
+            <div className="mpd-dots">
+              {mediaList.map((_, i) => (
+                <span key={i} className={`mpd-dot ${selectedImage === i ? 'active' : ''}`} onClick={() => setSelectedImage(i)} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Thumbnails */}
+        {mediaList.length > 1 && (
+          <div className="mpd-thumbs">
+            {mediaList.map((item, i) => {
+              const url = typeof item === 'string' ? item : item?.url;
+              const type = typeof item === 'string' ? 'image' : item?.type;
+              return (
+                <div key={i} className={`mpd-thumb ${selectedImage === i ? 'active' : ''}`} onClick={() => setSelectedImage(i)}>
+                  {type === 'video'
+                    ? <div className="mpd-thumb-video">▶</div>
+                    : <img src={url} alt="" />}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="mpd-content">
+          {/* Badges */}
+          {(product.isNewArrival || product.isOnSale || product.isFeatured) && (
+            <div className="mpd-badges">
+              {product.isNewArrival && <span className="badge new-arrival">{language === 'ar' ? 'وصل حديثاً' : 'New'}</span>}
+              {product.isOnSale && <span className="badge sale">{language === 'ar' ? 'عرض خاص' : 'Sale'}</span>}
+              {product.isFeatured && <span className="badge featured">{language === 'ar' ? 'مميز' : 'Featured'}</span>}
+            </div>
+          )}
+
+          {/* Title */}
+          <h1 className="mpd-title">{product.name}</h1>
+
+          {/* Rating */}
+          {product.averageRating > 0 && (
+            <div className="mpd-rating">
+              <span className="mpd-stars">{'★'.repeat(Math.round(product.averageRating))}{'☆'.repeat(5 - Math.round(product.averageRating))}</span>
+              <span className="mpd-rating-text">{product.averageRating.toFixed(1)} ({product.totalReviews})</span>
+            </div>
+          )}
+
+          {/* Price */}
+          <div className="mpd-price-box">{priceDisplay()}</div>
+
+          {/* Stock */}
+          <div className="mpd-stock">
+            {product.stock <= 0
+              ? <span className="out-of-stock">❌ {language === 'ar' ? 'نفذت الكمية' : 'Out of Stock'}</span>
+              : product.stock < 10
+                ? <span className="low-stock">⚠️ {language === 'ar' ? `باقي ${product.stock} فقط` : `Only ${product.stock} left`}</span>
+                : <span className="in-stock">✓ {language === 'ar' ? 'متوفر في المخزون' : 'In Stock'}</span>}
+          </div>
+
+          {/* Points */}
+          {product.points > 0 && (isSubscriber || isAdmin) && (
+            <div className="mpd-points">🎁 {language === 'ar' ? `ستحصل على ${product.points} نقطة` : `Earn ${product.points} pts`}</div>
+          )}
+
+          {/* Colors */}
+          {colors.length > 0 && (
+            <div className="mpd-options">
+              <div className="mpd-options-label">🎨 {language === 'ar' ? 'اللون:' : 'Color:'}</div>
+              <div className="mpd-options-row">
+                {colors.map((c, i) => (
+                  <button key={i} className={`option-button ${selectedColor === c ? 'selected' : ''}`} onClick={() => setSelectedColor(c)}>{c}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sizes */}
+          {sizes.length > 0 && (
+            <div className="mpd-options">
+              <div className="mpd-options-label">📏 {language === 'ar' ? 'النمرة/المقاس:' : 'Size:'}</div>
+              <div className="mpd-options-row">
+                {sizes.map((s, i) => (
+                  <button key={i} className={`option-button ${selectedSize === s ? 'selected' : ''}`} onClick={() => setSelectedSize(s)}>{s}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity + Cart */}
+          <div className="mpd-purchase-row">
+            <div className="mpd-qty">
+              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1}>−</button>
+              <span>{quantity}</span>
+              <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} disabled={quantity >= product.stock}>+</button>
+            </div>
+            <button className="mpd-add-btn" onClick={handleAddToCart} disabled={product.stock <= 0}>
+              {product.stock <= 0 ? (language === 'ar' ? 'نفذت الكمية' : 'Out of Stock') : (language === 'ar' ? 'إضافة إلى السلة' : 'Add to Cart')}
+            </button>
+          </div>
+
+          {/* Create Order for User */}
+          {(isSuperAdmin || isSalesEmployee) && (
+            <button className="mpd-create-order-btn" onClick={() => setShowCreateOrderModal(true)} disabled={product.stock <= 0}>
+              {language === 'ar' ? '🛒 إنشاء طلبية لعضو/زبون' : '🛒 Create Order for User'}
+            </button>
+          )}
+
+          {/* Stock Details for Members */}
+          {(isSubscriber || isAdmin) && (
+            <div className="mpd-stock-details">
+              <div className="mpd-stock-item"><span>{language === 'ar' ? 'الأصلية' : 'Original'}</span><strong style={{color:'#1976d2'}}>{(product.stock || 0) + (product.soldCount || 0)}</strong></div>
+              <div className="mpd-stock-item"><span>{language === 'ar' ? 'المباعة' : 'Sold'}</span><strong style={{color:'#e65100'}}>{product.soldCount || 0}</strong></div>
+              <div className="mpd-stock-item"><span>{language === 'ar' ? 'المتبقي' : 'Left'}</span><strong style={{color:'#2e7d32'}}>{product.stock || 0}</strong></div>
+            </div>
+          )}
+
+          {/* Category */}
+          <div className="mpd-meta">
+            <span>📁 {language === 'ar' ? 'الفئة:' : 'Category:'} <strong>{product.category}</strong></span>
+            {product.weight && <span>⚖️ {language === 'ar' ? 'الوزن:' : 'Weight:'} <strong>{product.weight}</strong></span>}
+            {product.region && (
+              <span>📍 {language === 'ar' ? 'المنطقة:' : 'Region:'} <strong>
+                {typeof product.region === 'string' ? product.region : (language === 'ar' ? product.region.nameAr : product.region.nameEn) || product.region.name}
+              </strong></span>
+            )}
+          </div>
+
+          {/* Tabs */}
+          <div className="mpd-tabs">
+            <div className="mpd-tab-headers">
+              <button className={activeTab === 'description' ? 'mpd-tab active' : 'mpd-tab'} onClick={() => setActiveTab('description')}>
+                {language === 'ar' ? 'الوصف' : 'Description'}
+              </button>
+              <button className={activeTab === 'reviews' ? 'mpd-tab active' : 'mpd-tab'} onClick={() => setActiveTab('reviews')}>
+                {language === 'ar' ? 'التقييمات' : 'Reviews'} ({product.totalReviews || 0})
+              </button>
+            </div>
+            <div className="mpd-tab-body">
+              {activeTab === 'description' && (
+                <p className="mpd-description">{product.description || (language === 'ar' ? 'لا يوجد وصف' : 'No description')}</p>
+              )}
+              {activeTab === 'reviews' && (
+                <div className="mpd-reviews">
+                  {isAuthenticated && (
+                    <form onSubmit={handleSubmitReview} className="mpd-review-form">
+                      <div className="stars-input">{renderStars(rating, true, 'large')}</div>
+                      <textarea value={reviewText} onChange={e => setReviewText(e.target.value)}
+                        placeholder={language === 'ar' ? 'شارك تجربتك...' : 'Share your experience...'}
+                        rows="3" required />
+                      <button type="submit" className="mpd-submit-review">{language === 'ar' ? 'إرسال التقييم' : 'Submit'}</button>
+                    </form>
+                  )}
+                  {product.reviews?.length > 0
+                    ? product.reviews.map(r => (
+                        <div key={r._id} className="review-item">
+                          <div className="review-header">
+                            <div className="reviewer-info">
+                              <strong>{r.userName || r.user?.name || 'مستخدم'}</strong>
+                              <div className="review-rating">{renderStars(r.rating)}</div>
+                            </div>
+                            <div className="review-date">{new Date(r.createdAt).toLocaleDateString()}</div>
+                          </div>
+                          <p className="review-comment">{r.comment}</p>
+                        </div>
+                      ))
+                    : <p className="no-reviews">{language === 'ar' ? 'لا توجد تقييمات بعد' : 'No reviews yet'}</p>
+                  }
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <div className="mpd-related">
+              <h3>{language === 'ar' ? 'منتجات ذات صلة' : 'Related Products'}</h3>
+              <div className="mpd-related-grid">
+                {relatedProducts.map(rp => <ProductCard key={rp._id} product={rp} />)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {showCreateOrderModal && (
+          <CreateOrderForUser product={product} onClose={() => setShowCreateOrderModal(false)}
+            onSuccess={() => { setShowCreateOrderModal(false); alert(language === 'ar' ? 'تم إنشاء الطلبية بنجاح!' : 'Order created successfully!'); }} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="product-detail-page">
