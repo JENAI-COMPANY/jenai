@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
-const { calculateLeadershipCommission, calculateNetworkCommissions } = require('../config/memberRanks');
+const { getRankInfo, getRankNumber } = require('../config/memberRanks');
 
 // حساب الأرباح المتوقعة (غير المحتسبة بعد)
 exports.getExpectedProfit = async (req, res) => {
@@ -24,27 +24,53 @@ exports.getExpectedProfit = async (req, res) => {
     const personalCommissionPoints = personalPoints * 0.20;
     const personalProfitInShekel = Math.floor(personalCommissionPoints * POINTS_TO_CURRENCY);
 
-    // نقاط الفريق من lastPointsReset حتى الآن (نفس منطق دورة الأرباح)
-    const startDate = member.lastPointsReset || new Date('2020-01-01');
-    const endDate = new Date();
-    const networkCommissions = await calculateNetworkCommissions(User, member._id, startDate, endDate);
+    // نقاط الفريق: جلب monthlyPoints مباشرة من أعضاء كل جيل
+    const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
+    const genPointsRaw = [0, 0, 0, 0, 0];
 
-    const teamCommissionPoints = networkCommissions.team.totalCommissionPoints;
-    const teamProfitInShekel = networkCommissions.team.commissionInShekel;
+    // بناء شجرة الأجيال (5 مستويات)
+    let currentLevel = [member._id];
+    for (let i = 0; i < 5; i++) {
+      if (currentLevel.length === 0) break;
+      const levelMembers = await User.find({ referredBy: { $in: currentLevel }, role: 'member' })
+        .select('_id monthlyPoints referredBy');
+      genPointsRaw[i] = levelMembers.reduce((sum, m) => sum + (m.monthlyPoints || 0), 0);
+      currentLevel = levelMembers.map(m => m._id);
+    }
 
-    const gen1Points = networkCommissions.team.generation1 || 0;
-    const gen2Points = networkCommissions.team.generation2 || 0;
-    const gen3Points = networkCommissions.team.generation3 || 0;
-    const gen4Points = networkCommissions.team.generation4 || 0;
-    const gen5Points = networkCommissions.team.generation5 || 0;
+    const gen1Points = genPointsRaw[0];
+    const gen2Points = genPointsRaw[1];
+    const gen3Points = genPointsRaw[2];
+    const gen4Points = genPointsRaw[3];
+    const gen5Points = genPointsRaw[4];
+
+    const teamCommissionPoints =
+      gen1Points * TEAM_RATES[0] + gen2Points * TEAM_RATES[1] +
+      gen3Points * TEAM_RATES[2] + gen4Points * TEAM_RATES[3] +
+      gen5Points * TEAM_RATES[4];
+    const teamProfitInShekel = Math.floor(teamCommissionPoints * POINTS_TO_CURRENCY);
 
     // إجمالي أرباح الأداء
     const performanceProfitInShekel = personalProfitInShekel + teamProfitInShekel;
 
     // ══════════════════════════════════════
-    // 2. حساب عمولة القيادة
+    // 2. حساب عمولة القيادة حسب الرتبة
     // ══════════════════════════════════════
-    const leadershipCommission = networkCommissions.leadership.commissionInShekel || 0;
+    const memberRankNumber = getRankNumber(member.memberRank);
+    const rankConfig = getRankInfo(memberRankNumber);
+    const leadershipRates = rankConfig?.leadershipCommission || {};
+    const leadershipGenRates = [
+      leadershipRates.generation1 || 0,
+      leadershipRates.generation2 || 0,
+      leadershipRates.generation3 || 0,
+      leadershipRates.generation4 || 0,
+      leadershipRates.generation5 || 0
+    ];
+    const leadershipCommissionPoints =
+      gen1Points * leadershipGenRates[0] + gen2Points * leadershipGenRates[1] +
+      gen3Points * leadershipGenRates[2] + gen4Points * leadershipGenRates[3] +
+      gen5Points * leadershipGenRates[4];
+    const leadershipCommission = Math.floor(leadershipCommissionPoints * POINTS_TO_CURRENCY);
 
     // ══════════════════════════════════════
     // 3. حساب عمولة شراء الزبون (الطلبيات غير المهمشة)
