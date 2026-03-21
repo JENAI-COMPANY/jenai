@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
-const { calculateLeadershipCommission } = require('../config/memberRanks');
+const { calculateLeadershipCommission, calculateNetworkCommissions } = require('../config/memberRanks');
 
 // حساب الأرباح المتوقعة (غير المحتسبة بعد)
 exports.getExpectedProfit = async (req, res) => {
@@ -24,24 +24,27 @@ exports.getExpectedProfit = async (req, res) => {
     const personalCommissionPoints = personalPoints * 0.20;
     const personalProfitInShekel = Math.floor(personalCommissionPoints * POINTS_TO_CURRENCY);
 
-    // نقاط الفريق (الأجيال)
-    const gen1Points = member.generation1Points || 0;
-    const gen2Points = member.generation2Points || 0;
-    const gen3Points = member.generation3Points || 0;
-    const gen4Points = member.generation4Points || 0;
-    const gen5Points = member.generation5Points || 0;
+    // نقاط الفريق من lastPointsReset حتى الآن (نفس منطق دورة الأرباح)
+    const startDate = member.lastPointsReset || new Date('2020-01-01');
+    const endDate = new Date();
+    const networkCommissions = await calculateNetworkCommissions(User, member._id, startDate, endDate);
 
-    const teamCommissionPoints = gen1Points + gen2Points + gen3Points + gen4Points + gen5Points;
-    const teamProfitInShekel = Math.floor(teamCommissionPoints * POINTS_TO_CURRENCY);
+    const teamCommissionPoints = networkCommissions.team.totalCommissionPoints;
+    const teamProfitInShekel = networkCommissions.team.commissionInShekel;
+
+    const gen1Points = networkCommissions.team.generation1 || 0;
+    const gen2Points = networkCommissions.team.generation2 || 0;
+    const gen3Points = networkCommissions.team.generation3 || 0;
+    const gen4Points = networkCommissions.team.generation4 || 0;
+    const gen5Points = networkCommissions.team.generation5 || 0;
 
     // إجمالي أرباح الأداء
     const performanceProfitInShekel = personalProfitInShekel + teamProfitInShekel;
 
     // ══════════════════════════════════════
-    // 2. حساب عمولة القيادة (دالة آمنة - قراءة فقط)
+    // 2. حساب عمولة القيادة
     // ══════════════════════════════════════
-    const leadershipCommissionData = await calculateLeadershipCommission(User, member._id);
-    const leadershipCommission = leadershipCommissionData.commissionInShekel || 0;
+    const leadershipCommission = networkCommissions.leadership.commissionInShekel || 0;
 
     // ══════════════════════════════════════
     // 3. حساب عمولة شراء الزبون (الطلبيات غير المهمشة)
