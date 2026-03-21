@@ -616,7 +616,7 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
           commissionRate: leadershipRate,
           commissionRatePercent: (leadershipRate * 100).toFixed(0) + '%',
           commissionPoints: leadershipPoints,
-          commissionInShekel: Math.floor(leadershipPoints * POINTS_TO_SHEKEL_RATE)
+          commissionInShekel: leadershipPoints * POINTS_TO_SHEKEL_RATE
         });
       }
     }
@@ -625,7 +625,7 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
   return {
     team: {
       totalCommissionPoints: teamTotalPoints,
-      commissionInShekel: Math.floor(teamTotalPoints * POINTS_TO_SHEKEL_RATE),
+      commissionInShekel: teamTotalPoints * POINTS_TO_SHEKEL_RATE,
       generation1: levelPoints[0],
       generation2: levelPoints[1],
       generation3: levelPoints[2],
@@ -634,7 +634,7 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
     },
     leadership: {
       totalCommissionPoints: leadershipTotalPoints,
-      commissionInShekel: Math.floor(leadershipTotalPoints * POINTS_TO_SHEKEL_RATE),
+      commissionInShekel: leadershipTotalPoints * POINTS_TO_SHEKEL_RATE,
       hasLeadershipCommission: hasLeadership,
       breakdown: leadershipBreakdown,
       rankName: rankConfig.name,

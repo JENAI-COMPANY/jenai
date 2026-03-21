@@ -22,7 +22,7 @@ exports.getExpectedProfit = async (req, res) => {
     // النقاط الشخصية
     const personalPoints = member.monthlyPoints || 0;
     const personalCommissionPoints = personalPoints * 0.20;
-    const personalProfitInShekel = Math.floor(personalCommissionPoints * POINTS_TO_CURRENCY);
+    const personalProfitInShekel = personalCommissionPoints * POINTS_TO_CURRENCY;
 
     // نقاط الفريق: جلب monthlyPoints مباشرة من أعضاء كل جيل
     const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
@@ -48,7 +48,7 @@ exports.getExpectedProfit = async (req, res) => {
       gen1Points * TEAM_RATES[0] + gen2Points * TEAM_RATES[1] +
       gen3Points * TEAM_RATES[2] + gen4Points * TEAM_RATES[3] +
       gen5Points * TEAM_RATES[4];
-    const teamProfitInShekel = Math.floor(teamCommissionPoints * POINTS_TO_CURRENCY);
+    const teamProfitInShekel = teamCommissionPoints * POINTS_TO_CURRENCY;
 
     // إجمالي أرباح الأداء
     const performanceProfitInShekel = personalProfitInShekel + teamProfitInShekel;
@@ -70,7 +70,7 @@ exports.getExpectedProfit = async (req, res) => {
       gen1Points * leadershipGenRates[0] + gen2Points * leadershipGenRates[1] +
       gen3Points * leadershipGenRates[2] + gen4Points * leadershipGenRates[3] +
       gen5Points * leadershipGenRates[4];
-    const leadershipCommission = Math.floor(leadershipCommissionPoints * POINTS_TO_CURRENCY);
+    const leadershipCommission = leadershipCommissionPoints * POINTS_TO_CURRENCY;
 
     // ══════════════════════════════════════
     // 3. حساب عمولة شراء الزبون (الطلبيات غير المهمشة)

@@ -81,7 +81,7 @@ exports.calculatePeriodProfits = async (req, res) => {
 
       // حساب أرباح الأداء الشخصي: نقاط × 20% × 0.55
       const personalCommissionPoints = personalPoints * 0.20;
-      const personalProfitInShekel = Math.floor(personalCommissionPoints * 0.55);
+      const personalProfitInShekel = personalCommissionPoints * 0.55;
 
       // حساب عمولات الشبكة (فريق + قيادة) من مصدر موحد (personal+bonus للشبكة ضمن التواريخ)
       const networkCommissions = await calculateNetworkCommissions(User, member._id, startDate, endDate);
