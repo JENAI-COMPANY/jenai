@@ -28,14 +28,14 @@ exports.getExpectedProfit = async (req, res) => {
     const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
     const genPointsRaw = [0, 0, 0, 0, 0];
 
-    // بناء شجرة الأجيال (5 مستويات)
-    let currentLevel = [member._id];
+    // بناء شجرة الأجيال (5 مستويات) باستخدام sponsorCode
+    let currentCodes = [member.subscriberCode];
     for (let i = 0; i < 5; i++) {
-      if (currentLevel.length === 0) break;
-      const levelMembers = await User.find({ referredBy: { $in: currentLevel }, role: 'member' })
-        .select('_id monthlyPoints referredBy');
+      if (currentCodes.length === 0) break;
+      const levelMembers = await User.find({ sponsorCode: { $in: currentCodes }, role: { $in: ['member', 'subscriber'] } })
+        .select('subscriberCode monthlyPoints');
       genPointsRaw[i] = levelMembers.reduce((sum, m) => sum + (m.monthlyPoints || 0), 0);
-      currentLevel = levelMembers.map(m => m._id);
+      currentCodes = levelMembers.map(m => m.subscriberCode).filter(Boolean);
     }
 
     const gen1Points = genPointsRaw[0];
