@@ -1146,7 +1146,12 @@ const Profile = () => {
                       </div>
                       <div className="point-value">
                         {pointsView === 'monthly'
-                          ? (user.monthlyPoints || 0) + (user.generation1Points || 0) + (user.generation2Points || 0) + (user.generation3Points || 0) + (user.generation4Points || 0) + (user.generation5Points || 0)
+                          ? (user.monthlyPoints || 0) +
+                            Math.round((user.generation1Points || 0) / 0.11) +
+                            Math.round((user.generation2Points || 0) / 0.08) +
+                            Math.round((user.generation3Points || 0) / 0.06) +
+                            Math.round((user.generation4Points || 0) / 0.03) +
+                            Math.round((user.generation5Points || 0) / 0.02)
                           : (user.points || 0)}
                       </div>
                     </div>
@@ -1155,7 +1160,7 @@ const Profile = () => {
                         {language === 'ar' ? 'نقاط الجيل الأول' : 'Generation 1 Points'}
                       </div>
                       <div className="point-value">
-                        {pointsView === 'monthly' ? (user.generation1Points || 0) : getGenerationCumulativePoints(1)}
+                        {pointsView === 'monthly' ? Math.round((user.generation1Points || 0) / 0.11) : getGenerationCumulativePoints(1)}
                       </div>
                     </div>
                     <div className="point-card">
@@ -1163,7 +1168,7 @@ const Profile = () => {
                         {language === 'ar' ? 'نقاط الجيل الثاني' : 'Generation 2 Points'}
                       </div>
                       <div className="point-value">
-                        {pointsView === 'monthly' ? (user.generation2Points || 0) : getGenerationCumulativePoints(2)}
+                        {pointsView === 'monthly' ? Math.round((user.generation2Points || 0) / 0.08) : getGenerationCumulativePoints(2)}
                       </div>
                     </div>
                     <div className="point-card">
@@ -1171,7 +1176,7 @@ const Profile = () => {
                         {language === 'ar' ? 'نقاط الجيل الثالث' : 'Generation 3 Points'}
                       </div>
                       <div className="point-value">
-                        {pointsView === 'monthly' ? (user.generation3Points || 0) : getGenerationCumulativePoints(3)}
+                        {pointsView === 'monthly' ? Math.round((user.generation3Points || 0) / 0.06) : getGenerationCumulativePoints(3)}
                       </div>
                     </div>
                     <div className="point-card">
@@ -1179,7 +1184,7 @@ const Profile = () => {
                         {language === 'ar' ? 'نقاط الجيل الرابع' : 'Generation 4 Points'}
                       </div>
                       <div className="point-value">
-                        {pointsView === 'monthly' ? (user.generation4Points || 0) : getGenerationCumulativePoints(4)}
+                        {pointsView === 'monthly' ? Math.round((user.generation4Points || 0) / 0.03) : getGenerationCumulativePoints(4)}
                       </div>
                     </div>
                     <div className="point-card">
@@ -1187,7 +1192,7 @@ const Profile = () => {
                         {language === 'ar' ? 'نقاط الجيل الخامس' : 'Generation 5 Points'}
                       </div>
                       <div className="point-value">
-                        {pointsView === 'monthly' ? (user.generation5Points || 0) : getGenerationCumulativePoints(5)}
+                        {pointsView === 'monthly' ? Math.round((user.generation5Points || 0) / 0.02) : getGenerationCumulativePoints(5)}
                       </div>
                     </div>
                   </div>
