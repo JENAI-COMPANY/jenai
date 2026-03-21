@@ -157,7 +157,7 @@ exports.getExpectedProfit = async (req, res) => {
           generation4Points: gen4Points,
           generation5Points: gen5Points,
           unprocessedCustomerOrders: customerOrders.length,
-          hasLeadershipCommission: leadershipCommissionData.hasLeadershipCommission || false
+          hasLeadershipCommission: leadershipCommissionPoints > 0
         }
       }
     });
