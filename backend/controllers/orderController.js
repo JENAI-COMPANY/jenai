@@ -171,7 +171,8 @@ exports.createOrder = async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 // دالة توزيع العمولات حسب النظام الجديد
 // ══════════════════════════════════════════════════════════════
-const distributeCommissions = async (buyer, productPoints) => {
+const distributeCommissions = async (buyer, productPoints, earnedAt = null) => {
+  const txDate = earnedAt || new Date();
   try {
     // النسب الثابتة لعمولة الأجيال (للجميع)
     const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
@@ -202,7 +203,7 @@ const distributeCommissions = async (buyer, productPoints) => {
         points: productPoints,
         type: 'personal',
         sourceType: 'order',
-        earnedAt: new Date()
+        earnedAt: txDate
       });
     } catch (ptErr) {
       console.error('PointTransaction record failed (non-critical):', ptErr.message);
@@ -251,7 +252,7 @@ const distributeCommissions = async (buyer, productPoints) => {
           points: genPoints,
           type: `generation${generationLevel + 1}`,
           sourceType: 'order',
-          earnedAt: new Date()
+          earnedAt: txDate
         });
       } catch (ptErr) {
         console.error('PointTransaction record failed (non-critical):', ptErr.message);
