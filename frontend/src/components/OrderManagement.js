@@ -58,6 +58,27 @@ const OrderManagement = () => {
     }
   };
 
+  const handleRedistributePoints = async (order) => {
+    if (!window.confirm(
+      language === 'ar'
+        ? `إعادة توزيع ${order.totalPoints} نقطة للطلب ${order.orderNumber}؟`
+        : `Redistribute ${order.totalPoints} points for order ${order.orderNumber}?`
+    )) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `/api/admin/orders/${order._id}/redistribute-points`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessage(res.data.message);
+      setTimeout(() => setMessage(''), 4000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to redistribute points');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
   const handleStatusChange = async (orderId, newStatus) => {
     // Block category_admin from setting "received" status
     if (user?.role === 'category_admin' && newStatus === 'received') {
@@ -678,6 +699,18 @@ const OrderManagement = () => {
                 <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
                   <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {selectedOrder.totalPoints}
                 </p>
+              )}
+              {user?.role === 'super_admin' && selectedOrder.status === 'received' && selectedOrder.totalPoints > 0 && (
+                <button
+                  onClick={() => handleRedistributePoints(selectedOrder)}
+                  style={{
+                    marginTop: '10px', background: '#f59e0b', color: 'white',
+                    border: 'none', padding: '7px 14px', borderRadius: '6px',
+                    cursor: 'pointer', fontWeight: '600', fontSize: '13px'
+                  }}
+                >
+                  🔄 {language === 'ar' ? 'إعادة توزيع النقاط' : 'Redistribute Points'}
+                </button>
               )}
             </div>
 

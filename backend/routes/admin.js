@@ -2037,6 +2037,62 @@ router.put('/orders/:id/status', protect, isAdmin, canManageOrders, async (req, 
   }
 });
 
+// @route   POST /api/admin/orders/:id/redistribute-points
+// @desc    Manually redistribute points for a specific order (fix missed commissions)
+// @access  Private/Super Admin
+router.post('/orders/:id/redistribute-points', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user');
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'الطلب غير موجود' });
+    }
+
+    if (order.status !== 'received') {
+      return res.status(400).json({ success: false, message: 'الطلب يجب أن يكون بحالة "مستلم" أولاً' });
+    }
+
+    if (!order.totalPoints || order.totalPoints <= 0) {
+      return res.status(400).json({ success: false, message: `هذا الطلب لا يحتوي على نقاط (totalPoints = ${order.totalPoints})` });
+    }
+
+    const buyer = await User.findById(order.user);
+    if (!buyer) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    if (buyer.role === 'member') {
+      const { distributeCommissions } = require('../controllers/orderController');
+      await distributeCommissions(buyer, order.totalPoints);
+      console.log(`✅ إعادة توزيع ${order.totalPoints} نقطة للعضو ${buyer.name} من الطلب ${order.orderNumber}`);
+      return res.json({
+        success: true,
+        message: `تم إعادة توزيع ${order.totalPoints} نقطة للعضو ${buyer.name} وأجياله`,
+        orderNumber: order.orderNumber,
+        points: order.totalPoints
+      });
+    } else if (buyer.role === 'customer' && order.referredBy) {
+      const referrerUser = await User.findById(order.referredBy);
+      if (referrerUser && referrerUser.role === 'member') {
+        const { distributeCommissions } = require('../controllers/orderController');
+        await distributeCommissions(referrerUser, order.totalPoints);
+        await referrerUser.save();
+        console.log(`✅ إعادة توزيع ${order.totalPoints} نقطة للعضو المُحيل ${referrerUser.name}`);
+        return res.json({
+          success: true,
+          message: `تم إعادة توزيع ${order.totalPoints} نقطة للعضو المُحيل ${referrerUser.name}`,
+          orderNumber: order.orderNumber,
+          points: order.totalPoints
+        });
+      }
+    }
+
+    return res.status(400).json({ success: false, message: 'لا يوجد عضو مرتبط بهذا الطلب لتوزيع النقاط عليه' });
+  } catch (error) {
+    console.error('❌ خطأ في إعادة توزيع النقاط:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // @route   POST /api/admin/profits/check-period
 // @desc    Check if period is available for calculation
 // @access  Private/Super Admin
