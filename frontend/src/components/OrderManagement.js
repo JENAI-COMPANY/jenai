@@ -295,7 +295,9 @@ const OrderManagement = () => {
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="4" style="text-align:${isArabic ? 'left' : 'right'}">${isArabic ? 'المجموع' : 'Total'}</td>
+              <td colspan="2" style="text-align:${isArabic ? 'left' : 'right'}">${isArabic ? 'المجموع' : 'Total'}</td>
+              <td style="text-align:center;color:#059669;font-weight:bold">${(order.orderItems || []).reduce((s,i) => s + (i.points||0), 0)} ${isArabic ? 'نقطة' : 'pts'}</td>
+              <td></td>
               <td>₪${order.totalPrice?.toFixed(2)}</td>
             </tr>
           </tfoot>
