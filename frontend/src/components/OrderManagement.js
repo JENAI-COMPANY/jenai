@@ -173,6 +173,12 @@ const OrderManagement = () => {
   };
 
   // تحديث كمية منتج
+  const handleRemoveItem = (index) => {
+    if (editFormData.orderItems.length <= 1) return;
+    const updatedItems = editFormData.orderItems.filter((_, i) => i !== index);
+    setEditFormData({ ...editFormData, orderItems: updatedItems });
+  };
+
   const handleQuantityChange = (index, newQuantity) => {
     const quantity = parseInt(newQuantity) || 1;
     if (quantity < 1) return;
@@ -231,6 +237,11 @@ const OrderManagement = () => {
 
   const handlePrintOrder = async (order) => {
     const isArabic = language === 'ar';
+
+    // فتح النافذة أولاً مباشرةً (قبل أي await) لتجنب حجب popup على الموبايل
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write('<html><body><p style="font-family:sans-serif;padding:20px">جاري التحميل...</p></body></html>');
 
     // Get payment method label
     const getPaymentMethodLabel = (method) => {
@@ -304,9 +315,6 @@ const OrderManagement = () => {
         </table>
       </div>
     `;
-
-    // Create print window
-    const printWindow = window.open('', '_blank');
 
     const invoiceHTML = `
       <!DOCTYPE html>
@@ -1085,6 +1093,14 @@ const OrderManagement = () => {
                         <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
                         <span className="om-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
                       </div>
+                      {editFormData.orderItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(index)}
+                          style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '16px', alignSelf: 'center' }}
+                          title={language === 'ar' ? 'حذف المنتج' : 'Remove item'}
+                        >🗑️</button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1243,6 +1259,14 @@ const OrderManagement = () => {
                             <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
                             <span className="om-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
+                          {editFormData.orderItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(index)}
+                              style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '16px', alignSelf: 'center' }}
+                              title={language === 'ar' ? 'حذف المنتج' : 'Remove item'}
+                            >🗑️</button>
+                          )}
                         </div>
                       ))}
                     </div>

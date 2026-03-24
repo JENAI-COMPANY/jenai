@@ -134,6 +134,11 @@ const MyOrders = () => {
   };
 
   // تحديث كمية منتج
+  const handleRemoveItem = (index) => {
+    if (editFormData.orderItems.length <= 1) return;
+    setEditFormData({ ...editFormData, orderItems: editFormData.orderItems.filter((_, i) => i !== index) });
+  };
+
   const handleQuantityChange = (index, newQuantity) => {
     const quantity = parseInt(newQuantity) || 1;
     if (quantity < 1) return;
@@ -1071,6 +1076,14 @@ const MyOrders = () => {
                           <label>{language === 'ar' ? 'المجموع' : 'Subtotal'}</label>
                           <span className="mo-subtotal-value">₪{(item.price * item.quantity).toFixed(2)}</span>
                         </div>
+                        {editFormData.orderItems.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(index)}
+                            style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '16px', alignSelf: 'center' }}
+                            title={language === 'ar' ? 'حذف المنتج' : 'Remove item'}
+                          >🗑️</button>
+                        )}
                       </div>
                     ))}
                   </div>
