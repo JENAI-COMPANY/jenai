@@ -36,7 +36,8 @@ const serviceSchema = new mongoose.Schema({
     facebook: { type: String, trim: true },
     instagram: { type: String, trim: true },
     tiktok: { type: String, trim: true },
-    whatsapp: { type: String, trim: true }
+    whatsapp: { type: String, trim: true },
+    phone: { type: String, trim: true }
   },
   // Discount and points (visible to different user types)
   discountPercentage: {

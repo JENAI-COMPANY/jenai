@@ -130,13 +130,35 @@ exports.updateService = async (req, res) => {
       });
     }
 
+    const updateData = { ...req.body };
+
+    // Parse socialMedia from JSON string (FormData sends it as string)
+    if (typeof updateData.socialMedia === 'string') {
+      try {
+        updateData.socialMedia = JSON.parse(updateData.socialMedia);
+      } catch (e) {
+        console.error('Error parsing socialMedia:', e);
+      }
+    }
+
+    // Parse boolean fields
+    if (updateData.isActive !== undefined) {
+      updateData.isActive = updateData.isActive === 'true' || updateData.isActive === true;
+    }
+
+    // Parse numeric fields
+    if (updateData.discountPercentage !== undefined) updateData.discountPercentage = Number(updateData.discountPercentage);
+    if (updateData.pointsPercentage !== undefined) updateData.pointsPercentage = Number(updateData.pointsPercentage);
+
+    // Handle image uploads
+    if (req.files && req.files.length > 0) {
+      updateData.images = req.files.map(file => `/uploads/services/${file.filename}`);
+    }
+
     service = await Service.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
+      updateData,
+      { new: true, runValidators: true }
     );
 
     res.status(200).json({
@@ -144,6 +166,7 @@ exports.updateService = async (req, res) => {
       data: service
     });
   } catch (error) {
+    console.error('Error updating service:', error);
     res.status(500).json({
       success: false,
       message: error.message

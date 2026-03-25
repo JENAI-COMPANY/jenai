@@ -27,7 +27,8 @@ const ServicesManagement = () => {
     facebook: '',
     instagram: '',
     tiktok: '',
-    whatsapp: ''
+    whatsapp: '',
+    phone: ''
   });
 
   useEffect(() => {
@@ -64,7 +65,8 @@ const ServicesManagement = () => {
           facebook: newService.facebook,
           instagram: newService.instagram,
           tiktok: newService.tiktok,
-          whatsapp: newService.whatsapp
+          whatsapp: newService.whatsapp,
+          phone: newService.phone
         },
         images: selectedImages
       };
@@ -81,7 +83,8 @@ const ServicesManagement = () => {
         facebook: '',
         instagram: '',
         tiktok: '',
-        whatsapp: ''
+        whatsapp: '',
+        phone: ''
       });
       setSelectedImages([]);
       fetchData();
@@ -106,7 +109,8 @@ const ServicesManagement = () => {
       facebook: service.socialMedia?.facebook || '',
       instagram: service.socialMedia?.instagram || '',
       tiktok: service.socialMedia?.tiktok || '',
-      whatsapp: service.socialMedia?.whatsapp || ''
+      whatsapp: service.socialMedia?.whatsapp || '',
+      phone: service.socialMedia?.phone || ''
     });
   };
 
@@ -124,7 +128,8 @@ const ServicesManagement = () => {
           facebook: editForm.facebook,
           instagram: editForm.instagram,
           tiktok: editForm.tiktok,
-          whatsapp: editForm.whatsapp
+          whatsapp: editForm.whatsapp,
+          phone: editForm.phone
         },
         ...(editImages.length > 0 && { images: editImages })
       };
@@ -303,6 +308,13 @@ const ServicesManagement = () => {
                       value={newService.whatsapp}
                       onChange={handleServiceChange}
                     />
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder={language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
+                      value={newService.phone}
+                      onChange={handleServiceChange}
+                    />
                   </div>
 
                   <h4>{language === 'ar' ? 'صور وفيديوهات الخدمة' : 'Service Images & Videos'}</h4>
@@ -434,6 +446,7 @@ const ServicesManagement = () => {
                 <input type="url" name="instagram" placeholder="Instagram URL" value={editForm.instagram} onChange={handleEditFormChange} />
                 <input type="url" name="tiktok" placeholder="TikTok URL" value={editForm.tiktok} onChange={handleEditFormChange} />
                 <input type="text" name="whatsapp" placeholder={language === 'ar' ? 'رقم واتساب' : 'WhatsApp Number'} value={editForm.whatsapp} onChange={handleEditFormChange} />
+                <input type="tel" name="phone" placeholder={language === 'ar' ? 'رقم الهاتف' : 'Phone Number'} value={editForm.phone || ''} onChange={handleEditFormChange} />
               </div>
 
               <h4>{language === 'ar' ? 'الحالة' : 'Status'}</h4>
