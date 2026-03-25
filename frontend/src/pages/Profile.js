@@ -275,18 +275,25 @@ const Profile = () => {
     }
   };
 
-  // Calculate cumulative points for each generation level
+  // نسب عمولة الأجيال الخمسة
+  const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
+
+  // Calculate cumulative commission points for each generation level (raw points × rate)
   const getGenerationCumulativePoints = (level) => {
     if (!teamData || !teamData.team) return 0;
+    const rate = TEAM_RATES[level - 1] || 0;
     const membersInLevel = teamData.team.filter(member => member.level === level);
-    return membersInLevel.reduce((sum, member) => sum + (member.points || 0), 0);
+    const rawPoints = membersInLevel.reduce((sum, member) => sum + (member.points || 0), 0);
+    return Math.floor(rawPoints * rate);
   };
 
-  // Calculate monthly (uncalculated) points for each generation level
+  // Calculate monthly commission points for each generation level (raw points × rate)
   const getGenerationMonthlyPoints = (level) => {
     if (!teamData || !teamData.team) return 0;
+    const rate = TEAM_RATES[level - 1] || 0;
     const membersInLevel = teamData.team.filter(member => member.level === level);
-    return membersInLevel.reduce((sum, member) => sum + (member.monthlyPoints || 0), 0);
+    const rawPoints = membersInLevel.reduce((sum, member) => sum + (member.monthlyPoints || 0), 0);
+    return Math.floor(rawPoints * rate);
   };
 
   // Update form data when user data changes
