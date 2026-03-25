@@ -611,20 +611,15 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       if (bonusPointsToAdd > 0) {
         console.log(`📊 إضافة ${bonusPointsToAdd} نقطة مكافأة لـ ${user.name}`);
 
-        // إضافة إلى bonusPoints المخزنة (للسجل فقط)
-        user.bonusPoints = (user.bonusPoints || 0) + bonusPointsToAdd;
-
-        // إضافة إلى monthlyPoints (نقاط الأداء الشخصي)
-        const oldMonthlyPoints = user.monthlyPoints || 0;
-        user.monthlyPoints = oldMonthlyPoints + bonusPointsToAdd;
-        console.log(`📊 إضافة نقاط المكافأة لنقاط الأداء الشخصي: من ${oldMonthlyPoints} إلى ${user.monthlyPoints}`);
-
-        // إضافة إلى النقاط التراكمية للعضو نفسه
-        const oldUserPoints = user.points || 0;
-        user.points = oldUserPoints + bonusPointsToAdd;
-        console.log(`📊 تحديث النقاط التراكمية: من ${oldUserPoints} إلى ${user.points}`);
-
-        await user.save();
+        // تحديث atomic باستخدام $inc لتجنب race condition
+        await User.findByIdAndUpdate(user._id, {
+          $inc: {
+            bonusPoints: bonusPointsToAdd,
+            monthlyPoints: bonusPointsToAdd,
+            points: bonusPointsToAdd
+          }
+        });
+        console.log(`📊 تم إضافة ${bonusPointsToAdd} نقطة مكافأة (atomic $inc)`);
 
         // تسجيل معاملة نقاط المكافأة الإدارية
         try {
@@ -663,13 +658,14 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       if (compensationPointsToAdd > 0) {
         console.log(`📊 إضافة ${compensationPointsToAdd} نقطة تعويض لـ ${user.name}`);
 
-        // إضافة إلى compensationPoints المخزنة
-        user.compensationPoints = (user.compensationPoints || 0) + compensationPointsToAdd;
-
-        // إضافة إلى النقاط التراكمية (points) فقط، بدون النقاط الشهرية
-        user.points = (user.points || 0) + compensationPointsToAdd;
-
-        await user.save();
+        // تحديث atomic باستخدام $inc لتجنب race condition
+        await User.findByIdAndUpdate(user._id, {
+          $inc: {
+            compensationPoints: compensationPointsToAdd,
+            points: compensationPointsToAdd
+          }
+        });
+        console.log(`📊 تم إضافة ${compensationPointsToAdd} نقطة تعويض (atomic $inc)`);
 
         // توزيع نقاط التعويض على الأعضاء العلويين (تراكمي فقط، بدون أرباح)
         console.log('✅ توزيع نقاط التعويض على الأعضاء العلويين (تراكمي فقط)');
@@ -695,17 +691,15 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
         monthlyPointsDifference
       });
 
-      // تحديث قيمة monthlyPoints مباشرة
+      // تحديث قيمة monthlyPoints مباشرة (set)
       user.monthlyPoints = newMonthlyPoints;
-
-      // تحديث النقاط التراكمية للعضو نفسه
-      if (monthlyPointsDifference !== 0) {
-        const oldUserPoints = user.points || 0;
-        user.points = oldUserPoints + monthlyPointsDifference;
-        console.log(`📊 تحديث نقاط العضو: points من ${oldUserPoints} إلى ${user.points} (فرق: ${monthlyPointsDifference})`);
-      }
-
       await user.save();
+
+      // تحديث النقاط التراكمية بشكل atomic لتجنب race condition
+      if (monthlyPointsDifference !== 0) {
+        await User.findByIdAndUpdate(user._id, { $inc: { points: monthlyPointsDifference } });
+        console.log(`📊 تحديث نقاط العضو التراكمية بفرق: ${monthlyPointsDifference} (atomic $inc)`);
+      }
 
       // توزيع أو طرح النقاط من الأعضاء العلويين حسب الفرق
       if (monthlyPointsDifference !== 0) {
