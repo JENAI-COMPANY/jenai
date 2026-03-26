@@ -1814,7 +1814,7 @@ router.get('/orders', protect, isAdmin, canViewOrders, async (req, res) => {
     }
 
     let orders = await Order.find(query)
-      .populate('user', 'username name subscriberCode')
+      .populate('user', 'username name subscriberCode role')
       .populate('orderItems.product', 'name price category images')
       .sort('-createdAt');
 

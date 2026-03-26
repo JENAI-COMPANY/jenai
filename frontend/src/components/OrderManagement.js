@@ -682,11 +682,14 @@ const OrderManagement = () => {
                 <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -₪{selectedOrder.discountAmount?.toFixed(2)}</p>
               )}
               <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
-              {selectedOrder.totalPoints && (
-                <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
-                  <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {selectedOrder.totalPoints}
-                </p>
-              )}
+              {selectedOrder.user?.role === 'member' && (() => {
+                const pts = selectedOrder.totalPoints || (selectedOrder.orderItems || []).reduce((s, i) => s + ((i.points || 0) * (i.quantity || 1)), 0);
+                return pts > 0 ? (
+                  <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
+                    <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {pts}
+                  </p>
+                ) : null;
+              })()}
             </div>
 
             {selectedOrder.isCustomOrder && selectedOrder.customOrderDetails && (
@@ -907,11 +910,14 @@ const OrderManagement = () => {
                   <p><strong>{language === 'ar' ? 'الخصم:' : 'Discount:'}</strong> -₪{selectedOrder.discountAmount?.toFixed(2)}</p>
                 )}
                 <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
-                {selectedOrder.totalPoints && (
-                  <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
-                    <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {selectedOrder.totalPoints}
-                  </p>
-                )}
+                {selectedOrder.user?.role === 'member' && (() => {
+                  const pts = selectedOrder.totalPoints || (selectedOrder.orderItems || []).reduce((s, i) => s + ((i.points || 0) * (i.quantity || 1)), 0);
+                  return pts > 0 ? (
+                    <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
+                      <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {pts}
+                    </p>
+                  ) : null;
+                })()}
               </div>
 
               {/* قسم الطلب المخصص */}
