@@ -307,7 +307,7 @@ const OrderManagement = () => {
           <tfoot>
             <tr class="total-row">
               <td colspan="2" style="text-align:${isArabic ? 'left' : 'right'}">${isArabic ? 'المجموع' : 'Total'}</td>
-              <td style="text-align:center;color:#059669;font-weight:bold">${(order.orderItems || []).reduce((s,i) => s + (i.points||0), 0)} ${isArabic ? 'نقطة' : 'pts'}</td>
+              <td style="text-align:center;color:#059669;font-weight:bold">${(order.orderItems || []).reduce((s,i) => s + ((i.points||0)*(i.quantity||1)), 0)} ${isArabic ? 'نقطة' : 'pts'}</td>
               <td></td>
               <td>₪${order.totalPrice?.toFixed(2)}</td>
             </tr>
@@ -683,7 +683,8 @@ const OrderManagement = () => {
               )}
               <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
               {selectedOrder.user?.role === 'member' && (() => {
-                const pts = selectedOrder.totalPoints || (selectedOrder.orderItems || []).reduce((s, i) => s + ((i.points || 0) * (i.quantity || 1)), 0);
+                const itemPts = (selectedOrder.orderItems || []).reduce((s, i) => s + ((i.points || 0) * (i.quantity || 1)), 0);
+                  const pts = itemPts || selectedOrder.totalPoints || 0;
                 return pts > 0 ? (
                   <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
                     <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {pts}
@@ -911,7 +912,8 @@ const OrderManagement = () => {
                 )}
                 <p className="om-total"><strong>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</strong> ₪{selectedOrder.totalPrice?.toFixed(2)}</p>
                 {selectedOrder.user?.role === 'member' && (() => {
-                  const pts = selectedOrder.totalPoints || (selectedOrder.orderItems || []).reduce((s, i) => s + ((i.points || 0) * (i.quantity || 1)), 0);
+                  const itemPts = (selectedOrder.orderItems || []).reduce((s, i) => s + ((i.points || 0) * (i.quantity || 1)), 0);
+                  const pts = itemPts || selectedOrder.totalPoints || 0;
                   return pts > 0 ? (
                     <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
                       <strong>{language === 'ar' ? '⭐ النقاط المكتسبة:' : '⭐ Points Earned:'}</strong> {pts}
