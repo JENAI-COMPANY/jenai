@@ -60,7 +60,8 @@ const MemberProfitSchema = new mongoose.Schema({
     websiteDevelopmentCommission: { type: Number, default: 0 },
     totalProfit: { type: Number, default: 0 },
     conversionRate: { type: Number, default: 0.55 }
-  }
+  },
+  isPaid: { type: Boolean, default: false }
 });
 
 const profitPeriodSchema = new mongoose.Schema({

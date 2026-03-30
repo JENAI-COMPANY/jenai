@@ -81,4 +81,27 @@ router.patch(
   updateProfitPeriodStatus
 );
 
+// @route   PATCH /api/profit-periods/:id/member/:memberId/payment
+// @desc    تحديث حالة دفع عضو معين في فترة أرباح
+// @access  Private (Admin/Super Admin only)
+router.patch(
+  '/:id/member/:memberId/payment',
+  protect,
+  authorize('admin', 'super_admin'),
+  async (req, res) => {
+    try {
+      const { isPaid } = req.body;
+      const period = await require('../models/ProfitPeriod').findById(req.params.id);
+      if (!period) return res.status(404).json({ message: 'الفترة غير موجودة' });
+      const member = period.membersProfits.find(m => m.memberId.toString() === req.params.memberId);
+      if (!member) return res.status(404).json({ message: 'العضو غير موجود في هذه الفترة' });
+      member.isPaid = isPaid;
+      await period.save();
+      res.json({ success: true, isPaid: member.isPaid });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
 module.exports = router;

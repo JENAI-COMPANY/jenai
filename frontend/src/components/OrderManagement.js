@@ -84,6 +84,21 @@ const OrderManagement = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الطلب؟' : 'Are you sure you want to delete this order?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/admin/orders/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setMessage(language === 'ar' ? 'تم حذف الطلب بنجاح' : 'Order deleted successfully');
+      setSelectedOrder(null);
+      fetchOrders();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete order');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const handleConfirmSpecs = async () => {
     console.log('🚀 handleConfirmSpecs called');
     console.log('📝 Confirm data:', confirmData);
@@ -586,16 +601,24 @@ const OrderManagement = () => {
         onClose={() => setSelectedOrder(null)}
         title={language === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
         footerButtons={selectedOrder && selectedOrder.status === 'pending' ? (
-          <button
-            className="om-edit-btn-large"
-            onClick={() => {
-              const order = selectedOrder;
-              setSelectedOrder(null);
-              openEditModal(order, { stopPropagation: () => {} });
-            }}
-          >
-            ✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="om-edit-btn-large"
+              onClick={() => {
+                const order = selectedOrder;
+                setSelectedOrder(null);
+                openEditModal(order, { stopPropagation: () => {} });
+              }}
+            >
+              ✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+            </button>
+            <button
+              style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}
+              onClick={() => handleDeleteOrder(selectedOrder._id)}
+            >
+              🗑️ {language === 'ar' ? 'حذف الطلب' : 'Delete Order'}
+            </button>
+          </div>
         ) : null}
       >
         {selectedOrder && (

@@ -1855,6 +1855,23 @@ router.get('/orders', protect, isAdmin, canViewOrders, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/admin/orders/:id
+// @desc    Delete order (pending only)
+// @access  Private/Admin
+router.delete('/orders/:id', protect, isAdmin, canManageOrders, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'الطلب غير موجود' });
+    if (order.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'لا يمكن حذف الطلب إلا إذا كان قيد الانتظار' });
+    }
+    await Order.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'تم حذف الطلب' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // @route   PUT /api/admin/orders/:id
 // @desc    Update order details (for pending orders only)
 // @access  Private/Admin

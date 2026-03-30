@@ -22,6 +22,7 @@ const ProfitPeriods = () => {
   const [calculating, setCalculating] = useState(false);
   const [selectedMemberDetails, setSelectedMemberDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [paymentUpdating, setPaymentUpdating] = useState({});
 
   useEffect(() => {
     fetchProfitPeriods();
@@ -298,6 +299,28 @@ const ProfitPeriods = () => {
     return breakdown;
   };
 
+  const handleTogglePayment = async (periodId, memberId, currentIsPaid) => {
+    setPaymentUpdating(prev => ({ ...prev, [memberId]: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.patch(
+        `/api/profit-periods/${periodId}/member/${memberId}/payment`,
+        { isPaid: !currentIsPaid },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSelectedPeriod(prev => ({
+        ...prev,
+        membersProfits: prev.membersProfits.map(m =>
+          m.memberId === memberId ? { ...m, isPaid: res.data.isPaid } : m
+        )
+      }));
+    } catch (err) {
+      console.error('Failed to update payment status', err);
+    } finally {
+      setPaymentUpdating(prev => ({ ...prev, [memberId]: false }));
+    }
+  };
+
   // Function to show member profit details
   const handleShowMemberDetails = (memberProfit) => {
     const leadershipBreakdown = calculateLeadershipBreakdown(memberProfit);
@@ -532,6 +555,7 @@ const ProfitPeriods = () => {
                   <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
                   <th>{language === 'ar' ? 'إجمالي الأرباح' : 'Total'}</th>
                   <th>{language === 'ar' ? 'التفاصيل' : 'Details'}</th>
+                  {selectedPeriod.status !== 'draft' && <th>{language === 'ar' ? 'الدفع' : 'Payment'}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -540,7 +564,7 @@ const ProfitPeriods = () => {
                   .map((mp, index) => {
                     const teamPoints = mp.points.generation1 + mp.points.generation2 + mp.points.generation3 + mp.points.generation4 + mp.points.generation5;
                     return (
-                      <tr key={mp.memberId}>
+                      <tr key={mp.memberId} style={mp.isPaid ? { background: '#f0fdf4' } : {}}>
                         <td>{index + 1}</td>
                         <td>{mp.memberName}</td>
                         <td>{mp.username}</td>
@@ -561,6 +585,24 @@ const ProfitPeriods = () => {
                             👁️
                           </button>
                         </td>
+                        {selectedPeriod.status !== 'draft' && (
+                          <td>
+                            <button
+                              onClick={() => handleTogglePayment(selectedPeriod._id, mp.memberId, mp.isPaid)}
+                              disabled={paymentUpdating[mp.memberId]}
+                              style={{
+                                background: mp.isPaid ? '#10b981' : '#6b7280',
+                                color: 'white', border: 'none', padding: '5px 12px',
+                                borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
+                                fontSize: '12px', whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {mp.isPaid
+                                ? (language === 'ar' ? '✅ مدفوع' : '✅ Paid')
+                                : (language === 'ar' ? '⏳ غير مدفوع' : '⏳ Unpaid')}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
