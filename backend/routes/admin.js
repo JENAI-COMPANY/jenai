@@ -208,7 +208,7 @@ const distributeGenerationPointsOnly = async (member, points) => {
           memberId: currentMember._id,
           points: genPoints,
           type: `generation${generationLevel + 1}`,
-          sourceType: 'admin_bonus',
+          sourceType: 'admin_compensation',
           earnedAt: new Date()
         });
       } catch (ptErr) {
