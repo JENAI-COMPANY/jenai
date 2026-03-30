@@ -1020,9 +1020,9 @@ const OrderManagement = () => {
                 </div>
               )}
 
-              {/* زر تعديل الطلب */}
+              {/* زر تعديل وحذف الطلب */}
               {selectedOrder.status === 'pending' && (
-                <div className="om-modal-actions">
+                <div className="om-modal-actions" style={{ display: 'flex', gap: '10px' }}>
                   <button
                     className="om-edit-btn-large"
                     onClick={() => {
@@ -1031,6 +1031,12 @@ const OrderManagement = () => {
                     }}
                   >
                     ✏️ {language === 'ar' ? 'تعديل الطلب' : 'Edit Order'}
+                  </button>
+                  <button
+                    style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}
+                    onClick={() => handleDeleteOrder(selectedOrder._id)}
+                  >
+                    🗑️ {language === 'ar' ? 'حذف الطلب' : 'Delete Order'}
                   </button>
                 </div>
               )}
