@@ -35,7 +35,7 @@ const {
 // ══════════════════════════════════════════════════════════════
 // دالة توزيع العمولات حسب النظام الجديد
 // ══════════════════════════════════════════════════════════════
-const distributeCommissions = async (buyer, productPoints) => {
+const distributeCommissions = async (buyer, productPoints, sourceType = 'order', description = '') => {
   try {
     // النسب الثابتة لعمولة الأجيال (للجميع)
     const GENERATION_RATES = [0.11, 0.08, 0.06, 0.03, 0.02]; // 11%, 8%, 6%, 3%, 2%
@@ -75,7 +75,8 @@ const distributeCommissions = async (buyer, productPoints) => {
         memberId: buyer._id,
         points: productPoints,
         type: 'personal',
-        sourceType: 'order',
+        sourceType: sourceType,
+        description: description,
         earnedAt: new Date()
       });
     } catch (ptErr) {
@@ -133,7 +134,8 @@ const distributeCommissions = async (buyer, productPoints) => {
           memberId: currentMember._id,
           points: genPoints,
           type: `generation${generationLevel + 1}`,
-          sourceType: 'order',
+          sourceType: sourceType,
+          description: description,
           earnedAt: new Date()
         });
       } catch (ptErr) {
@@ -601,6 +603,7 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
     const hasBonusUpdate = req.body.bonusPoints !== undefined;
     const hasCompensationUpdate = req.body.compensationPoints !== undefined;
     const hasMonthlyPointsUpdate = req.body.monthlyPoints !== undefined;
+    const hasServicePointsUpdate = req.body.servicePoints !== undefined;
 
     // 1. معالجة نقاط المكافأة (تُوزع على الأعضاء العلويين)
     // ملاحظة: الفرونت إند يُرسل القيمة المُراد إضافتها، وليس القيمة النهائية
@@ -673,7 +676,18 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       }
     }
 
-    // 3. معالجة النقاط الشهرية (توزيع نقاط الأجيال فقط، بدون عمولات)
+    // 3. معالجة نقاط الخدمات (تُوزع على الأعضاء العلويين مثل الطلبات تماماً)
+    if (hasServicePointsUpdate && user.role === 'member') {
+      const servicePointsToAdd = parseInt(req.body.servicePoints) || 0;
+      if (servicePointsToAdd > 0) {
+        console.log(`📊 إضافة ${servicePointsToAdd} نقطة خدمات لـ ${user.name}`);
+        const freshUser = await User.findById(user._id);
+        await distributeCommissions(freshUser, servicePointsToAdd, 'service', req.body.servicePointsReason || '');
+        console.log('✅ نقاط الخدمات أُضيفت ووُزعت على الأعضاء العلويين مثل الطلبات');
+      }
+    }
+
+    // 4. معالجة النقاط الشهرية (توزيع نقاط الأجيال فقط، بدون عمولات)
     if (hasMonthlyPointsUpdate && user.role === 'member') {
       console.log('🔍 تحديث النقاط الشهرية:', {
         hasMonthlyPointsUpdate,

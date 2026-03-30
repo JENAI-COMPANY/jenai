@@ -1468,6 +1468,7 @@ const Profile = () => {
                             ? (t.description ? `${language === 'ar' ? 'مكافأة' : 'Bonus'} - ${t.description}` : (language === 'ar' ? 'مكافأة إدارية' : 'Admin Bonus'))
                           : t.sourceType === 'admin_compensation' ? (language === 'ar' ? 'تعويض إداري' : 'Admin Compensation')
                           : t.sourceType === 'first_order_bonus' ? (language === 'ar' ? 'مكافأة أول طلب' : 'First Order Bonus')
+                          : t.sourceType === 'service' ? (t.description ? `${language === 'ar' ? '🛠️ خدمات' : '🛠️ Service'} - ${t.description}` : (language === 'ar' ? '🛠️ خدمات' : '🛠️ Service'))
                           : (language === 'ar' ? 'أخرى' : 'Other')}
                       </td>
                       <td style={{ padding: '7px 8px', color: '#10b981', fontWeight: 'bold' }}>+{t.points}</td>

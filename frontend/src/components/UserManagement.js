@@ -297,6 +297,8 @@ const UserManagement = () => {
       monthlyPoints: user.monthlyPoints || 0,
       bonusPoints: 0,
       compensationPoints: 0,
+      servicePoints: 0,
+      servicePointsReason: '',
       isActive: user.isActive !== false
     });
     setEditCurrentSponsorName('');
@@ -358,6 +360,10 @@ const UserManagement = () => {
       }
       if (editingUser.compensationPoints && editingUser.compensationPoints > 0) {
         updateData.compensationPoints = editingUser.compensationPoints;
+      }
+      if (editingUser.servicePoints && editingUser.servicePoints > 0) {
+        updateData.servicePoints = editingUser.servicePoints;
+        updateData.servicePointsReason = editingUser.servicePointsReason || '';
       }
 
       console.log('🔍 Frontend: editingUser.isActive =', editingUser.isActive, 'Type:', typeof editingUser.isActive);
@@ -1077,6 +1083,37 @@ const UserManagement = () => {
                           </small>
                         </div>
                       </div>
+                      <div className="um-form-row">
+                        <div className="um-form-group">
+                          <label style={{ color: '#0288d1' }}>🛠️ {language === 'ar' ? 'إضافة نقاط خدمات' : 'Add Service Points'}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder={language === 'ar' ? 'أدخل عدد النقاط المراد إضافتها' : 'Enter points to add'}
+                            value={editingUser.servicePoints || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, servicePoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#0288d1' }}
+                          />
+                          <small style={{ color: '#0288d1', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar'
+                              ? '🔄 تُضاف للنقاط والربح وتُوزع على الأعضاء العلويين مثل الطلبات تماماً'
+                              : '🔄 Treated exactly like order points - distributed to upline'}
+                          </small>
+                        </div>
+                        <div className="um-form-group">
+                          <label style={{ color: '#0288d1' }}>📝 {language === 'ar' ? 'سبب نقاط الخدمات' : 'Service Points Reason'}</label>
+                          <input
+                            type="text"
+                            placeholder={language === 'ar' ? 'أدخل سبب إضافة نقاط الخدمات' : 'Enter service points reason'}
+                            value={editingUser.servicePointsReason || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, servicePointsReason: e.target.value })}
+                            style={{ borderColor: '#0288d1' }}
+                          />
+                          <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar' ? 'يُحفظ في سجل النقاط ويظهر للعضو' : 'Saved in points log, visible to member'}
+                          </small>
+                        </div>
+                      </div>
                     </>
                   )}
                 </>
@@ -1392,6 +1429,37 @@ const UserManagement = () => {
                             {language === 'ar'
                               ? '⚠️ تُضاف للتراكمي فقط لحساب الرتبة، لا تُوزع ولا تُحسب كأرباح'
                               : '⚠️ Added to cumulative points for rank only, no profit or distribution'}
+                          </small>
+                        </div>
+                      </div>
+                      <div className="um-form-row">
+                        <div className="um-form-group">
+                          <label style={{ color: '#0288d1' }}>🛠️ {language === 'ar' ? 'إضافة نقاط خدمات' : 'Add Service Points'}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder={language === 'ar' ? 'أدخل عدد النقاط المراد إضافتها' : 'Enter points to add'}
+                            value={editingUser.servicePoints || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, servicePoints: parseInt(e.target.value) || 0 })}
+                            style={{ borderColor: '#0288d1' }}
+                          />
+                          <small style={{ color: '#0288d1', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar'
+                              ? '🔄 تُضاف للنقاط والربح وتُوزع على الأعضاء العلويين مثل الطلبات تماماً'
+                              : '🔄 Treated exactly like order points - distributed to upline'}
+                          </small>
+                        </div>
+                        <div className="um-form-group">
+                          <label style={{ color: '#0288d1' }}>📝 {language === 'ar' ? 'سبب نقاط الخدمات' : 'Service Points Reason'}</label>
+                          <input
+                            type="text"
+                            placeholder={language === 'ar' ? 'أدخل سبب إضافة نقاط الخدمات' : 'Enter service points reason'}
+                            value={editingUser.servicePointsReason || ''}
+                            onChange={(e) => setEditingUser({ ...editingUser, servicePointsReason: e.target.value })}
+                            style={{ borderColor: '#0288d1' }}
+                          />
+                          <small style={{ color: '#888', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                            {language === 'ar' ? 'يُحفظ في سجل النقاط ويظهر للعضو' : 'Saved in points log, visible to member'}
                           </small>
                         </div>
                       </div>

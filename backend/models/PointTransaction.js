@@ -18,7 +18,7 @@ const pointTransactionSchema = new mongoose.Schema({
   },
   sourceType: {
     type: String,
-    enum: ['order', 'admin_bonus', 'admin_compensation', 'first_order_bonus', 'other'],
+    enum: ['order', 'admin_bonus', 'admin_compensation', 'first_order_bonus', 'service', 'other'],
     default: 'order'
   },
   sourceId: {
