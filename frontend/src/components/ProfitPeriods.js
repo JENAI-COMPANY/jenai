@@ -554,8 +554,7 @@ const ProfitPeriods = () => {
                   <th>{language === 'ar' ? 'أرباح الأداء' : 'Performance'}</th>
                   <th>{language === 'ar' ? 'عمولة القيادة' : 'Leadership'}</th>
                   <th>{language === 'ar' ? 'إجمالي الأرباح' : 'Total'}</th>
-                  <th>{language === 'ar' ? 'التفاصيل' : 'Details'}</th>
-                  {selectedPeriod.status !== 'draft' && <th>{language === 'ar' ? 'الدفع' : 'Payment'}</th>}
+                  <th>{language === 'ar' ? 'التفاصيل / الدفع' : 'Details / Payment'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -577,32 +576,32 @@ const ProfitPeriods = () => {
                         <td className="profit-cell">{mp.profit.leadershipProfit.toFixed(2)} ₪</td>
                         <td className="total-profit-cell">{mp.profit.totalProfit.toFixed(2)} ₪</td>
                         <td>
-                          <button
-                            className="btn-view-details"
-                            onClick={() => handleShowMemberDetails(mp)}
-                            title={language === 'ar' ? 'عرض تفاصيل الاحتساب' : 'View Calculation Details'}
-                          >
-                            👁️
-                          </button>
-                        </td>
-                        {selectedPeriod.status !== 'draft' && (
-                          <td>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
-                              onClick={() => handleTogglePayment(selectedPeriod._id, mp.memberId, mp.isPaid)}
-                              disabled={paymentUpdating[mp.memberId]}
-                              style={{
-                                background: mp.isPaid ? '#10b981' : '#6b7280',
-                                color: 'white', border: 'none', padding: '5px 12px',
-                                borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
-                                fontSize: '12px', whiteSpace: 'nowrap'
-                              }}
+                              className="btn-view-details"
+                              onClick={() => handleShowMemberDetails(mp)}
+                              title={language === 'ar' ? 'عرض تفاصيل الاحتساب' : 'View Calculation Details'}
                             >
-                              {mp.isPaid
-                                ? (language === 'ar' ? '✅ مدفوع' : '✅ Paid')
-                                : (language === 'ar' ? '⏳ غير مدفوع' : '⏳ Unpaid')}
+                              👁️
                             </button>
-                          </td>
-                        )}
+                            {selectedPeriod.status !== 'draft' && (
+                              <button
+                                onClick={() => handleTogglePayment(selectedPeriod._id, mp.memberId, mp.isPaid)}
+                                disabled={paymentUpdating[mp.memberId]}
+                                style={{
+                                  background: mp.isPaid ? '#10b981' : '#6b7280',
+                                  color: 'white', border: 'none', padding: '5px 10px',
+                                  borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
+                                  fontSize: '11px', whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {mp.isPaid
+                                  ? (language === 'ar' ? '✅ مدفوع' : '✅ Paid')
+                                  : (language === 'ar' ? '⏳ غير مدفوع' : '⏳ Unpaid')}
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
