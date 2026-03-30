@@ -20,7 +20,7 @@ exports.getMyTeam = async (req, res) => {
         sponsorCode: sponsorCode,
         role: { $in: ['member', 'subscriber'] }
       })
-        .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive phone')
+        .select('name username subscriberCode points monthlyPoints bonusPoints firstOrderBonus createdAt country city memberRank isActive phone')
         .lean();
 
       let allMembers = [];
@@ -121,7 +121,7 @@ exports.getMemberTeam = async (req, res) => {
         sponsorCode,
         role: { $in: ['member', 'subscriber'] }
       })
-        .select('name username subscriberCode points monthlyPoints createdAt country city memberRank isActive phone')
+        .select('name username subscriberCode points monthlyPoints bonusPoints firstOrderBonus createdAt country city memberRank isActive phone')
         .lean();
 
       let allMembers = [];

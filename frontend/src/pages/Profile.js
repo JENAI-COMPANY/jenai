@@ -282,6 +282,16 @@ const Profile = () => {
     return membersInLevel.reduce((sum, member) => sum + (member.points || 0), 0);
   };
 
+  // مجموع نقاط المكافآت لكل الفريق (لا تنتشر للأعلى)
+  const getTeamTotalBonusPoints = () => {
+    if (!teamData || !teamData.team) return 0;
+    return teamData.team.reduce((sum, member) => {
+      const adminBonus = member.bonusPoints || 0;
+      const firstOrderBonus = (member.firstOrderBonus?.received && member.firstOrderBonus?.points) ? member.firstOrderBonus.points : 0;
+      return sum + adminBonus + firstOrderBonus;
+    }, 0);
+  };
+
   // Calculate monthly (uncalculated) points for each generation level
   const getGenerationMonthlyPoints = (level) => {
     if (!teamData || !teamData.team) return 0;
@@ -1198,17 +1208,16 @@ const Profile = () => {
                         {pointsView === 'monthly' ? getGenerationMonthlyPoints(5) : getGenerationCumulativePoints(5)}
                       </div>
                     </div>
-                    {pointsView === 'cumulative' && (() => {
-                      const gen1Total = getGenerationCumulativePoints(1);
-                      const missing = gen1Total - (user.points || 0);
-                      if (missing <= 0) return null;
+                    {pointsView === 'monthly' && (() => {
+                      const teamBonus = getTeamTotalBonusPoints();
+                      if (teamBonus <= 0) return null;
                       return (
                         <div className="point-card" style={{ borderColor: '#f59e0b', background: '#fffbeb' }}>
                           <div className="point-label" style={{ color: '#b45309' }}>
-                            {language === 'ar' ? '⚠️ نقاط غير مضافة للتراكمي' : '⚠️ Missing Cumulative Points'}
+                            {language === 'ar' ? '🎁 مكافآت الفريق' : '🎁 Team Bonus Points'}
                           </div>
                           <div className="point-value" style={{ color: '#d97706' }}>
-                            {missing}
+                            {teamBonus}
                           </div>
                         </div>
                       );
