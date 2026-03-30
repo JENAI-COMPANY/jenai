@@ -1047,8 +1047,8 @@ const UserManagement = () => {
                           />
                           <small style={{ color: '#ff9800', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                             {language === 'ar'
-                              ? '💰 تُضاف للنقاط والرتبة والربح وتُوزع على الأعضاء العلويين (مثل شراء منتج)'
-                              : '💰 Added to points, rank & profit, distributes to upline (like purchasing a product)'}
+                              ? '💰 تُضاف للعضو فقط (نقاط + ربح شخصي) ولا تُوزع على الأعضاء العلويين'
+                              : '💰 Added to member only (points + personal profit), not distributed to upline'}
                           </small>
                         </div>
                         <div className="um-form-group">
@@ -1396,8 +1396,8 @@ const UserManagement = () => {
                           />
                           <small style={{ color: '#ff9800', fontSize: '11px', display: 'block', marginTop: '4px' }}>
                             {language === 'ar'
-                              ? '💰 تُضاف للنقاط والرتبة والربح وتُوزع على الأعضاء العلويين (مثل شراء منتج)'
-                              : '💰 Added to points, rank & profit, distributes to upline (like purchasing a product)'}
+                              ? '💰 تُضاف للعضو فقط (نقاط + ربح شخصي) ولا تُوزع على الأعضاء العلويين'
+                              : '💰 Added to member only (points + personal profit), not distributed to upline'}
                           </small>
                         </div>
                         <div className="um-form-group">
