@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const PointTransaction = require('../models/PointTransaction');
+const ProfitPeriod = require('../models/ProfitPeriod');
 
 // Get team members (5 levels deep) with their points
 exports.getMyTeam = async (req, res) => {
@@ -232,6 +234,55 @@ exports.getDirectReferrals = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching direct referrals:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get team bonus points for current period (admin_bonus + first_order_bonus not yet in profit calculation)
+exports.getTeamCurrentBonusPoints = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // تاريخ بداية الفترة الحالية = نهاية آخر فترة محسوبة
+    const lastPaidPeriod = await ProfitPeriod.findOne({ status: 'paid' }).sort({ endDate: -1 });
+    const periodStart = lastPaidPeriod ? new Date(lastPaidPeriod.endDate) : new Date('2000-01-01');
+
+    // جمع كل أعضاء الفريق (5 أجيال)
+    const getTeamMembers = async (sponsorCode, level, maxLevel = 5) => {
+      if (level > maxLevel || !sponsorCode) return [];
+      const members = await User.find({ sponsorCode, role: { $in: ['member', 'subscriber'] } })
+        .select('_id subscriberCode').lean();
+      let all = [...members];
+      for (const m of members) {
+        const sub = await getTeamMembers(m.subscriberCode, level + 1, maxLevel);
+        all = all.concat(sub);
+      }
+      return all;
+    };
+
+    const teamMembers = await getTeamMembers(user.subscriberCode, 1);
+    const teamIds = teamMembers.map(m => m._id);
+
+    if (teamIds.length === 0) return res.json({ bonusPoints: 0 });
+
+    // مجموع PointTransactions من نوع bonus في الفترة الحالية
+    const result = await PointTransaction.aggregate([
+      {
+        $match: {
+          memberId: { $in: teamIds },
+          type: 'bonus',
+          earnedAt: { $gte: periodStart }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$points' } } }
+    ]);
+
+    const bonusPoints = result.length > 0 ? Math.round(result[0].total) : 0;
+    res.json({ bonusPoints, periodStart });
+  } catch (error) {
+    console.error('Error fetching team bonus points:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

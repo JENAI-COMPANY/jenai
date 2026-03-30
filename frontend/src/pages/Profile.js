@@ -165,6 +165,7 @@ const Profile = () => {
 
   // State for team points view
   const [teamData, setTeamData] = useState(null);
+  const [teamCurrentBonus, setTeamCurrentBonus] = useState(0);
   const [pointsView, setPointsView] = useState('monthly'); // 'monthly' or 'cumulative'
   const [loadingTeam, setLoadingTeam] = useState(false);
 
@@ -243,12 +244,16 @@ const Profile = () => {
     try {
       setLoadingTeam(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/team/my-team', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const [teamRes, bonusRes] = await Promise.all([
+        axios.get('/api/team/my-team', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/api/team/my-team/bonus-current', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
 
-      if (response.data.success) {
-        setTeamData(response.data);
+      if (teamRes.data.success) {
+        setTeamData(teamRes.data);
+      }
+      if (bonusRes.data) {
+        setTeamCurrentBonus(bonusRes.data.bonusPoints || 0);
       }
     } catch (err) {
       console.error('Error fetching team data:', err);
@@ -1208,20 +1213,16 @@ const Profile = () => {
                         {pointsView === 'monthly' ? getGenerationMonthlyPoints(5) : getGenerationCumulativePoints(5)}
                       </div>
                     </div>
-                    {pointsView === 'monthly' && (() => {
-                      const teamBonus = getTeamTotalBonusPoints();
-                      if (teamBonus <= 0) return null;
-                      return (
-                        <div className="point-card" style={{ borderColor: '#f59e0b', background: '#fffbeb' }}>
-                          <div className="point-label" style={{ color: '#b45309' }}>
-                            {language === 'ar' ? '🎁 مكافآت الفريق' : '🎁 Team Bonus Points'}
-                          </div>
-                          <div className="point-value" style={{ color: '#d97706' }}>
-                            {teamBonus}
-                          </div>
+                    {pointsView === 'monthly' && teamCurrentBonus > 0 && (
+                      <div className="point-card" style={{ borderColor: '#f59e0b', background: '#fffbeb' }}>
+                        <div className="point-label" style={{ color: '#b45309' }}>
+                          {language === 'ar' ? '🎁 مكافآت الفريق' : '🎁 Team Bonus Points'}
                         </div>
-                      );
-                    })()}
+                        <div className="point-value" style={{ color: '#d97706' }}>
+                          {teamCurrentBonus}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
