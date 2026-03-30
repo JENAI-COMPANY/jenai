@@ -1198,6 +1198,21 @@ const Profile = () => {
                         {pointsView === 'monthly' ? getGenerationMonthlyPoints(5) : getGenerationCumulativePoints(5)}
                       </div>
                     </div>
+                    {pointsView === 'cumulative' && (() => {
+                      const gen1Total = getGenerationCumulativePoints(1);
+                      const missing = gen1Total - (user.points || 0);
+                      if (missing <= 0) return null;
+                      return (
+                        <div className="point-card" style={{ borderColor: '#f59e0b', background: '#fffbeb' }}>
+                          <div className="point-label" style={{ color: '#b45309' }}>
+                            {language === 'ar' ? '⚠️ نقاط غير مضافة للتراكمي' : '⚠️ Missing Cumulative Points'}
+                          </div>
+                          <div className="point-value" style={{ color: '#d97706' }}>
+                            {missing}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
