@@ -30,6 +30,7 @@ const ProfitCalculation = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [showPreviousPeriods, setShowPreviousPeriods] = useState(true);
+  const [paymentUpdating, setPaymentUpdating] = useState({});
   const resultsRef = useRef(null);
 
   useEffect(() => {
@@ -293,6 +294,27 @@ const ProfitCalculation = () => {
 
   const displayData = selectedPeriod || profitData;
 
+  const handleTogglePayment = async (periodId, memberId, currentIsPaid) => {
+    setPaymentUpdating(prev => ({ ...prev, [memberId]: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.patch(
+        `/api/profit-periods/${periodId}/member/${memberId}/payment`,
+        { isPaid: !currentIsPaid },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const updateMembers = members => members.map(m =>
+        (m.memberId || m._id)?.toString() === memberId ? { ...m, isPaid: res.data.isPaid } : m
+      );
+      if (selectedPeriod) setSelectedPeriod(prev => ({ ...prev, membersProfits: updateMembers(prev.membersProfits || []) }));
+      if (profitData) setProfitData(prev => ({ ...prev, membersProfits: updateMembers(prev.membersProfits || []) }));
+    } catch (err) {
+      console.error('Failed to update payment status', err);
+    } finally {
+      setPaymentUpdating(prev => ({ ...prev, [memberId]: false }));
+    }
+  };
+
   return (
     <div className="profit-calc-container">
       <div className="profit-calc-header">
@@ -502,6 +524,7 @@ const ProfitCalculation = () => {
                   <th>{language === 'ar' ? 'قبل الخصم' : 'Before Deduction'}</th>
                   <th>{language === 'ar' ? 'خصم الموقع 3%' : 'Site Deduction 3%'}</th>
                   <th>{language === 'ar' ? 'الناتج النهائي' : 'Final Total'}</th>
+                  {displayData.status === 'paid' && <th>{language === 'ar' ? 'الدفع' : 'Payment'}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -576,6 +599,24 @@ const ProfitCalculation = () => {
                         <td className="text-right commission-cell">₪{totalBeforeDeduction.toFixed(2)}</td>
                         <td className="text-right deduction-cell" style={{color: '#e74c3c'}}>-₪{websiteCommission.toFixed(2)}</td>
                         <td className="text-right profit-cell" style={{fontWeight: 'bold'}}>₪{finalProfit}</td>
+                        {displayData.status === 'paid' && (
+                          <td>
+                            <button
+                              onClick={() => handleTogglePayment(displayData._id, (member.memberId || member._id)?.toString(), member.isPaid)}
+                              disabled={paymentUpdating[(member.memberId || member._id)?.toString()]}
+                              style={{
+                                background: member.isPaid ? '#10b981' : '#6b7280',
+                                color: 'white', border: 'none', padding: '5px 10px',
+                                borderRadius: '6px', cursor: 'pointer', fontWeight: '600',
+                                fontSize: '11px', whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {member.isPaid
+                                ? (language === 'ar' ? '✅ مدفوع' : '✅ Paid')
+                                : (language === 'ar' ? '⏳ غير مدفوع' : '⏳ Unpaid')}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
