@@ -560,7 +560,7 @@ const calculateNetworkCommissions = async (User, memberId, startDate, endDate) =
     {
       $match: {
         memberId: { $in: allDownlineIds },
-        type: { $in: ['personal', 'bonus'] },
+        type: 'personal',
         earnedAt: { $gte: new Date(startDate), $lte: endDateObj }
       }
     },
