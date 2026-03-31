@@ -347,7 +347,8 @@ const UserManagement = () => {
       // Only include monthlyPoints if not adding bonus/compensation points
       // This prevents conflicts in backend processing
       const hasPointsAdditions = (editingUser.bonusPoints && editingUser.bonusPoints > 0) ||
-                                  (editingUser.compensationPoints && editingUser.compensationPoints > 0);
+                                  (editingUser.compensationPoints && editingUser.compensationPoints > 0) ||
+                                  (editingUser.servicePoints && editingUser.servicePoints > 0);
 
       if (!hasPointsAdditions) {
         updateData.monthlyPoints = editingUser.monthlyPoints;
