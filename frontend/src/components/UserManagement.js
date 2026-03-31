@@ -352,6 +352,9 @@ const UserManagement = () => {
 
       if (!hasPointsAdditions) {
         updateData.monthlyPoints = editingUser.monthlyPoints;
+      } else {
+        // لا نرسل points أو monthlyPoints عند إضافة نقاط خاصة لتجنب مسح القيم المحدَّثة
+        delete updateData.points;
       }
 
       // Include bonus/compensation points if they're being added
