@@ -23,14 +23,13 @@ exports.getExpectedProfit = async (req, res) => {
     // ══════════════════════════════════════
     // 1. حساب أرباح الأداء الشخصي + الفريق
     // ══════════════════════════════════════
-    // النقاط الشخصية = monthlyPoints - نقاط المكافأة منذ الريست
-    const memberBonusTxns = await PointTransaction.find({
+    // النقاط الشخصية - من PointTransactions نوع personal منذ الريست (الأدق للعضو نفسه)
+    const personalTxns = await PointTransaction.find({
       memberId: member._id,
-      type: 'bonus',
+      type: 'personal',
       earnedAt: { $gte: periodStart }
     });
-    const memberBonusTotal = memberBonusTxns.reduce((sum, t) => sum + t.points, 0);
-    const personalPoints = Math.max(0, (member.monthlyPoints || 0) - memberBonusTotal);
+    const personalPoints = personalTxns.reduce((sum, t) => sum + t.points, 0);
     const personalCommissionPoints = personalPoints * 0.20;
     const personalProfitInShekel = personalCommissionPoints * POINTS_TO_CURRENCY;
 
