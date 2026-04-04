@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const PointTransaction = require('../models/PointTransaction');
 const { getRankInfo, getRankNumber } = require('../config/memberRanks');
 
 // حساب الأرباح المتوقعة (غير المحتسبة بعد)
@@ -16,15 +17,23 @@ exports.getExpectedProfit = async (req, res) => {
     // معامل التحويل من نقاط إلى شيكل
     const POINTS_TO_CURRENCY = 0.55;
 
+    // تاريخ بداية الفترة الحالية (آخر ريست للنقاط)
+    const periodStart = member.lastPointsReset || new Date(0);
+
     // ══════════════════════════════════════
     // 1. حساب أرباح الأداء الشخصي + الفريق
     // ══════════════════════════════════════
-    // النقاط الشخصية
-    const personalPoints = member.monthlyPoints || 0;
+    // النقاط الشخصية - من PointTransactions نوع personal فقط (بدون مكافآت)
+    const personalTxns = await PointTransaction.find({
+      memberId: member._id,
+      type: 'personal',
+      earnedAt: { $gte: periodStart }
+    });
+    const personalPoints = personalTxns.reduce((sum, t) => sum + t.points, 0);
     const personalCommissionPoints = personalPoints * 0.20;
     const personalProfitInShekel = personalCommissionPoints * POINTS_TO_CURRENCY;
 
-    // نقاط الفريق: جلب monthlyPoints مباشرة من أعضاء كل جيل
+    // نقاط الفريق: جلب PointTransactions نوع personal فقط لكل جيل (بدون مكافآت)
     const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
     const genPointsRaw = [0, 0, 0, 0, 0];
 
@@ -33,8 +42,16 @@ exports.getExpectedProfit = async (req, res) => {
     for (let i = 0; i < 5; i++) {
       if (currentCodes.length === 0) break;
       const levelMembers = await User.find({ sponsorCode: { $in: currentCodes }, role: { $in: ['member', 'subscriber'] } })
-        .select('subscriberCode monthlyPoints');
-      genPointsRaw[i] = levelMembers.reduce((sum, m) => sum + (m.monthlyPoints || 0), 0);
+        .select('_id subscriberCode');
+      const levelIds = levelMembers.map(m => m._id);
+      if (levelIds.length > 0) {
+        const txns = await PointTransaction.find({
+          memberId: { $in: levelIds },
+          type: 'personal',
+          earnedAt: { $gte: periodStart }
+        });
+        genPointsRaw[i] = txns.reduce((sum, t) => sum + t.points, 0);
+      }
       currentCodes = levelMembers.map(m => m.subscriberCode).filter(Boolean);
     }
 
