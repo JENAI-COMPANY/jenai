@@ -23,17 +23,18 @@ exports.getExpectedProfit = async (req, res) => {
     // ══════════════════════════════════════
     // 1. حساب أرباح الأداء الشخصي + الفريق
     // ══════════════════════════════════════
-    // النقاط الشخصية - من PointTransactions نوع personal فقط (بدون مكافآت)
-    const personalTxns = await PointTransaction.find({
+    // النقاط الشخصية = monthlyPoints - نقاط المكافأة منذ الريست
+    const memberBonusTxns = await PointTransaction.find({
       memberId: member._id,
-      type: 'personal',
+      type: 'bonus',
       earnedAt: { $gte: periodStart }
     });
-    const personalPoints = personalTxns.reduce((sum, t) => sum + t.points, 0);
+    const memberBonusTotal = memberBonusTxns.reduce((sum, t) => sum + t.points, 0);
+    const personalPoints = Math.max(0, (member.monthlyPoints || 0) - memberBonusTotal);
     const personalCommissionPoints = personalPoints * 0.20;
     const personalProfitInShekel = personalCommissionPoints * POINTS_TO_CURRENCY;
 
-    // نقاط الفريق: جلب PointTransactions نوع personal فقط لكل جيل (بدون مكافآت)
+    // نقاط الفريق: monthlyPoints - نقاط المكافأة منذ الريست لكل جيل
     const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
     const genPointsRaw = [0, 0, 0, 0, 0];
 
@@ -42,15 +43,26 @@ exports.getExpectedProfit = async (req, res) => {
     for (let i = 0; i < 5; i++) {
       if (currentCodes.length === 0) break;
       const levelMembers = await User.find({ sponsorCode: { $in: currentCodes }, role: { $in: ['member', 'subscriber'] } })
-        .select('_id subscriberCode');
+        .select('_id subscriberCode monthlyPoints');
       const levelIds = levelMembers.map(m => m._id);
       if (levelIds.length > 0) {
-        const txns = await PointTransaction.find({
+        // نقاط المكافأة لأعضاء هذا الجيل منذ الريست
+        const bonusTxns = await PointTransaction.find({
           memberId: { $in: levelIds },
-          type: 'personal',
+          type: 'bonus',
           earnedAt: { $gte: periodStart }
         });
-        genPointsRaw[i] = txns.reduce((sum, t) => sum + t.points, 0);
+        // مجموع نقاط المكافأة لكل عضو
+        const bonusByMember = {};
+        bonusTxns.forEach(t => {
+          const id = t.memberId.toString();
+          bonusByMember[id] = (bonusByMember[id] || 0) + t.points;
+        });
+        // نقاط الجيل = مجموع (monthlyPoints - bonus) لكل عضو
+        genPointsRaw[i] = levelMembers.reduce((sum, m) => {
+          const bonus = bonusByMember[m._id.toString()] || 0;
+          return sum + Math.max(0, (m.monthlyPoints || 0) - bonus);
+        }, 0);
       }
       currentCodes = levelMembers.map(m => m.subscriberCode).filter(Boolean);
     }
