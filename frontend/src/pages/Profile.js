@@ -297,11 +297,15 @@ const Profile = () => {
     }, 0);
   };
 
-  // Calculate monthly (uncalculated) points for each generation level
+  // Calculate monthly (uncalculated) points for each generation level - excluding bonus points
   const getGenerationMonthlyPoints = (level) => {
     if (!teamData || !teamData.team) return 0;
     const membersInLevel = teamData.team.filter(member => member.level === level);
-    return membersInLevel.reduce((sum, member) => sum + (member.monthlyPoints || 0), 0);
+    return membersInLevel.reduce((sum, member) => {
+      const bonus = member.bonusPoints || 0;
+      const monthly = member.monthlyPoints || 0;
+      return sum + Math.max(0, monthly - bonus);
+    }, 0);
   };
 
   // Update form data when user data changes
