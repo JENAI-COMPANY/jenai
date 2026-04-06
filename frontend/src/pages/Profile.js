@@ -1330,7 +1330,8 @@ const Profile = () => {
                       </div>
                       <div className="point-value">
                         {pointsView === 'monthly'
-                          ? getGenerationMonthlyPoints(1) +
+                          ? (user.monthlyPoints || 0) +
+                            getGenerationMonthlyPoints(1) +
                             getGenerationMonthlyPoints(2) +
                             getGenerationMonthlyPoints(3) +
                             getGenerationMonthlyPoints(4) +
