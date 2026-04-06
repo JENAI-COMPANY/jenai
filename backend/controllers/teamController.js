@@ -83,7 +83,7 @@ exports.getMyTeam = async (req, res) => {
     // Calculate statistics
     const stats = {
       totalMembers: teamMembers.length,
-      totalPoints: teamMembers.reduce((sum, member) => sum + (member.monthlyPoints || 0), 0),
+      totalPoints: teamMembers.reduce((sum, member) => sum + Math.max(0, (member.monthlyPoints || 0) - (member.bonusPoints || 0)), 0),
       levelCounts: {
         level1: teamMembers.filter(m => m.level === 1).length,
         level2: teamMembers.filter(m => m.level === 2).length,
