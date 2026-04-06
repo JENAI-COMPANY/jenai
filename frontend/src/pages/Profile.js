@@ -32,6 +32,7 @@ const RewardsPanel = ({ language }) => {
   const [rewards, setRewards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     fetchRewards('');
@@ -56,6 +57,24 @@ const RewardsPanel = ({ language }) => {
     const val = e.target.value;
     setSearch(val);
     fetchRewards(val);
+  };
+
+  const handleDelete = async (rewardId, memberName, amount) => {
+    if (!window.confirm(language === 'ar'
+      ? `هل تريد حذف مكافأة ${amount} نقطة من ${memberName}؟ سيتم خصم النقاط من حسابه.`
+      : `Delete ${amount} bonus points from ${memberName}? Points will be deducted.`
+    )) return;
+    setDeletingId(rewardId);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/admin/rewards/${rewardId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRewards(prev => prev.filter(r => r._id !== rewardId));
+    } catch (e) {
+      alert(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting reward');
+    }
+    setDeletingId(null);
   };
 
   return (
@@ -91,6 +110,7 @@ const RewardsPanel = ({ language }) => {
                 <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'السبب' : 'Reason'}</th>
                 <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'بواسطة' : 'By'}</th>
                 <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'التاريخ' : 'Date'}</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>{language === 'ar' ? 'حذف' : 'Delete'}</th>
               </tr>
             </thead>
             <tbody>
@@ -108,6 +128,15 @@ const RewardsPanel = ({ language }) => {
                   <td style={{ padding: '10px 12px', color: '#888', fontSize: '12px' }}>{r.addedBy?.name || '-'}</td>
                   <td style={{ padding: '10px 12px', color: '#888', fontSize: '12px', whiteSpace: 'nowrap' }}>
                     {new Date(r.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <button
+                      onClick={() => handleDelete(r._id, r.user?.name, r.amount)}
+                      disabled={deletingId === r._id}
+                      style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '13px' }}
+                    >
+                      {deletingId === r._id ? '...' : '🗑️'}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1168,8 +1197,7 @@ const Profile = () => {
                       </div>
                       <div className="point-value">
                         {pointsView === 'monthly'
-                          ? (user.monthlyPoints || 0) +
-                            getGenerationMonthlyPoints(1) +
+                          ? getGenerationMonthlyPoints(1) +
                             getGenerationMonthlyPoints(2) +
                             getGenerationMonthlyPoints(3) +
                             getGenerationMonthlyPoints(4) +

@@ -314,6 +314,45 @@ router.get('/rewards', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/admin/rewards/:id
+// @desc    Delete a reward and deduct points from member
+// @access  Private/SuperAdmin
+router.delete('/rewards/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const reward = await Reward.findById(req.params.id).populate('user');
+    if (!reward) return res.status(404).json({ success: false, message: 'المكافأة غير موجودة' });
+
+    const member = await User.findById(reward.user._id);
+    if (member) {
+      // طرح النقاط من العضو
+      await User.findByIdAndUpdate(member._id, {
+        $inc: {
+          bonusPoints: -reward.amount,
+          monthlyPoints: -reward.amount,
+          points: -reward.amount
+        }
+      });
+
+      // حذف PointTransaction المرتبطة
+      await PointTransaction.deleteOne({
+        memberId: member._id,
+        type: 'bonus',
+        sourceType: 'admin_bonus',
+        points: reward.amount,
+        description: reward.reason || ''
+      });
+
+      console.log(`🗑️ حذف مكافأة ${reward.amount} نقطة من ${member.name}`);
+    }
+
+    await Reward.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'تم حذف المكافأة وخصم النقاط' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/users
 // @desc    Get all users (Super Admin and Regional Admin)
 // @access  Private/Admin
