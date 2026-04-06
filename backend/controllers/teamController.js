@@ -49,6 +49,15 @@ exports.getMyTeam = async (req, res) => {
     // Get all team members starting from level 1
     const teamMembers = await getTeamMembers(user.subscriberCode, 1);
 
+    // Build sponsor name map: subscriberCode → name
+    const allSponsorCodes = [...new Set(teamMembers.map(m => m.directSponsor).filter(Boolean))];
+    const sponsorUsers = await User.find({ subscriberCode: { $in: allSponsorCodes } }).select('subscriberCode name').lean();
+    const sponsorNameMap = {};
+    sponsorUsers.forEach(u => { sponsorNameMap[u.subscriberCode] = u.name; });
+    // Add the current user as well (for level 1 members)
+    if (user.subscriberCode) sponsorNameMap[user.subscriberCode] = user.name;
+    teamMembers.forEach(m => { m.directSponsorName = sponsorNameMap[m.directSponsor] || m.directSponsor || '-'; });
+
     // Calculate start of last month
     const now = new Date();
     const oneMonthAgo = new Date();

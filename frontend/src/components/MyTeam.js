@@ -133,7 +133,7 @@ const MyTeam = () => {
           <td>${member.phone || '-'}</td>
           <td>${getRankName(member.memberRank, language)}</td>
           <td>${member.monthlyPoints || 0}</td>
-          <td>${member.directSponsor || '-'}</td>
+          <td>${member.directSponsorName || '-'}</td>
           <td>${member.city || '-'}</td>
           <td>${formatDate(member.createdAt)}</td>
         </tr>
@@ -563,7 +563,7 @@ const MyTeam = () => {
                                 <td className="member-points">
                                   <span className="points-badge">⭐ {member.monthlyPoints || 0}</span>
                                 </td>
-                                <td>{member.directSponsor || '-'}</td>
+                                <td>{member.directSponsorName || '-'}</td>
                                 <td>{member.city || '-'}</td>
                                 <td className="member-date">{formatDate(member.createdAt)}</td>
                               </tr>
@@ -618,7 +618,7 @@ const MyTeam = () => {
                     <td className="member-points">
                       <span className="points-badge">⭐ {member.points || 0}</span>
                     </td>
-                    <td>{member.directSponsor || '-'}</td>
+                    <td>{member.directSponsorName || '-'}</td>
                     <td>{member.city || '-'}</td>
                     <td className="member-date">{formatDate(member.createdAt)}</td>
                   </tr>
