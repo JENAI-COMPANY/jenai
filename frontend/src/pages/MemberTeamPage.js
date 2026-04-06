@@ -36,16 +36,7 @@ const MemberTeamPage = () => {
 
       const memberData = memberRes.data.user;
 
-      // Calculate cumulative points
-      const cumulativePoints =
-        (memberData.points || 0) +
-        (memberData.generation1Points || 0) +
-        (memberData.generation2Points || 0) +
-        (memberData.generation3Points || 0) +
-        (memberData.generation4Points || 0) +
-        (memberData.generation5Points || 0);
-
-      setMember({ ...memberData, cumulativePoints });
+      setMember({ ...memberData, cumulativePoints: memberData.points || 0 });
 
       // Now fetch their team if they have a subscriberCode
       if (memberData.subscriberCode) {
