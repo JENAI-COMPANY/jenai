@@ -133,6 +133,7 @@ const MyTeam = () => {
           <td>${member.phone || '-'}</td>
           <td>${getRankName(member.memberRank, language)}</td>
           <td>${member.monthlyPoints || 0}</td>
+          <td>${member.directSponsor || '-'}</td>
           <td>${member.city || '-'}</td>
           <td>${formatDate(member.createdAt)}</td>
         </tr>
@@ -154,6 +155,7 @@ const MyTeam = () => {
                 <th>${isArabic ? 'رقم الهاتف' : 'Phone'}</th>
                 <th>${isArabic ? 'الرتبة' : 'Rank'}</th>
                 <th>${isArabic ? 'النقاط' : 'Points'}</th>
+                <th>${isArabic ? 'الراعي' : 'Sponsor'}</th>
                 <th>${isArabic ? 'المدينة' : 'City'}</th>
                 <th>${isArabic ? 'تاريخ الانضمام' : 'Join Date'}</th>
               </tr>
@@ -530,6 +532,7 @@ const MyTeam = () => {
                               <th>{language === 'ar' ? 'كود العضو' : 'Member Code'}</th>
                               <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
                               <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                              <th>{language === 'ar' ? 'الراعي' : 'Sponsor'}</th>
                               <th>{language === 'ar' ? 'المدينة' : 'City'}</th>
                               <th>{language === 'ar' ? 'تاريخ الانضمام' : 'Joined Date'}</th>
                             </tr>
@@ -560,6 +563,7 @@ const MyTeam = () => {
                                 <td className="member-points">
                                   <span className="points-badge">⭐ {member.monthlyPoints || 0}</span>
                                 </td>
+                                <td>{member.directSponsor || '-'}</td>
                                 <td>{member.city || '-'}</td>
                                 <td className="member-date">{formatDate(member.createdAt)}</td>
                               </tr>
@@ -583,6 +587,7 @@ const MyTeam = () => {
                   <th>{language === 'ar' ? 'كود العضو' : 'Member Code'}</th>
                   <th>{language === 'ar' ? 'الرتبة' : 'Rank'}</th>
                   <th>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                  <th>{language === 'ar' ? 'الراعي' : 'Sponsor'}</th>
                   <th>{language === 'ar' ? 'المدينة' : 'City'}</th>
                   <th>{language === 'ar' ? 'تاريخ الانضمام' : 'Joined Date'}</th>
                 </tr>
@@ -613,6 +618,7 @@ const MyTeam = () => {
                     <td className="member-points">
                       <span className="points-badge">⭐ {member.points || 0}</span>
                     </td>
+                    <td>{member.directSponsor || '-'}</td>
                     <td>{member.city || '-'}</td>
                     <td className="member-date">{formatDate(member.createdAt)}</td>
                   </tr>
