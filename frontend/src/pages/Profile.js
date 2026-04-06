@@ -149,6 +149,124 @@ const RewardsPanel = ({ language }) => {
 };
 // ───────────────────────────────────────────────────────────────────
 
+// ── Service Points Panel Component ──────────────────────────────────
+const ServicePointsPanel = ({ language }) => {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
+
+  useEffect(() => { fetchTransactions(''); }, []);
+
+  const fetchTransactions = async (term) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = term ? `?search=${encodeURIComponent(term)}` : '';
+      const res = await axios.get(`/api/admin/service-points${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTransactions(res.data.transactions || []);
+    } catch (e) {
+      setTransactions([]);
+    }
+    setLoading(false);
+  };
+
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    fetchTransactions(val);
+  };
+
+  const handleDelete = async (txnId, memberName, points) => {
+    if (!window.confirm(language === 'ar'
+      ? `هل تريد حذف ${points} نقطة خدمات من ${memberName}؟ سيتم خصم النقاط من حسابه.`
+      : `Delete ${points} service points from ${memberName}? Points will be deducted.`
+    )) return;
+    setDeletingId(txnId);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/admin/service-points/${txnId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTransactions(prev => prev.filter(t => t._id !== txnId));
+    } catch (e) {
+      alert(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting');
+    }
+    setDeletingId(null);
+  };
+
+  return (
+    <div className="tab-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <h3 style={{ margin: 0, color: '#10b981' }}>🛠️ {language === 'ar' ? 'سجل نقاط الخدمات' : 'Service Points Log'}</h3>
+        <input
+          type="text"
+          value={search}
+          onChange={handleSearch}
+          placeholder={language === 'ar' ? 'بحث بالاسم أو الكود أو اليوزر...' : 'Search by name, code or username...'}
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1.5px solid #ddd', minWidth: '250px', fontSize: '14px' }}
+        />
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+          {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+        </div>
+      ) : transactions.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+          {language === 'ar' ? 'لا توجد نقاط خدمات' : 'No service points found'}
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ background: '#ecfdf5', borderBottom: '2px solid #10b981' }}>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'العضو' : 'Member'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'كود العضوية' : 'Code'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'اليوزرنيم' : 'Username'}</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>{language === 'ar' ? 'النقاط' : 'Points'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'السبب' : 'Reason'}</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>{language === 'ar' ? 'التاريخ' : 'Date'}</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>{language === 'ar' ? 'حذف' : 'Delete'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((t, i) => (
+                <tr key={t._id} style={{ background: i % 2 === 0 ? '#fff' : '#f0fdf4', borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: '600' }}>{t.memberId?.name || '-'}</td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#1a7a3c' }}>{t.memberId?.subscriberCode || '-'}</td>
+                  <td style={{ padding: '10px 12px', color: '#666' }}>@{t.memberId?.username || '-'}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <span style={{ background: '#10b981', color: '#fff', borderRadius: '20px', padding: '3px 12px', fontWeight: 'bold', fontSize: '13px' }}>
+                      +{t.points}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: '#555' }}>{t.description || <span style={{ color: '#bbb' }}>—</span>}</td>
+                  <td style={{ padding: '10px 12px', color: '#888', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                    {new Date(t.earnedAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <button
+                      onClick={() => handleDelete(t._id, t.memberId?.name, t.points)}
+                      disabled={deletingId === t._id}
+                      style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '13px' }}
+                    >
+                      {deletingId === t._id ? '...' : '🗑️'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+// ───────────────────────────────────────────────────────────────────
+
 const Profile = () => {
   const { user, fetchUser } = useContext(AuthContext);
   const { language } = useLanguage();
@@ -509,6 +627,16 @@ const Profile = () => {
             >
               <span className="tab-icon">🎁</span>
               <span className="tab-label">{language === 'ar' ? 'المكافآت' : 'Rewards'}</span>
+            </button>
+          )}
+
+          {user.role === 'super_admin' && (
+            <button
+              className={`tab-btn ${activeTab === 'service-points' ? 'active' : ''}`}
+              onClick={() => setActiveTab('service-points')}
+            >
+              <span className="tab-icon">🛠️</span>
+              <span className="tab-label">{language === 'ar' ? 'نقاط الخدمات' : 'Service Points'}</span>
             </button>
           )}
 
@@ -1003,6 +1131,11 @@ const Profile = () => {
           {/* Rewards Tab - Super Admin Only */}
           {activeTab === 'rewards' && user.role === 'super_admin' && (
             <RewardsPanel language={language} />
+          )}
+
+          {/* Service Points Tab - Super Admin Only */}
+          {activeTab === 'service-points' && user.role === 'super_admin' && (
+            <ServicePointsPanel language={language} />
           )}
 
           {/* Products Management Tab */}

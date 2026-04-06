@@ -353,6 +353,64 @@ router.delete('/rewards/:id', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/service-points
+// @desc    Get service point transactions log
+// @access  Private/SuperAdmin
+router.get('/service-points', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { search } = req.query;
+    let txns = await PointTransaction.find({ type: 'personal', sourceType: 'service' })
+      .populate('memberId', 'name username subscriberCode')
+      .sort({ earnedAt: -1 });
+
+    if (search && search.trim()) {
+      const term = search.trim().toLowerCase();
+      txns = txns.filter(t =>
+        t.memberId && (
+          (t.memberId.name || '').toLowerCase().includes(term) ||
+          (t.memberId.username || '').toLowerCase().includes(term) ||
+          (t.memberId.subscriberCode || '').toLowerCase().includes(term)
+        )
+      );
+    }
+
+    res.json({ success: true, transactions: txns });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/service-points/:id
+// @desc    Delete a service point transaction and deduct points from member
+// @access  Private/SuperAdmin
+router.delete('/service-points/:id', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const txn = await PointTransaction.findById(req.params.id);
+    if (!txn) return res.status(404).json({ success: false, message: 'المعاملة غير موجودة' });
+    if (txn.type !== 'personal' || txn.sourceType !== 'service') {
+      return res.status(400).json({ success: false, message: 'ليست معاملة خدمات' });
+    }
+
+    const member = await User.findById(txn.memberId);
+    if (member) {
+      await User.findByIdAndUpdate(member._id, {
+        $inc: {
+          monthlyPoints: -txn.points,
+          points: -txn.points
+        }
+      });
+      console.log(`🗑️ حذف ${txn.points} نقطة خدمات من ${member.name}`);
+    }
+
+    await PointTransaction.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'تم حذف نقاط الخدمة وخصمها من العضو' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/users
 // @desc    Get all users (Super Admin and Regional Admin)
 // @access  Private/Admin
