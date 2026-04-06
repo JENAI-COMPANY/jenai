@@ -9,6 +9,7 @@ const ImageSlider = () => {
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState({});
+  const [isPaused, setIsPaused] = useState(false);
 
   // Fetch sliders from backend
   useEffect(() => {
@@ -84,13 +85,13 @@ const ImageSlider = () => {
   };
 
   useEffect(() => {
-    // Auto-play slider - change slide every 5 seconds
+    if (isPaused) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, 8000);
 
     return () => clearInterval(interval);
-  }, [slides.length]);
+  }, [slides.length, isPaused]);
 
   useEffect(() => {
     // Animate slide change with smooth right-to-left motion and fade
@@ -148,7 +149,12 @@ const ImageSlider = () => {
   }
 
   return (
-    <div className="image-slider" ref={sliderRef}>
+    <div
+      className="image-slider"
+      ref={sliderRef}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       <div className="slider-container">
         {slides.map((slide, index) => (
           <div

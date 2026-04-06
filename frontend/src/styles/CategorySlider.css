@@ -38,7 +38,7 @@
   display: flex;
   gap: 2rem;
   width: max-content;
-  animation: scroll-ltr 20s linear infinite;
+  animation: scroll-ltr 40s linear infinite;
 }
 
 .category-slider-container:hover .category-slider {
