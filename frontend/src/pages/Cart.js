@@ -34,7 +34,7 @@ const Cart = () => {
           {cartItems.map((item, index) => {
             const displayPrice = isSubscriber ? (item.subscriberPrice || 0) : (item.customerPrice || 0);
             // Create unique key combining product ID, color, and size
-            const uniqueKey = `${item._id}-${item.selectedColor || 'nocolor'}-${item.selectedSize || 'nosize'}-${index}`;
+            const uniqueKey = `${item.product || item._id}-${item.selectedColor || 'nocolor'}-${item.selectedSize || 'nosize'}-${index}`;
             return (
               <div key={uniqueKey} className="cart-item">
                 <div className="item-image">
@@ -59,11 +59,11 @@ const Cart = () => {
                   <p className="item-price">₪{displayPrice.toFixed(2)}</p>
                 </div>
                 <div className="item-quantity">
-                  <button onClick={() => updateQuantity(item._id, item.quantity - 1, item.selectedColor || '', item.selectedSize || '')}>
+                  <button onClick={() => updateQuantity(item.product || item._id, item.quantity - 1, item.selectedColor || '', item.selectedSize || '')}>
                     -
                   </button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item._id, item.quantity + 1, item.selectedColor || '', item.selectedSize || '')}>
+                  <button onClick={() => updateQuantity(item.product || item._id, item.quantity + 1, item.selectedColor || '', item.selectedSize || '')}>
                     +
                   </button>
                 </div>
@@ -71,7 +71,7 @@ const Cart = () => {
                   ₪{(displayPrice * item.quantity).toFixed(2)}
                 </div>
                 <button
-                  onClick={() => removeFromCart(item._id, item.selectedColor || '', item.selectedSize || '')}
+                  onClick={() => removeFromCart(item.product || item._id, item.selectedColor || '', item.selectedSize || '')}
                   className="remove-btn"
                 >
                   {t('remove')}

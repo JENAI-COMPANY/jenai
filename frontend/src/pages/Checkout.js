@@ -90,7 +90,7 @@ const Checkout = () => {
         }
 
         return {
-          product: item._id,
+          product: item.product || item._id,
           name: item.name,
           quantity: item.quantity,
           price: isSubscriber ? actualMemberPrice : actualCustomerPrice,

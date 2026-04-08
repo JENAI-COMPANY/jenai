@@ -1,111 +1,56 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 
 export const CartContext = createContext();
 
-// دالة للحصول على معرف المستخدم الحالي
-const getCurrentUserId = () => {
-  const user = localStorage.getItem('user');
-  if (user) {
-    try {
-      const parsedUser = JSON.parse(user);
-      return parsedUser._id || 'guest';
-    } catch {
-      return 'guest';
-    }
-  }
-  return 'guest';
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// دالة للحصول على مفتاح السلة الخاص بالمستخدم
-const getCartKey = () => {
-  const userId = getCurrentUserId();
-  return `cartItems_${userId}`;
-};
+const isLoggedIn = () => !!localStorage.getItem('token');
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [currentUser, setCurrentUser] = useState(getCurrentUserId());
+  const [cartLoaded, setCartLoaded] = useState(false);
 
-  // مراقبة تغيير المستخدم
-  useEffect(() => {
-    const checkUserChange = () => {
-      const newUserId = getCurrentUserId();
-      if (newUserId !== currentUser) {
-        setCurrentUser(newUserId);
-        loadCart(newUserId);
-      }
-    };
-
-    // فحص كل ثانية إذا تغير المستخدم
-    const interval = setInterval(checkUserChange, 1000);
-    return () => clearInterval(interval);
-  }, [currentUser]);
-
-  // تحميل السلة عند بدء التشغيل
-  useEffect(() => {
-    loadCart(currentUser);
-  }, []);
-
-  const loadCart = (userId) => {
-    const cartKey = `cartItems_${userId}`;
-    const savedCart = localStorage.getItem(cartKey);
-
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        // التحقق من صحة البيانات
-        const validCart = parsedCart.filter(item =>
-          (item.id || item._id) &&
-          item.name &&
-          (item.customerPrice !== undefined || item.subscriberPrice !== undefined)
-        );
-
-        if (validCart.length !== parsedCart.length) {
-          console.log('🗑️ Removing invalid items from cart');
-          localStorage.setItem(cartKey, JSON.stringify(validCart));
-        }
-
-        setCartItems(validCart);
-      } catch (error) {
-        console.error('Error parsing cart:', error);
-        localStorage.removeItem(cartKey);
-        setCartItems([]);
-      }
-    } else {
+  // تحميل السلة عند البدء أو عند تسجيل الدخول
+  const loadCart = async () => {
+    if (!isLoggedIn()) {
       setCartItems([]);
+      setCartLoaded(true);
+      return;
+    }
+    try {
+      const { data } = await axios.get('/api/cart', { headers: getAuthHeader() });
+      setCartItems(data.items || []);
+    } catch (error) {
+      setCartItems([]);
+    } finally {
+      setCartLoaded(true);
     }
   };
 
-  // حفظ السلة عند التغيير
   useEffect(() => {
-    const cartKey = getCartKey();
-    localStorage.setItem(cartKey, JSON.stringify(cartItems));
-  }, [cartItems]);
+    loadCart();
 
-  const addToCart = (product, quantity = 1, selectedColor = '', selectedSize = '') => {
-    setCartItems((prevItems) => {
-      const productId = product.id || product._id;
-      // Check if same product with same color and size exists
-      const existingItem = prevItems.find((item) =>
-        (item.id || item._id) === productId &&
-        item.selectedColor === selectedColor &&
-        item.selectedSize === selectedSize
-      );
+    // مراقبة تسجيل الدخول/الخروج
+    const handleStorageChange = () => loadCart();
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userLoggedIn', handleStorageChange);
+    window.addEventListener('userLoggedOut', () => setCartItems([]));
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLoggedIn', handleStorageChange);
+      window.removeEventListener('userLoggedOut', () => setCartItems([]));
+    };
+  }, []);
 
-      if (existingItem) {
-        return prevItems.map((item) =>
-          (item.id || item._id) === productId &&
-          item.selectedColor === selectedColor &&
-          item.selectedSize === selectedSize
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      }
-
-      // حفظ الحقول المطلوبة فقط لتجنب مشاكل localStorage
-      const cartItem = {
-        _id: productId,
-        id: productId,
+  const addToCart = async (product, quantity = 1, selectedColor = '', selectedSize = '') => {
+    if (!isLoggedIn()) return;
+    try {
+      const { data } = await axios.post('/api/cart/add', {
+        product: product._id || product.id,
         name: product.name,
         description: product.description,
         customerPrice: product.customerPrice,
@@ -114,48 +59,72 @@ export const CartProvider = ({ children }) => {
         stock: product.stock,
         images: product.images,
         category: product.category,
-        quantity: quantity,
-        selectedColor: selectedColor,
-        selectedSize: selectedSize
-      };
-
-      return [...prevItems, cartItem];
-    });
+        quantity,
+        selectedColor: selectedColor || '',
+        selectedSize: selectedSize || '',
+        customerDiscount: product.customerDiscount,
+        subscriberDiscount: product.subscriberDiscount
+      }, { headers: getAuthHeader() });
+      setCartItems(data.items || []);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
   };
 
-  const removeFromCart = (productId, selectedColor = '', selectedSize = '') => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) =>
-        !((item.id || item._id) === productId &&
-          item.selectedColor === selectedColor &&
-          item.selectedSize === selectedSize)
-      )
-    );
+  const removeFromCart = async (productId, selectedColor = '', selectedSize = '') => {
+    if (!isLoggedIn()) return;
+    try {
+      const { data } = await axios.delete('/api/cart/remove', {
+        headers: getAuthHeader(),
+        data: { product: productId, selectedColor: selectedColor || '', selectedSize: selectedSize || '' }
+      });
+      setCartItems(data.items || []);
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+    }
   };
 
-  const updateQuantity = (productId, quantity, selectedColor = '', selectedSize = '') => {
+  const updateQuantity = async (productId, quantity, selectedColor = '', selectedSize = '') => {
+    if (!isLoggedIn()) return;
     if (quantity <= 0) {
-      removeFromCart(productId, selectedColor, selectedSize);
+      await removeFromCart(productId, selectedColor, selectedSize);
       return;
     }
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        (item.id || item._id) === productId &&
-        item.selectedColor === selectedColor &&
-        item.selectedSize === selectedSize
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    try {
+      const { data } = await axios.put('/api/cart/update', {
+        product: productId,
+        quantity,
+        selectedColor: selectedColor || '',
+        selectedSize: selectedSize || ''
+      }, { headers: getAuthHeader() });
+      setCartItems(data.items || []);
+    } catch (error) {
+      console.error('Error updating cart:', error);
+    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  const clearCart = async () => {
+    if (!isLoggedIn()) {
+      setCartItems([]);
+      return;
+    }
+    try {
+      await axios.delete('/api/cart/clear', { headers: getAuthHeader() });
+      setCartItems([]);
+    } catch (error) {
+      setCartItems([]);
+    }
   };
 
   const getCartTotal = (isSubscriber = false) => {
     return cartItems.reduce((total, item) => {
-      const price = isSubscriber ? (item.subscriberPrice || 0) : (item.customerPrice || 0);
+      let price = isSubscriber ? (item.subscriberPrice || 0) : (item.customerPrice || 0);
+      // تطبيق الخصم إن وجد
+      if (isSubscriber && item.subscriberDiscount?.enabled && item.subscriberDiscount?.discountedPrice) {
+        price = item.subscriberDiscount.discountedPrice;
+      } else if (!isSubscriber && item.customerDiscount?.enabled && item.customerDiscount?.discountedPrice) {
+        price = item.customerDiscount.discountedPrice;
+      }
       return total + (price * item.quantity);
     }, 0);
   };
@@ -166,6 +135,8 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     cartItems,
+    cartLoaded,
+    loadCart,
     addToCart,
     removeFromCart,
     updateQuantity,
