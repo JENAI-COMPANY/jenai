@@ -7,7 +7,9 @@ import '../styles/Cart.css';
 
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useContext(CartContext);
-  const { isSubscriber } = useContext(AuthContext);
+  const { isSubscriber, isCustomer } = useContext(AuthContext);
+
+  const getTotalPoints = () => cartItems.reduce((sum, item) => sum + ((item.points || 0) * item.quantity), 0);
   const { t, language } = useLanguage();
   const navigate = useNavigate();
 
@@ -88,6 +90,12 @@ const Cart = () => {
               ₪{getCartTotal(isSubscriber).toFixed(2)}
             </span>
           </div>
+          {!isCustomer && getTotalPoints() > 0 && (
+            <div className="summary-points">
+              <span>النقاط المكتسبة:</span>
+              <span>{getTotalPoints()} نقطة</span>
+            </div>
+          )}
           {isSubscriber && (
             <div className="subscriber-savings">
               {t('subscriberSavings')}
