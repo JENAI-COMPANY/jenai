@@ -10,7 +10,7 @@ const { calculateNetworkCommissions, getRankInfo, getRankNumber } = require('../
 const POINTS_TO_SHEKEL = 0.55;
 
 async function run() {
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(process.env.MONGODB_URI);
   console.log('✅ Connected to DB');
 
   // 1. جلب الدورة الحالية
