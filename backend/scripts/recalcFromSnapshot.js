@@ -12,6 +12,7 @@ const POINTS_TO_SHEKEL = 0.55;
 const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
 
 // بناء شجرة الأجيال بنفس طريقة expectedProfitController (sponsorCode)
+// يُرجع { 1: [{_id, role, monthlyPoints}], ... }
 async function getGenIdsBySponsorCode(subscriberCode) {
   const result = { 1: [], 2: [], 3: [], 4: [], 5: [] };
   let currentCodes = [subscriberCode];
@@ -19,22 +20,28 @@ async function getGenIdsBySponsorCode(subscriberCode) {
   for (let level = 1; level <= 5; level++) {
     if (currentCodes.length === 0) break;
     const levelMembers = await User.find({ sponsorCode: { $in: currentCodes }, role: { $in: ['member', 'subscriber'] } })
-      .select('_id subscriberCode').lean();
-    result[level] = levelMembers.map(m => m._id);
+      .select('_id subscriberCode role monthlyPoints').lean();
+    result[level] = levelMembers;
     currentCodes = levelMembers.map(m => m.subscriberCode).filter(Boolean);
   }
   return result;
 }
 
-// حساب نقاط جيل من snapshot (monthlyPoints - bonusPoints خلال الفترة فقط)
-function getNetPointsFromSnap(ids, snapMap, bonusByMember) {
+// حساب نقاط جيل من snapshot للأعضاء، ومن DB للمشتركين (لم يُصفَّروا)
+function getNetPointsFromSnap(levelMembers, snapMap, bonusByMember) {
   let total = 0;
-  ids.forEach(id => {
-    const sm = snapMap[id.toString()];
-    if (sm) {
-      const bonusInPeriod = bonusByMember[id.toString()] || 0;
-      total += Math.max(0, (sm.monthlyPoints || 0) - bonusInPeriod);
+  levelMembers.forEach(m => {
+    const id = m._id.toString();
+    const bonusInPeriod = bonusByMember[id] || 0;
+    let monthlyPts;
+    if (m.role === 'member') {
+      const sm = snapMap[id];
+      monthlyPts = sm ? (sm.monthlyPoints || 0) : 0;
+    } else {
+      // subscriber: ما اتصفر، نستخدم القيمة الحالية من DB
+      monthlyPts = m.monthlyPoints || 0;
     }
+    total += Math.max(0, monthlyPts - bonusInPeriod);
   });
   return total;
 }
@@ -43,25 +50,41 @@ async function run() {
   await mongoose.connect(process.env.MONGODB_URI);
   console.log('✅ Connected to DB');
 
-  // 1. جلب الدورة
-  const period = await ProfitPeriod.findOne({ periodName: /شهر 3/ });
-  if (!period) { console.log('❌ Period not found'); process.exit(1); }
-  console.log(`📅 الدورة: ${period.periodName} | ${period.startDate.toISOString().slice(0,10)} → ${period.endDate.toISOString().slice(0,10)}`);
-
-  // 2. جلب الـ snapshot
-  const snap = await PointsSnapshot.findOne({ periodName: period.periodName });
+  // 1. جلب الـ snapshot (لا يحتاج ProfitPeriod موجوداً)
+  const snap = await PointsSnapshot.findOne({ periodName: /شهر 3/ });
   if (!snap) { console.log('❌ Snapshot not found'); process.exit(1); }
-  console.log(`📦 Snapshot: ${snap.members.length} عضو`);
+  console.log(`📦 Snapshot: ${snap.members.length} عضو | ${snap.periodName}`);
+
+  // بيانات الدورة - نحاول نجيبها من ProfitPeriod، وإلا نستخدم القيم المعروفة
+  let periodName, startDate, endDate, periodNumber, calculatedBy, calculatedByName;
+  const existingPeriod = await ProfitPeriod.findOne({ periodName: /شهر 3/ });
+  if (existingPeriod) {
+    periodName = existingPeriod.periodName;
+    startDate = existingPeriod.startDate;
+    endDate = existingPeriod.endDate;
+    periodNumber = existingPeriod.periodNumber;
+    calculatedBy = existingPeriod.calculatedBy;
+    calculatedByName = existingPeriod.calculatedByName;
+  } else {
+    // fallback: تواريخ الدورة المعروفة
+    periodName = snap.periodName;
+    startDate = new Date('2026-03-13');
+    endDate = new Date('2026-04-09');
+    periodNumber = snap.periodNumber || 1;
+    calculatedBy = snap.takenBy;
+    calculatedByName = snap.takenByName;
+  }
+  console.log(`📅 الدورة: ${periodName} | ${startDate.toISOString().slice(0,10)} → ${endDate.toISOString().slice(0,10)}`);
 
   const snapMap = {};
   snap.members.forEach(m => { snapMap[m.memberId.toString()] = m; });
 
   // جلب نقاط البونص خلال الفترة فقط من PT (مثل expectedProfit بالضبط)
-  const endDateObj2 = new Date(period.endDate);
+  const endDateObj2 = new Date(endDate);
   endDateObj2.setHours(23, 59, 59, 999);
   const bonusTxnsAll = await PointTransaction.find({
     type: 'bonus',
-    earnedAt: { $gte: period.startDate, $lte: endDateObj2 }
+    earnedAt: { $gte: startDate, $lte: endDateObj2 }
   }).lean();
   const bonusByMember = {};
   bonusTxnsAll.forEach(t => {
@@ -74,7 +97,7 @@ async function run() {
   const members = await User.find({ role: 'member' }).select('name username memberRank subscriberCode _id').lean();
   console.log(`👥 ${members.length} عضو`);
 
-  const endDateObj = new Date(period.endDate);
+  const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
 
   const membersProfits = [];
@@ -91,11 +114,11 @@ async function run() {
     // بناء شجرة الفريق بنفس طريقة expectedProfitController
     const genIds = await getGenIdsBySponsorCode(member.subscriberCode || '');
 
-    // نقاط كل جيل من snapshot (monthlyPoints - bonus خلال الفترة فقط)
+    // نقاط كل جيل من snapshot للأعضاء / من DB للمشتركين
     const genPoints = [0, 0, 0, 0, 0];
     for (let i = 0; i < 5; i++) {
-      const ids = genIds[i + 1] || [];
-      genPoints[i] = getNetPointsFromSnap(ids, snapMap, bonusByMember);
+      const levelMembers = genIds[i + 1] || [];
+      genPoints[i] = getNetPointsFromSnap(levelMembers, snapMap, bonusByMember);
     }
 
     // عمولة الفريق
@@ -124,7 +147,7 @@ async function run() {
     const customerOrders = await Order.find({
       referredBy: member._id,
       isDelivered: true,
-      deliveredAt: { $gte: period.startDate, $lte: endDateObj },
+      deliveredAt: { $gte: startDate, $lte: endDateObj },
       isCustomerCommissionCalculated: { $ne: true }
     }).populate('user', 'role').populate('orderItems.product');
 
@@ -149,13 +172,15 @@ async function run() {
     const finalProfit = Math.floor(memberTotalProfit - websiteDevelopmentCommission);
 
     if (member.name && member.name.includes('البرقوني')) {
-      const g1ids = genIds[1] || [];
-      console.log(`DEBUG g1 count: ${g1ids.length}`);
-      // فحص أول 3 ids
-      for (let x = 0; x < Math.min(3, g1ids.length); x++) {
-        const id = g1ids[x];
-        const sm = snapMap[id.toString()];
-        console.log(`  id=${id} inSnap=${!!sm} monthly=${sm?.monthlyPoints}`);
+      const g1members = genIds[1] || [];
+      console.log(`DEBUG g1 count: ${g1members.length}`);
+      // طباعة كل أعضاء الجيل الأول
+      for (const m of g1members) {
+        const id = m._id.toString();
+        const sm = snapMap[id];
+        const bonus = bonusByMember[id] || 0;
+        const monthly = m.role === 'member' ? (sm?.monthlyPoints || 0) : (m.monthlyPoints || 0);
+        console.log(`  id=${id} role=${m.role} inSnap=${!!sm} monthly=${monthly} bonus=${bonus} net=${Math.max(0, monthly - bonus)}`);
       }
     }
     if (finalProfit > 0 || personalPoints > 0) {
@@ -205,18 +230,21 @@ async function run() {
     totalProfits += finalProfit;
   }
 
-  // 4. حذف الدورة القديمة
-  await ProfitPeriod.findByIdAndDelete(period._id);
-  console.log(`🗑️ تم حذف الدورة القديمة`);
+  // 4. حذف الدورة القديمة إن وجدت
+  const oldPeriod = await ProfitPeriod.findOne({ periodName: /شهر 3/ });
+  if (oldPeriod) {
+    await ProfitPeriod.findByIdAndDelete(oldPeriod._id);
+    console.log(`🗑️ تم حذف الدورة القديمة`);
+  }
 
   // 5. إنشاء الدورة الجديدة
   const newPeriod = new ProfitPeriod({
-    periodName: period.periodName,
-    periodNumber: period.periodNumber,
-    startDate: period.startDate,
-    endDate: period.endDate,
-    calculatedBy: period.calculatedBy,
-    calculatedByName: period.calculatedByName,
+    periodName,
+    periodNumber,
+    startDate,
+    endDate,
+    calculatedBy,
+    calculatedByName,
     membersProfits,
     summary: {
       totalMembers: members.length,
