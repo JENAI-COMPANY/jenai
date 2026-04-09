@@ -157,7 +157,7 @@ async function run() {
     const finalProfit = Math.floor(memberTotalProfit - websiteDevelopmentCommission);
 
     if (finalProfit > 0 || personalPoints > 0) {
-      console.log(`  ${member.name}: personal=${personalPoints} team=₪${teamProfitInShekel.toFixed(2)} leadership=₪${leadershipCommissionShekel.toFixed(2)} total=₪${finalProfit}`);
+      console.log(`  ${member.name}: personal=${personalPoints} g1=${genPoints[0]} g2=${genPoints[1]} g3=${genPoints[2]} team=₪${teamProfitInShekel.toFixed(2)} total=₪${finalProfit}`);
     }
 
     membersProfits.push({
