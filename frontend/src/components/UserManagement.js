@@ -1031,7 +1031,8 @@ const UserManagement = () => {
                       <input
                         type="number"
                         value={editingUser.monthlyPoints}
-                        onChange={(e) => setEditingUser({ ...editingUser, monthlyPoints: parseInt(e.target.value) || 0 })}
+                        readOnly
+                        style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                       />
                     </div>
                   </div>
@@ -1380,7 +1381,8 @@ const UserManagement = () => {
                       <input
                         type="number"
                         value={editingUser.monthlyPoints}
-                        onChange={(e) => setEditingUser({ ...editingUser, monthlyPoints: parseInt(e.target.value) || 0 })}
+                        readOnly
+                        style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                       />
                     </div>
                   </div>
