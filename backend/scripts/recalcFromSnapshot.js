@@ -11,15 +11,26 @@ const { getRankInfo, getRankNumber } = require('../config/memberRanks');
 const POINTS_TO_SHEKEL = 0.55;
 const TEAM_RATES = [0.11, 0.08, 0.06, 0.03, 0.02];
 
-// بناء شجرة الأجيال من referredBy
-async function getGenIds(parentIds, level, maxLevel) {
-  if (level > maxLevel || parentIds.length === 0) return {};
-  const result = {};
-  const children = await User.find({ referredBy: { $in: parentIds }, role: 'member' }).select('_id').lean();
-  const childIds = children.map(c => c._id);
-  result[level] = childIds;
-  const deeper = await getGenIds(childIds, level + 1, maxLevel);
-  Object.assign(result, deeper);
+// بناء شجرة الأجيال من referredBy (iterative مع منع التكرار)
+async function getGenIds(memberId) {
+  const result = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+  const visited = new Set([memberId.toString()]);
+  let currentIds = [memberId];
+
+  for (let level = 1; level <= 5; level++) {
+    if (currentIds.length === 0) break;
+    const children = await User.find({ referredBy: { $in: currentIds }, role: 'member' }).select('_id').lean();
+    const newIds = [];
+    for (const c of children) {
+      const idStr = c._id.toString();
+      if (!visited.has(idStr)) {
+        visited.add(idStr);
+        newIds.push(c._id);
+      }
+    }
+    result[level] = newIds;
+    currentIds = newIds;
+  }
   return result;
 }
 
@@ -86,7 +97,7 @@ async function run() {
     const personalProfitInShekel = personalCommissionPoints * POINTS_TO_SHEKEL;
 
     // بناء شجرة الفريق من referredBy
-    const genIds = await getGenIds([member._id], 1, 5);
+    const genIds = await getGenIds(member._id);
 
     // نقاط كل جيل من snapshot (monthlyPoints - bonus خلال الفترة فقط)
     const genPoints = [0, 0, 0, 0, 0];
