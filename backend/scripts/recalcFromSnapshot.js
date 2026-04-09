@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const ProfitPeriod = require('../models/ProfitPeriod');
 const PointsSnapshot = require('../models/PointsSnapshot');
+const PointTransaction = require('../models/PointTransaction');
 const Order = require('../models/Order');
 const { getRankInfo, getRankNumber } = require('../config/memberRanks');
 
@@ -22,12 +23,15 @@ async function getGenIds(parentIds, level, maxLevel) {
   return result;
 }
 
-// حساب نقاط جيل من snapshot (monthlyPoints - bonusPoints)
-function getNetPointsFromSnap(ids, snapMap) {
+// حساب نقاط جيل من snapshot (monthlyPoints - bonusPoints خلال الفترة فقط)
+function getNetPointsFromSnap(ids, snapMap, bonusByMember) {
   let total = 0;
   ids.forEach(id => {
     const sm = snapMap[id.toString()];
-    if (sm) total += Math.max(0, (sm.monthlyPoints || 0) - (sm.bonusPoints || 0));
+    if (sm) {
+      const bonusInPeriod = bonusByMember[id.toString()] || 0;
+      total += Math.max(0, (sm.monthlyPoints || 0) - bonusInPeriod);
+    }
   });
   return total;
 }
@@ -48,6 +52,20 @@ async function run() {
 
   const snapMap = {};
   snap.members.forEach(m => { snapMap[m.memberId.toString()] = m; });
+
+  // جلب نقاط البونص خلال الفترة فقط من PT (مثل expectedProfit بالضبط)
+  const endDateObj2 = new Date(period.endDate);
+  endDateObj2.setHours(23, 59, 59, 999);
+  const bonusTxnsAll = await PointTransaction.find({
+    type: 'bonus',
+    earnedAt: { $gte: period.startDate, $lte: endDateObj2 }
+  }).lean();
+  const bonusByMember = {};
+  bonusTxnsAll.forEach(t => {
+    const id = t.memberId.toString();
+    bonusByMember[id] = (bonusByMember[id] || 0) + t.points;
+  });
+  console.log(`📊 سجلات بونص خلال الفترة: ${bonusTxnsAll.length}`);
 
   // 3. جلب جميع الأعضاء
   const members = await User.find({ role: 'member' }).select('name username memberRank subscriberCode _id').lean();
@@ -70,11 +88,11 @@ async function run() {
     // بناء شجرة الفريق من referredBy
     const genIds = await getGenIds([member._id], 1, 5);
 
-    // نقاط كل جيل من snapshot (monthlyPoints - bonusPoints)
+    // نقاط كل جيل من snapshot (monthlyPoints - bonus خلال الفترة فقط)
     const genPoints = [0, 0, 0, 0, 0];
     for (let i = 0; i < 5; i++) {
       const ids = genIds[i + 1] || [];
-      genPoints[i] = getNetPointsFromSnap(ids, snapMap);
+      genPoints[i] = getNetPointsFromSnap(ids, snapMap, bonusByMember);
     }
 
     // عمولة الفريق
