@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const ProfitPeriod = require('../models/ProfitPeriod');
+const PointsSnapshot = require('../models/PointsSnapshot');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const PointTransaction = require('../models/PointTransaction');
@@ -464,6 +465,37 @@ exports.updateProfitPeriodStatus = async (req, res) => {
     //   - generation1-5Points تُخصم بنسبتها الصحيحة (11%,8%,6%,3%,2%) من النقاط الخام
     //     لأن هذه الحقول تخزّن مبلغ العمولة وليس النقاط الخام
     if (status === 'paid' && period.status !== 'paid') {
+      // نسخة احتياطية من نقاط جميع الأعضاء قبل التصفير
+      const allMembers = await User.find({ role: 'member' })
+        .select('name username subscriberCode points monthlyPoints bonusPoints compensationPoints generation1Points generation2Points generation3Points generation4Points generation5Points profitPoints')
+        .lean();
+
+      await PointsSnapshot.create({
+        profitPeriodId: period._id,
+        periodName: period.periodName,
+        periodNumber: period.periodNumber,
+        takenBy: req.user._id,
+        takenByName: req.user.name,
+        members: allMembers.map(m => ({
+          memberId: m._id,
+          memberName: m.name,
+          username: m.username,
+          subscriberCode: m.subscriberCode || '',
+          points: m.points || 0,
+          monthlyPoints: m.monthlyPoints || 0,
+          bonusPoints: m.bonusPoints || 0,
+          compensationPoints: m.compensationPoints || 0,
+          generation1Points: m.generation1Points || 0,
+          generation2Points: m.generation2Points || 0,
+          generation3Points: m.generation3Points || 0,
+          generation4Points: m.generation4Points || 0,
+          generation5Points: m.generation5Points || 0,
+          profitPoints: m.profitPoints || 0
+        }))
+      });
+
+      console.log(`✅ تم حفظ نسخة احتياطية من نقاط ${allMembers.length} عضو قبل تصفير الدورة ${period.periodName}`);
+
       const bulkOps = period.membersProfits.map(mp => ({
         updateOne: {
           filter: { _id: mp.memberId },

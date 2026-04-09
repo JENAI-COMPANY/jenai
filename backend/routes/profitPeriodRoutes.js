@@ -104,4 +104,24 @@ router.patch(
   }
 );
 
+// @route   GET /api/profit-periods/snapshots/all
+// @desc    الحصول على جميع النسخ الاحتياطية للنقاط
+// @access  Private (Super Admin only)
+router.get(
+  '/snapshots/all',
+  protect,
+  authorize('super_admin'),
+  async (req, res) => {
+    try {
+      const PointsSnapshot = require('../models/PointsSnapshot');
+      const snapshots = await PointsSnapshot.find()
+        .select('periodName periodNumber takenAt takenByName members')
+        .sort({ takenAt: -1 });
+      res.json({ success: true, data: snapshots });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
 module.exports = router;
