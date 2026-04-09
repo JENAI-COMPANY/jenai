@@ -496,27 +496,49 @@ exports.updateProfitPeriodStatus = async (req, res) => {
 
       console.log(`✅ تم حفظ نسخة احتياطية من نقاط ${allMembers.length} عضو قبل تصفير الدورة ${period.periodName}`);
 
-      const bulkOps = period.membersProfits.map(mp => ({
-        updateOne: {
-          filter: { _id: mp.memberId },
-          update: [{
-            $set: {
-              monthlyPoints:    { $max: [0, { $subtract: ['$monthlyPoints',    mp.points.personal    || 0] }] },
-              generation1Points:{ $max: [0, { $subtract: ['$generation1Points', (mp.points.generation1 || 0) * 0.11] }] },
-              generation2Points:{ $max: [0, { $subtract: ['$generation2Points', (mp.points.generation2 || 0) * 0.08] }] },
-              generation3Points:{ $max: [0, { $subtract: ['$generation3Points', (mp.points.generation3 || 0) * 0.06] }] },
-              generation4Points:{ $max: [0, { $subtract: ['$generation4Points', (mp.points.generation4 || 0) * 0.03] }] },
-              generation5Points:{ $max: [0, { $subtract: ['$generation5Points', (mp.points.generation5 || 0) * 0.02] }] },
-              profitPoints:     { $max: [0, { $subtract: ['$profitPoints',      mp.points.profitPoints || 0] }] }
-              // user.points (التراكمي) لا يُخصم — ينمو فقط ولا ينقص أبداً
-            }
-          }]
-        }
-      }));
+      // جلب نقاط المكافأة لكل عضو خلال فترة الاحتساب
+      const endDateClose = new Date(period.endDate);
+      endDateClose.setHours(23, 59, 59, 999);
+      const bonusTxns = await PointTransaction.aggregate([
+        {
+          $match: {
+            type: 'bonus',
+            earnedAt: { $gte: new Date(period.startDate), $lte: endDateClose }
+          }
+        },
+        { $group: { _id: '$memberId', total: { $sum: '$points' } } }
+      ]);
+      const bonusMap = {};
+      bonusTxns.forEach(t => { bonusMap[t._id.toString()] = t.total; });
+
+      const resetDate = new Date(period.endDate);
+
+      const bulkOps = period.membersProfits.map(mp => {
+        const bonusInPeriod = bonusMap[mp.memberId.toString()] || 0;
+        return {
+          updateOne: {
+            filter: { _id: mp.memberId },
+            update: [{
+              $set: {
+                monthlyPoints:     { $max: [0, { $subtract: ['$monthlyPoints',     mp.points.personal    || 0] }] },
+                bonusPoints:       { $max: [0, { $subtract: ['$bonusPoints',       bonusInPeriod] }] },
+                generation1Points: { $max: [0, { $subtract: ['$generation1Points', (mp.points.generation1 || 0) * 0.11] }] },
+                generation2Points: { $max: [0, { $subtract: ['$generation2Points', (mp.points.generation2 || 0) * 0.08] }] },
+                generation3Points: { $max: [0, { $subtract: ['$generation3Points', (mp.points.generation3 || 0) * 0.06] }] },
+                generation4Points: { $max: [0, { $subtract: ['$generation4Points', (mp.points.generation4 || 0) * 0.03] }] },
+                generation5Points: { $max: [0, { $subtract: ['$generation5Points', (mp.points.generation5 || 0) * 0.02] }] },
+                profitPoints:      { $max: [0, { $subtract: ['$profitPoints',      mp.points.profitPoints || 0] }] },
+                lastPointsReset:   resetDate
+                // user.points (التراكمي) لا يُخصم — ينمو فقط ولا ينقص أبداً
+              }
+            }]
+          }
+        };
+      });
 
       await User.bulkWrite(bulkOps);
 
-      console.log(`✅ تم طرح النقاط الشهرية لـ ${period.membersProfits.length} عضو عند إغلاق الدورة ${period.periodName} — النقاط التراكمية لم تُمَس`);
+      console.log(`✅ تم طرح النقاط الشهرية لـ ${period.membersProfits.length} عضو، خصم bonusPoints، وتحديث lastPointsReset — النقاط التراكمية لم تُمَس`);
     }
 
     period.status = status;
