@@ -1023,7 +1023,8 @@ const UserManagement = () => {
                       <input
                         type="number"
                         value={editingUser.points}
-                        onChange={(e) => setEditingUser({ ...editingUser, points: parseInt(e.target.value) || 0 })}
+                        readOnly
+                        style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                       />
                     </div>
                     <div className="um-form-group">
@@ -1373,7 +1374,8 @@ const UserManagement = () => {
                       <input
                         type="number"
                         value={editingUser.points}
-                        onChange={(e) => setEditingUser({ ...editingUser, points: parseInt(e.target.value) || 0 })}
+                        readOnly
+                        style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                       />
                     </div>
                     <div className="um-form-group">
