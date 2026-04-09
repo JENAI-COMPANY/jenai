@@ -810,6 +810,20 @@ router.put('/users/:id', protect, isAdmin, canManageMembers, async (req, res) =>
       if (monthlyPointsDifference !== 0) {
         await User.findByIdAndUpdate(user._id, { $inc: { points: monthlyPointsDifference } });
         console.log(`📊 تحديث نقاط العضو التراكمية بفرق: ${monthlyPointsDifference} (atomic $inc)`);
+
+        // تسجيل PointTransaction للنقاط اليدوية حتى تُحتسب عند إغلاق الفترة
+        try {
+          await PointTransaction.create({
+            memberId: user._id,
+            points: monthlyPointsDifference,
+            type: 'personal',
+            sourceType: 'admin_direct',
+            description: `تعديل يدوي من الأدمن (${monthlyPointsDifference > 0 ? '+' : ''}${monthlyPointsDifference})`,
+            earnedAt: new Date()
+          });
+        } catch (ptErr) {
+          console.error('PointTransaction admin_direct record failed (non-critical):', ptErr.message);
+        }
       }
 
       // توزيع أو طرح النقاط من الأعضاء العلويين حسب الفرق
