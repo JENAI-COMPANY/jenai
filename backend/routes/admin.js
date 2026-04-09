@@ -191,14 +191,18 @@ const distributeGenerationPointsOnly = async (member, points) => {
       const genRate = GENERATION_RATES[generationLevel];
       const genPoints = points * genRate;
 
-      // تحديث نقاط الجيل (للأرباح)
       const genFieldName = `generation${generationLevel + 1}Points`;
       const oldGenValue = currentMember[genFieldName] || 0;
-      currentMember[genFieldName] = oldGenValue + genPoints;
-
-      // تحديث النقاط التراكمية (points) - كاملة بدون نسبة
       const oldPointsValue = currentMember.points || 0;
-      currentMember.points = oldPointsValue + points; // النقاط الكاملة بدون نسبة
+
+      if (points > 0) {
+        // إضافة: نقاط الجيل + التراكمي
+        currentMember[genFieldName] = oldGenValue + genPoints;
+        currentMember.points = oldPointsValue + points;
+      } else {
+        // خصم: التراكمي فقط، نقاط الجيل لا تُخصم (الأرباح اتحسبت مسبقاً)
+        currentMember.points = Math.max(0, oldPointsValue + points);
+      }
 
       await currentMember.save();
 
