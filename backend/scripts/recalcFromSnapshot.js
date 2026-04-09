@@ -148,6 +148,16 @@ async function run() {
     const websiteDevelopmentCommission = memberTotalProfit > 100 ? memberTotalProfit * 0.03 : 0;
     const finalProfit = Math.floor(memberTotalProfit - websiteDevelopmentCommission);
 
+    if (member.name && member.name.includes('البرقوني')) {
+      const g1ids = genIds[1] || [];
+      console.log(`DEBUG g1 count: ${g1ids.length}`);
+      // فحص أول 3 ids
+      for (let x = 0; x < Math.min(3, g1ids.length); x++) {
+        const id = g1ids[x];
+        const sm = snapMap[id.toString()];
+        console.log(`  id=${id} inSnap=${!!sm} monthly=${sm?.monthlyPoints}`);
+      }
+    }
     if (finalProfit > 0 || personalPoints > 0) {
       console.log(`  ${member.name}: personal=${personalPoints} g1=${genPoints[0]} g2=${genPoints[1]} g3=${genPoints[2]} team=₪${teamProfitInShekel.toFixed(2)} total=₪${finalProfit}`);
     }
