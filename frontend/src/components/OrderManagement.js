@@ -566,18 +566,24 @@ const OrderManagement = () => {
                   </td>
                   <td className="om-price">₪{order.totalPrice?.toFixed(2)}</td>
                   <td>
-                    <select
-                      className={`om-status-badge ${getStatusBadgeClass(order.status)}`}
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                    >
-                      <option value="pending">{language === 'ar' ? 'قيد الانتظار' : 'Pending'}</option>
-                      <option value="prepared">{language === 'ar' ? 'جاهز' : 'Prepared'}</option>
-                      <option value="on_the_way">{language === 'ar' ? 'في الطريق' : 'On The Way'}</option>
-                      {user?.role !== 'category_admin' && (
-                        <option value="received">{language === 'ar' ? 'تم الاستلام' : 'Received'}</option>
-                      )}
-                    </select>
+                    {order.isCancelled ? (
+                      <span className="om-status-badge om-status-cancelled" style={{ padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                        {language === 'ar' ? 'ملغي' : 'Cancelled'}
+                      </span>
+                    ) : (
+                      <select
+                        className={`om-status-badge ${getStatusBadgeClass(order.status)}`}
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                      >
+                        <option value="pending">{language === 'ar' ? 'قيد الانتظار' : 'Pending'}</option>
+                        <option value="prepared">{language === 'ar' ? 'جاهز' : 'Prepared'}</option>
+                        <option value="on_the_way">{language === 'ar' ? 'في الطريق' : 'On The Way'}</option>
+                        {user?.role !== 'category_admin' && (
+                          <option value="received">{language === 'ar' ? 'تم الاستلام' : 'Received'}</option>
+                        )}
+                      </select>
+                    )}
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>

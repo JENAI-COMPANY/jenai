@@ -336,6 +336,12 @@
   color: #065f46;
 }
 
+.om-status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+  cursor: default;
+}
+
 .om-status-badge:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
