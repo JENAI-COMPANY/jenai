@@ -141,7 +141,7 @@ const Checkout = () => {
   }
 
   // التحقق من صحة بيانات السلة
-  const hasInvalidItems = cartItems.some(item => !item._id || !item.name || (!item.customerPrice && !item.subscriberPrice));
+  const hasInvalidItems = cartItems.some(item => !(item.product || item._id) || !item.name || (!item.customerPrice && !item.subscriberPrice));
 
   if (hasInvalidItems) {
     return (
