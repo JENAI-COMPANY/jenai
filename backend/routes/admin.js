@@ -112,15 +112,15 @@ const distributeCommissions = async (buyer, productPoints, sourceType = 'order',
 
       // تحديث العضو
       const genFieldName = `generation${generationLevel + 1}Points`;
-      currentMember[genFieldName] = (currentMember[genFieldName] || 0) + genPoints;
+      currentMember[genFieldName] = Math.round(((currentMember[genFieldName] || 0) + genPoints) * 100) / 100;
 
       // تحديث النقاط التراكمية (points) - كاملة بدون نسبة
-      currentMember.points = (currentMember.points || 0) + productPoints; // النقاط الكاملة بدون نسبة
+      currentMember.points = Math.round((currentMember.points || 0) + productPoints); // النقاط الكاملة بدون نسبة
 
       if (leadershipPoints > 0) {
         currentMember.leadershipPoints = (currentMember.leadershipPoints || 0) + leadershipPoints;
         // نقاط القيادة أيضاً تُضاف كاملة
-        currentMember.points = (currentMember.points || 0) + leadershipPoints;
+        currentMember.points = Math.round((currentMember.points || 0) + leadershipPoints);
       }
 
       currentMember.totalCommission = (currentMember.totalCommission || 0) + profit;
@@ -197,11 +197,11 @@ const distributeGenerationPointsOnly = async (member, points) => {
 
       if (points > 0) {
         // إضافة: نقاط الجيل + التراكمي
-        currentMember[genFieldName] = oldGenValue + genPoints;
-        currentMember.points = oldPointsValue + points;
+        currentMember[genFieldName] = Math.round((oldGenValue + genPoints) * 100) / 100;
+        currentMember.points = Math.round(oldPointsValue + points);
       } else {
         // خصم: التراكمي فقط، نقاط الجيل لا تُخصم (الأرباح اتحسبت مسبقاً)
-        currentMember.points = Math.max(0, oldPointsValue + points);
+        currentMember.points = Math.round(Math.max(0, oldPointsValue + points));
       }
 
       await currentMember.save();
