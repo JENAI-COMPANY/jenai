@@ -154,10 +154,7 @@ exports.getAllProducts = async (req, res) => {
         } else {
           query.$or = regionConditions;
         }
-        console.log('✅ Region filter applied. Query conditions:', JSON.stringify(query, null, 2));
       }
-    } else {
-      console.log('⚠️ No region filter applied. User region:', req.user ? req.user.region : 'No user');
     }
 
     if (search) {
@@ -182,24 +179,11 @@ exports.getAllProducts = async (req, res) => {
       }
     }
 
-    console.log('📊 Final query:', JSON.stringify(query, null, 2));
-
     const products = await Product.find(query)
       .populate('region', 'name nameAr code')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
-
-    console.log('📦 Found products count:', products.length);
-
-    // طباعة معلومات كل منتج للتحقق
-    products.forEach((product, index) => {
-      console.log(`Product ${index + 1}: ${product.name}`, {
-        region: product.region ? product.region.nameAr || product.region : 'null',
-        isGlobal: product.isGlobal,
-        isActive: product.isActive
-      });
-    });
 
     // إذا كان هناك فرع محدد، نعيد الأسعار الخاصة بهذا الفرع
     let regionSpecificProducts = products;
