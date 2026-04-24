@@ -70,8 +70,6 @@ exports.getAllProducts = async (req, res) => {
   try {
     const { category, search, page = 1, limit = 12, regionId, regionCode, isNewArrival, isOffer } = req.query;
 
-    console.log('📋 Query parameters received:', { category, search, regionId, regionCode, isNewArrival, isOffer });
-
     // المدراء يرون جميع المنتجات (نشطة وغير نشطة)، المستخدمون العاديون يرون النشطة فقط
     const adminRoles = ['super_admin', 'regional_admin', 'category_admin'];
     const isAdminRequest = req.user && adminRoles.includes(req.user.role);
@@ -84,20 +82,17 @@ exports.getAllProducts = async (req, res) => {
     // فلترة حسب "وصل حديثاً"
     if (isNewArrival === 'true' || isNewArrival === true) {
       query.isNewArrival = true;
-      console.log('✅ Filtering by isNewArrival');
     }
 
     // فلترة حسب "العروض"
     if (isOffer === 'true' || isOffer === true) {
       query.isOffer = true;
-      console.log('✅ Filtering by isOffer');
     }
 
     // فلترة تلقائية لمدير المنطقة - يرى فقط منتجات منطقته
     if (req.user && req.user.role === 'regional_admin' && req.user.region) {
       const adminRegionId = req.user.region._id || req.user.region;
       query.region = adminRegionId;
-      console.log('🔒 Regional admin filter: Only products from region', adminRegionId);
     }
 
     // فلترة تلقائية لمدير القسم - يرى فقط منتجات أقسامه
@@ -119,7 +114,6 @@ exports.getAllProducts = async (req, res) => {
         });
       }
       query.category = { $in: req.user.managedCategories };
-      console.log('🔒 Category admin filter: Only products from categories', req.user.managedCategories);
     }
 
     // فلترة اختيارية حسب المنطقة (فقط للمستخدمين غير regional_admin أو category_admin)
@@ -133,7 +127,6 @@ exports.getAllProducts = async (req, res) => {
         region = { _id: regionId };
       } else if (userRegionId) {
         region = { _id: userRegionId };
-        console.log('🔍 Filtering by user region:', userRegionId);
       }
 
       if (region) {
@@ -244,9 +237,6 @@ exports.getProduct = async (req, res) => {
 // Create product (Admin only)
 exports.createProduct = async (req, res) => {
   try {
-    console.log('Creating product with data:', req.body);
-    console.log('Request files:', req.files);
-
     let productData = { ...req.body };
 
     // Clean up FormData - convert string 'undefined' to undefined
@@ -288,8 +278,6 @@ exports.createProduct = async (req, res) => {
     }
 
     // التحقق من المنطقة حسب دور المستخدم
-    console.log('User role:', req.user.role);
-    console.log('Product region before:', productData.region);
 
     if (req.user.role === 'regional_admin') {
       // إذا كان admin المنطقة، المنتج يُضاف تلقائياً لمنطقته
@@ -312,9 +300,6 @@ exports.createProduct = async (req, res) => {
         productData.isGlobal = true;
       }
     }
-
-    console.log('Product region after:', productData.region);
-    console.log('Product isGlobal:', productData.isGlobal);
 
     // معالجة بيانات الخصم
     productData = processDiscountData(productData);
