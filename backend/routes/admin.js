@@ -421,6 +421,7 @@ router.delete('/service-points/:id', protect, isSuperAdmin, async (req, res) => 
 router.get('/users', protect, isAdmin, canViewMembers, async (req, res) => {
   try {
     let query = {};
+    const { page, limit: limitParam, search, subscriberCode } = req.query;
 
     // Regional admins can only see members and customers in their regions
     if (req.user.role === 'regional_admin') {
@@ -428,16 +429,50 @@ router.get('/users', protect, isAdmin, canViewMembers, async (req, res) => {
       query.role = { $in: ['member', 'customer'] };
     }
 
-    const users = await User.find(query)
-      .select('-password')
-      .populate('sponsorId', 'name subscriberId subscriberCode')
-      .populate('region', 'name nameAr nameEn code')
-      .sort('-createdAt');
+    // Search by subscriberCode (used by frontend for sponsor lookup)
+    if (subscriberCode) {
+      query.subscriberCode = subscriberCode.trim();
+      const users = await User.find(query)
+        .select('-password')
+        .populate('sponsorId', 'name subscriberId subscriberCode')
+        .populate('region', 'name nameAr nameEn code');
+      return res.json({ success: true, count: users.length, users });
+    }
+
+    // Search by name/username/email
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { username: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { sponsorCode: { $regex: search, $options: 'i' } },
+        { subscriberCode: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Pagination
+    const pageNum = parseInt(page) || 1;
+    const pageSize = parseInt(limitParam) || 50;
+    const skip = (pageNum - 1) * pageSize;
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select('-password')
+        .populate('sponsorId', 'name subscriberId subscriberCode')
+        .populate('region', 'name nameAr nameEn code')
+        .sort('-createdAt')
+        .skip(skip)
+        .limit(pageSize),
+      User.countDocuments(query)
+    ]);
 
     res.json({
       success: true,
       count: users.length,
-      users: users
+      total,
+      totalPages: Math.ceil(total / pageSize),
+      currentPage: pageNum,
+      users
     });
   } catch (error) {
     res.status(500).json({

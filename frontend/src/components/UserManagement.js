@@ -16,6 +16,10 @@ const UserManagement = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [searchTimeout, setSearchTimeout] = useState(null);
   const [filterRole, setFilterRole] = useState('all');
   const [filterCountry, setFilterCountry] = useState('all');
   const [showLocationStats, setShowLocationStats] = useState(false);
@@ -60,24 +64,26 @@ const UserManagement = () => {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(1, '');
     fetchRegions();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1, search = '') => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
-      console.log('Fetching users with token:', token);
-      const response = await axios.get('/api/admin/users', {
+      const params = new URLSearchParams({ page, limit: 50 });
+      if (search) params.append('search', search);
+      const response = await axios.get(`/api/admin/users?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('Users response:', response.data);
-      console.log('First user with region:', response.data.users?.find(u => u.region));
       const hiddenRoles = ['category_admin', 'sales_employee', 'admin_secretary'];
       setUsers((response.data.users || []).filter(u => !hiddenRoles.includes(u.role)));
+      setTotalPages(response.data.totalPages || 1);
+      setTotalUsers(response.data.total || 0);
+      setCurrentPage(page);
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching users:', err);
       setError(err.response?.data?.message || 'Failed to load users');
       setLoading(false);
     }
@@ -649,8 +655,8 @@ const UserManagement = () => {
           <h2>{language === 'ar' ? 'إدارة المستخدمين' : 'User Management'}</h2>
           <p className="um-subtitle">
             {language === 'ar'
-              ? `إجمالي المستخدمين: ${filteredUsers.length}`
-              : `Total Users: ${filteredUsers.length}`}
+              ? `إجمالي المستخدمين: ${totalUsers}`
+              : `Total Users: ${totalUsers}`}
           </p>
         </div>
         <div className="um-header-right">
@@ -673,7 +679,12 @@ const UserManagement = () => {
             type="text"
             placeholder={language === 'ar' ? 'بحث بالاسم أو المستخدم أو كود العضوية...' : 'Search by name, username or member code...'}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchTerm(val);
+              if (searchTimeout) clearTimeout(searchTimeout);
+              setSearchTimeout(setTimeout(() => fetchUsers(1, val), 400));
+            }}
           />
         </div>
         <div className="um-role-filter">
@@ -833,6 +844,25 @@ const UserManagement = () => {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px', direction: 'ltr' }}>
+            <button
+              onClick={() => fetchUsers(currentPage - 1, searchTerm)}
+              disabled={currentPage <= 1}
+              style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: currentPage <= 1 ? '#f3f4f6' : '#fff', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
+            >‹ Prev</button>
+            <span style={{ fontSize: '14px', color: '#374151' }}>
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => fetchUsers(currentPage + 1, searchTerm)}
+              disabled={currentPage >= totalPages}
+              style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: currentPage >= totalPages ? '#f3f4f6' : '#fff', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+            >Next ›</button>
+          </div>
+        )}
       </div>
 
       {/* Edit User Modal - Mobile Version */}
