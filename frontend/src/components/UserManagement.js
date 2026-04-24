@@ -68,9 +68,9 @@ const UserManagement = () => {
     fetchRegions();
   }, []);
 
-  const fetchUsers = async (page = 1, search = '') => {
+  const fetchUsers = async (page = 1, search = '', showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const token = localStorage.getItem('token');
       const params = new URLSearchParams({ page, limit: 50 });
       if (search) params.append('search', search);
@@ -683,7 +683,7 @@ const UserManagement = () => {
               const val = e.target.value;
               setSearchTerm(val);
               if (searchTimeout) clearTimeout(searchTimeout);
-              setSearchTimeout(setTimeout(() => fetchUsers(1, val), 400));
+              setSearchTimeout(setTimeout(() => fetchUsers(1, val, false), 400));
             }}
           />
         </div>
